@@ -136,6 +136,15 @@ function genPropertyTable(data) {
     $('#borrowable_item').empty();
     $.each(data, function (index, item) {
         console.log(item);
+        if(item.remark == null){
+            item.remark = '';
+        }
+        if(item.format == null){
+            item.format = '';
+        }
+        if(item.second_name == null){
+            item.second_name = '';
+        }
         var row = '<tr>' +
             '<td>' + '<input type="checkbox" class="form-check-input" id="' + item.ssid + '"></input>' + '</td>' +
             '<td>' + item.ssid + '</td>' +
