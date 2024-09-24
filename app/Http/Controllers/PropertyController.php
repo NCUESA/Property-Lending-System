@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Property;
 use PhpOption\None;
+use Illuminate\Support\Facades\Validator;
 
 class PropertyController extends Controller
 {
@@ -12,20 +13,32 @@ class PropertyController extends Controller
 
     public function getPropertyData(Request $request)
     {
-        $selectedValue = $request->input('selected');
-        $data = NAN;
-        if ($selectedValue == 'all') {
-            $data = Property::all();
-        } elseif ($selectedValue == 'jinde') {
-            $data = Property::where('belong_place', '進德')->get();
-        } elseif ($selectedValue == 'baosan') {
-            $data = Property::where('belong_place', '寶山')->get();
-        } elseif ($selectedValue == '307') {
-            $data = Property::where('belong_place', '307')->get();
-        } elseif ($selectedValue == '403') {
-            $data = Property::where('belong_place', '405')->get();
+        $validator = Validator::make($request->all(), [
+            'selected' => 'required|in:all,jinde,baosan,307,405'
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
         }
 
+        $selectedValue = $request->input('selected');   
+        if($selectedValue == 'jinde'){
+            $selectedValue = '進德';
+        }
+        elseif($selectedValue == 'baosan'){
+            $selectedValue = '寶山';
+        }
+
+        $data = NAN;
+        if ($selectedValue == 'all') {
+            $data = Property::orderBy('ssid')
+                ->get();
+        } else
+        {
+            $data = Property::where('belong_place',$selectedValue)
+                ->orderBy('ssid')
+                ->get();
+        }
         return response()->json(['success' => true, 'data' => $data]);
     }
 

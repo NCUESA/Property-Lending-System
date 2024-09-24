@@ -1,5 +1,9 @@
 $(document).ready(function () {
-    $('#location').on('change', function () {
+    if (sessionStorage.getItem('place')) {
+        $('#place').val(sessionStorage.getItem('place'));
+    }
+
+    $('#place').on('change', function () {
         $.ajax({
             type: 'POST',
             url: '/show-lending-status',
@@ -130,6 +134,7 @@ $(document).ready(function () {
                 success: function (response) {
                     //console.log(response);
                     if (response.success && response.error == '') {
+                        sessionStorage.setItem('place', $('#place').val());
                         alert('完成');
                         location.reload();
                     }
@@ -253,6 +258,8 @@ function bringDataIntoModal(combine_data, lending_property) {
 function genDataButton(data) {
     $('#lending_status').empty();
     $.each(data, function (index, item) {
+       
+
         let sa_lending_person_name = item.sa_lending_person_name == null ? '' : item.sa_lending_person_name;
         let sa_lending_date = item.sa_lending_date == null ? '' : item.sa_lending_date;
 

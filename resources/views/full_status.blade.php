@@ -13,7 +13,7 @@
         </ul>
     </div>
     <hr>
-    <select class="form-control" id='location'>
+    <select class="form-control" id='place'>
         <option disabled selected>請選擇地點...</option>
         <option value="jinde">進德</option>
         <option value="baosan">寶山</option>
