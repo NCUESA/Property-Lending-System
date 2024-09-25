@@ -8,8 +8,8 @@
             <option value="all">全部地點</option>
             <option value="jinde">進德</option>
             <option value="baosan">寶山</option>
-            <option value="307" disabled>307附屬倉庫</option>
-            <option value="parliament" disabled>403議會辦公室</option>
+            <!--<option value="307" disabled>307附屬倉庫</option>
+            <option value="parliament" disabled>403議會辦公室</option>-->
         </select>
         <select class="form-control col-6" id='lending_status'>
             <option disabled selected>查看借用狀況...</option>

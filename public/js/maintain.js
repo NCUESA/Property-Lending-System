@@ -185,7 +185,7 @@ function sendData() {
             }
         },
         error: function (error) {
-            alert(error);
+            alert(error.responseJSON.message + '\n' + error.responseText);
             console.log(error);
         }
     });

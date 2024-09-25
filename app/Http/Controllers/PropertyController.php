@@ -44,19 +44,33 @@ class PropertyController extends Controller
 
     public function getBorrowableData(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'place' => 'required|in:all,jinde,baosan'
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
         $location = $request->input('place');
+
+        $query = Property::select('ssid', 'class', 'name', 'second_name', 'belong_place', 'format', 'remark', 'img_url')
+            ->where('enable_lending', 1)
+            ->where('lending_status', 0);
+
+
         if ($location == 'jinde') {
-            $location = '進德';
+            //$location = '';
+            $query->where(function($query) {
+                $query->where('belong_place', '進德')
+                      ->orWhere('belong_place', '307');
+            });
+            
         } elseif ($location == 'baosan') {
-            $location = '寶山';
+           $query->where('belong_place','寶山');
         }
 
-        $data = Property::select('ssid', 'class', 'name', 'second_name', 'belong_place', 'format', 'remark', 'img_url')
-            ->where([
-                ['enable_lending', 1],
-                ['lending_status', 0],
-                ['belong_place', $location]
-            ])->get();
+
+        $data = $query->get();
 
         return response()->json(['success' => true, 'data' => $data]);
     }
@@ -65,11 +79,21 @@ class PropertyController extends Controller
 
     public function getPropertyStatusData(Request $request)
     {
+
+        $validator = Validator::make($request->all(), [
+            'place' => 'required|in:all,jinde,baosan',
+            'finding_status' => 'required|in:all,borrowable,lent'
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
         $location = $request->input('place');
         $finding_status = $request->input('finding_status');
 
         if ($location == 'jinde') {
-            $location = ['進德'];
+            $location = ['進德','307'];
         } elseif ($location == 'baosan') {
             $location = ['寶山'];
         } elseif ($location == '307') {
