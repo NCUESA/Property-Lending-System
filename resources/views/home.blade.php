@@ -1,9 +1,8 @@
 @extends('layouts.template')
 
 @section('content')
-    
     <img src="./ncuesa_img.png" alt="NCUESA_IMG" class="center">
-    <h2 class="name-cn" style="text-align: center;font-size: 48px">國立彰化師範大學學生會 器材借用表單</h2>
+    <h2 class="name-cn" style="text-align: center;font-size: 3vw">國立彰化師範大學學生會 器材借用表單</h2>
     <div class="alert alert-dark" role="alert">
         <h4 class="alert-heading">注意事項</h4>
         <ul>
@@ -17,7 +16,7 @@
     <form id='borrow' class="needs-validation" novalidate>
         <h4>基本資料填寫</h4>
         <div class="form-group row">
-            <label for="staticEmail" class="col-sm-2 col-form-label">你知道你自己在填現場借用表嗎？</label>
+            <label for="know_filling" class="col-sm-2 col-form-label">你知道你自己在填現場借用表嗎？</label>
             <div class="col">
                 <div class="form-check form-check">
                     <input class="form-check-input position-static" type="radio" name="know_filling" value="y"
@@ -26,13 +25,13 @@
                 <div class="form-check form-check">
                     <input class="form-check-input position-static" type="radio" name="know_filling" value="n"
                         aria-label="..." required>不知道
+                    <div class="valid-feedback" id='check_know_filling'></div>
                 </div>
-                <div class="" id='check_know_filling'></div>
             </div>
         </div>
         <hr>
         <div class="form-group row">
-            <label for="staticEmail" class="col-sm-2 col-form-label">借用地點</label>
+            <label for="borrow_place" class="col-sm-2 col-form-label">借用地點</label>
             <div class="col">
                 <div class="form-check form-check">
                     <input class="form-check-input position-static" type="radio" name="borrow_place" value="jinde"
@@ -41,7 +40,7 @@
                 <div class="form-check form-check">
                     <input class="form-check-input position-static" type="radio" name="borrow_place" value="baosan"
                         aria-label="..." required>寶山
-                    <div class="" id='check_borrow_place'></div>
+                    <div class="valid-feedback" id='check_borrow_place'></div>
                 </div>
             </div>
         </div>
@@ -61,7 +60,7 @@
         </div>
         <div class="form-group">
             <label for="phone">聯絡電話</label>
-            <input type="input" class="form-control" id="phone" required>
+            <input type="input" class="form-control" id="phone" required maxlength="10">
             <div class="valid-feedback" id='check_phone'>
 
             </div>
@@ -103,6 +102,12 @@
                 <tbody id='borrowable_item'>
 
                 </tbody>
+                <tfoot>
+                    <td colspan="9">
+                    <span class="invalid-feedback" id='check_borrow_item'>請至少選擇一個物品！
+                    </span>
+                    </td>
+                </tfoot>
             </table>
         </div>
 

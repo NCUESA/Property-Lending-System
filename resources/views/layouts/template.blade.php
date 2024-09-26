@@ -38,6 +38,9 @@
                     <li class="nav-item">
                         <a class="nav-link active" aria-current="page" href="./responsible">人員清單管理(管理員)</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="./ip">IP通過權限設定(管理員)</a>
+                    </li>
                     <!--
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"

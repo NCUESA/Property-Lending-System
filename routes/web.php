@@ -4,6 +4,7 @@ use App\Http\Controllers\BorrowController;
 use App\Http\Controllers\BorrowRequest;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HelloWorldController;
+use App\Http\Controllers\IPController;
 use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\ResponsibleController;
 
@@ -17,27 +18,35 @@ use App\Http\Controllers\ResponsibleController;
  * 
  * 
  */
+Route::group([], function () {
+    Route::get('/', function () {
+        return view('home', ['js_name' => 'index']);
+    });
 
-Route::get('/', function () {
-    return view('home', ['js_name' => 'index']);
+    Route::get('/status', function () {
+        return view('status', ['js_name' => 'status']);
+    });
 });
 
-Route::get('/status', function () {
-    return view('status', ['js_name' => 'status']);
+Route::middleware('ipAuth:5')->group(function () {
+    Route::get('/full_status', function () {
+        return view('full_status', ['js_name' => 'full_status']);
+    });    
 });
 
-Route::get('/full_status', function () {
-    return view('full_status', ['js_name' => 'full_status']);
+Route::middleware('ipAuth:10')->group(function(){
+    Route::get('/maintain', function () {
+        return view('maintain', ['js_name' => 'maintain']);
+    });
+    
+    Route::get('/responsible', function () {
+        return view('responsible', ['js_name' => 'responsible']);
+    });
+    
+    Route::get('/ip', function () {
+        return view('ip', ['js_name' => 'ip']);
+    });
 });
-
-Route::get('/maintain', function () {
-    return view('maintain', ['js_name' => 'maintain']);
-});
-
-Route::get('/responsible', function () {
-    return view('responsible', ['js_name' => 'responsible']);
-});
-
 
 /**
  * The route of database action.
@@ -64,3 +73,9 @@ Route::post('/borrow-items', [BorrowController::class, 'sendBorrowRequest']);
 Route::post('/add-user', [ResponsibleController::class, 'addUser']);
 Route::post('/items-final', [BorrowController::class, 'sendFinalRequest']);
 Route::post('/update-property-info', [PropertyController::class, 'updatePropertyData']);
+
+Route::name('ip')->group(function(){
+    Route::post('/add-ip',[IPController::class,'addIP']);
+    Route::post('/show-ip',[IPController::class,'showIP']);
+    Route::post('/delete-ip',[IPController::class,'deleteIP']);
+});

@@ -21,27 +21,39 @@ $(document).ready(function () {
         });
     });
 
-    $('#borrow').on('submit', function (e) {
-        e.preventDefault();
+    $('#borrow').on('submit', function (event) {
         // The logic of precheck
-        $('.form-control, .form-check-input').removeClass('is-invalid');
-        $('#check_know_filling').text('');
+        
+        //$('.form-control, .form-check-input').removeClass('is-invalid');
+        //
         let isValid = true;
-        if (!$('input[name="know_filling"]:checked').val()) {
-            $('#check_department').addClass('invalid');
-            $('#check_know_filling').text('要填');
-            isValid = false;
-        }
-        if ($('input[name="know_filling"]:checked').val() == 'n') {
-            $('#check_department').addClass('invalid');
-            $('#check_know_filling').text('還敢亂填啊');
+        if(!this.checkValidity()){
             isValid = false;
         }
 
+        if (!$('input[name="know_filling"]:checked').val()) {
+            $('#check_know_filling').addClass('invalid-feedback');
+            $('#check_know_filling').text('要填');
+            isValid = false;
+        }
+        else if ($('input[name="know_filling"]:checked').val() == 'n') {
+            $('#check_know_filling').addClass('invalid-feedback');
+            $('#check_know_filling').text('還敢亂填啊');
+            isValid = false;
+        }
+        else{
+            $('#check_know_filling').text('');
+            $('#check_know_filling').removeClass('invalid-feedback').addClass('valid-feedback');
+        }
+
         if (!$('input[name="borrow_place"]:checked').val()) {
-            $('#check_department').addClass('invalid');
+            $('#check_borrow_place').addClass('invalid-feedback');
             $('#check_borrow_place').text('要填');
             isValid = false;
+        }
+        else{
+            $('#check_borrow_place').text('');
+            $('#check_borrow_place').removeClass('invalid-feedback').addClass('valid-feedback');
         }
 
         if ($('#department').val().trim() === '') {
@@ -49,11 +61,20 @@ $(document).ready(function () {
             $('#check_department').text('要填');
             isValid = false;
         }
+        else{
+            $('#check_department').text('');
+            $('#check_department').removeClass('invalid-feedback').addClass('valid-feedback');
+        }
+        
 
         if ($('#contact_person').val().trim() === '') {
             $('#check_contact_person').addClass('invalid-feedback');
             $('#check_contact_person').text('要填');
             isValid = false;
+        }
+        else{
+            $('#check_contact_person').text('');
+            $('#check_contact_person').removeClass('invalid-feedback').addClass('valid-feedback');
         }
 
         const phoneRegex = /^[0-9]{10,15}$/;
@@ -61,6 +82,10 @@ $(document).ready(function () {
             $('#check_phone').addClass('invalid-feedback');
             $('#check_phone').text('要填');
             isValid = false;
+        }
+        else{
+            $('#check_phone').text('');
+            $('#check_phone').removeClass('invalid-feedback').addClass('valid-feedback');
         }
 
         if (!$('#email').val().trim()) {
@@ -72,26 +97,50 @@ $(document).ready(function () {
             isValid = false;
             $('#check_email').text('不要亂填');
         }
+        else{
+            $('#check_email').text('');
+            $('#check_email').removeClass('invalid-feedback').addClass('valid-feedback');
+        }
 
         if (!$('#borrow_date').val()) {
             $('#check_borrow_date').addClass('invalid-feedback');
             isValid = false;
             $('#check_borrow_date').text('要填');
         }
+        else{
+            $('#check_borrow_date').text('');
+            $('#check_borrow_date').removeClass('invalid-feedback').addClass('valid-feedback');
+        }
+
         if (!$('#return_date').val()) {
             $('#check_return_date').addClass('invalid-feedback');
             isValid = false;
             $('#check_return_date').text('要填');
         }
+        else{
+            $('#check_return_date').text('');
+            $('#check_return_date').removeClass('invalid-feedback').addClass('valid-feedback');
+        }
 
         var borrow_items = collectBorrowItems();
-
         if (borrow_items.length == 0) {
+            //$('#check_borrow_item').addClass('invalid-feedback');
+            $('#check_borrow_item').show();
             isValid = false;
         }
-        if (!isValid) {
-            return;
+        else{
+            $('#check_borrow_item').hide();
+            //$('#check_borrow_item').removeClass('invalid-feedback').addClass('valid-feedback');
         }
+        
+        if (!isValid) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+
+        $(this).addClass('was-validated');
+
+        
         // Send Ajax
         var pack_data = {
             'understand': $('input[name="know_filling"]').val(),
@@ -104,8 +153,6 @@ $(document).ready(function () {
             'returned_date': $('#return_date').val(),
             'borrow_items': borrow_items
         };
-
-        console.log(pack_data);
 
         $.ajax({
             type: 'POST',
