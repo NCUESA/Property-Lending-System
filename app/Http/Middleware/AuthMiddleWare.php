@@ -20,15 +20,12 @@ class AuthMiddleWare
 
         $isAllowed = AuthIp::select('auth_level')
             ->where('ip', $clientIp)
-            ->get();
-        if (!$isAllowed) {
-            if ($isAllowed->auth_level < $requireLevel) {
-                abort(403);
-            } else {
-                return $next($request);
-            }
-        } else {
-            abort(403);
+            ->first();
+        if (!$isAllowed || $isAllowed->auth_level < $requireLevel) {
+            return abort(403);
         }
+
+        // 如果通過驗證，繼續處理請求
+        return $next($request);
     }
 }
