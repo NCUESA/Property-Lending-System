@@ -8,12 +8,12 @@
         <ul>
             <li>依照地點分顏色，寶山灰色、進德青色</li>
             <li>借用器材請用條碼機掃描器材上方條碼</li>
-            <li></li>
-            <li></li>
+            <!--<li></li>
+            <li></li>-->
         </ul>
     </div>
     <hr>
-    <select class="form-control" id='location'>
+    <select class="form-control" id='place'>
         <option disabled selected>請選擇地點...</option>
         <option value="jinde">進德</option>
         <option value="baosan">寶山</option>

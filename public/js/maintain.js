@@ -2,7 +2,8 @@ var all_property_data = {};
 
 $(document).ready(function () {
 
-    /*$.ajax({
+    /*
+    $.ajax({
         type: 'POST',
         url: '/get-property-info',
         data: {
@@ -20,6 +21,30 @@ $(document).ready(function () {
             console.log(error);
         }
     });*/
+
+    if (sessionStorage.getItem('place')) {
+        $('#place').val(sessionStorage.getItem('place'));
+        var selectedValue = $('#place').val();
+        $.ajax({
+            type: 'POST',
+            url: '/get-property-info',
+            data: {
+                selected: selectedValue,
+                _token: $('meta[name="csrf-token"]').attr('content')  // CSRF Token
+            },
+            success: function (response) {
+                //console.log(response);
+                if (response.success) {
+                    genTable(response.data);
+                    addBarCode();
+                }
+
+            },
+            error: function (error) {
+                console.log(error);
+            }
+        });
+    }
 
     $('#place').on('change', function () {
         var selectedValue = $(this).val();
@@ -155,11 +180,12 @@ function sendData() {
             if (response.success) {
                 alert('修改(新增)完成');
                 //console.log(response.text,response.fA);
+                sessionStorage.setItem('place', $('#place').val());
                 location.reload();
             }
         },
         error: function (error) {
-            alert(error);
+            alert(error.responseJSON.message + '\n' + error.responseText);
             console.log(error);
         }
     });
@@ -205,9 +231,13 @@ function genTable(data) {
         }
         all_property_data[item.ssid + '_prop'] = combine_data;
 
+        item.second_name = item.second_name == null ? "" : item.second_name;
+        item.remark = item.remark == null ? "" : item.remark;
+        item.format = item.format == null ? "" : item.format;
+
         let trig_btn = `<button type="button" class="btn btn-dark btn-prop-info" data-bs-toggle="modal" data-bs-target="#modal" data-property="${item.ssid}_prop">修改</button>`;
         var row = '<tr class="' + bg_color + '">' +
-            '<td>' + item.ssid + '</td>' +
+            '<td>' + item.ssid + addBarCode(item.ssid) + '</td>' +
             '<td>' + item.class + '</td>' +
             '<td>' + item.name + '</td>' +
             '<td>' + item.second_name + '</td>' +
@@ -228,13 +258,8 @@ function genTable(data) {
         $('#property-table').append(row);
     });
 }
-function addBarCode() {
-    $('tbody td[id]').each(function (indexInArray, valueOfElement) {
-        //console.log("ID: " + $(this).attr('id') + ", Text: " + $(this).text());
-        let word = $(this).text();
-        let barcode = $('<p></p>').text(word);
-        barcode.addClass('barcode');
-
-        $(this).append(barcode);
-    });
+function addBarCode(ssid) {
+    //console.log("ID: " + $(this).attr('id') + ", Text: " + $(this).text());
+    let barcode = '<p class="barcode">' + ssid + '</p>';
+    return barcode;
 }

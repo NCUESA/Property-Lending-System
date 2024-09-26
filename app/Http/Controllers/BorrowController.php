@@ -83,6 +83,7 @@ class BorrowController extends Controller
         }
 
         $borrowers = BorrowList::whereIn('borrow_place', $location)
+            ->orderBy('borrow_date','desc')
             ->get();
 
         /*$borrowedItems = BorrowItem::leftjoin('property', 'borrow_item.property_id', '=', 'property.ssid')

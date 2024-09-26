@@ -60,9 +60,22 @@ function genTable(data) {
         }
         else {
             lending_status = '✅';
+            item.borrow_department = '';
+            item.borrow_date = '';
+            item.returned_date = '';
+            
         }
 
 
+        if(item.remark == null){
+            item.remark = '';
+        }
+        if(item.format == null){
+            item.format = '';
+        }
+        if(item.second_name == null){
+            item.second_name = '';
+        }
         var row = '<tr>' +
             '<td>' + item.ssid + '</td>' +
             '<td>' + item.class + '</td>' +
