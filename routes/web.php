@@ -18,7 +18,7 @@ use App\Http\Controllers\ResponsibleController;
  * 
  * 
  */
-Route::group([], function () {
+Route::middleware('ipAuth:0')->group(function () {
     Route::get('/', function () {
         return view('home', ['js_name' => 'index']);
     });

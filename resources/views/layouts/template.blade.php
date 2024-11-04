@@ -29,12 +29,12 @@
                     <li class="nav-item">
                         <a class="nav-link active" aria-current="page" href="./status">器材借用狀態</a>
                     </li>
-                    @if (isset($hasAccess) && $hasAccess)
+                    @if (session('hasAccess'))
                         <li class="nav-item">
                             <a class="nav-link active" aria-current="page" href="./full_status">器材借用狀態(管理員)</a>
                         </li>
                     @endif
-                    @if (isset($hasAdminAccess) && $hasAdminAccess)
+                    @if (session('hasAdminAccess'))
                         <li class="nav-item">
                             <a class="nav-link active" aria-current="page" href="./maintain">器材清單維護(管理員)</a>
                         </li>

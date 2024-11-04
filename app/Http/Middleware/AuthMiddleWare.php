@@ -18,20 +18,22 @@ class AuthMiddleWare
     {
         $clientIp = $request->ip();
 
+        if((int)$requireLevel == 0){
+            return $next($request);
+        }
         $isAllowed = AuthIp::select('auth_level')
             ->where('ip', $clientIp)
             ->first();
         if (!$isAllowed || $isAllowed->auth_level < $requireLevel) {
             return abort(403);
         }
-        if($requireLevel == 5){
-            view()->share('hasAccess', true);
-        }
-        elseif($requireLevel == 10){
-            view()->share('hasAccess', true);
-            view()->share('hasAdminAccess', true);
-        }
+        
+        // With Permition IP will generate URL to admin page
+        session(['hasAccess' => true]);
        
+        if ((int)$requireLevel == 10) {
+            session(['hasAdminAccess' => true]);
+        }
 
         // 如果通過驗證，繼續處理請求
         return $next($request);
