@@ -2,7 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\AuthIp;
+use App\Models\AuthIP;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -21,7 +21,7 @@ class AuthMiddleWare
         if((int)$requireLevel == 0){
             return $next($request);
         }
-        $isAllowed = AuthIp::select('auth_level')
+        $isAllowed = AuthIP::select('auth_level')
             ->where('ip', $clientIp)
             ->first();
         if (!$isAllowed || $isAllowed->auth_level < $requireLevel) {
