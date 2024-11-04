@@ -29,18 +29,22 @@
                     <li class="nav-item">
                         <a class="nav-link active" aria-current="page" href="./status">器材借用狀態</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="./full_status">器材借用狀態(管理員)</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="./maintain">器材清單維護(管理員)</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="./responsible">人員清單管理(管理員)</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="./ip">IP通過權限設定(管理員)</a>
-                    </li>
+                    @if (isset($hasAccess) && $hasAccess)
+                        <li class="nav-item">
+                            <a class="nav-link active" aria-current="page" href="./full_status">器材借用狀態(管理員)</a>
+                        </li>
+                    @endif
+                    @if (isset($hasAdminAccess) && $hasAdminAccess)
+                        <li class="nav-item">
+                            <a class="nav-link active" aria-current="page" href="./maintain">器材清單維護(管理員)</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" aria-current="page" href="./responsible">人員清單管理(管理員)</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" aria-current="page" href="./ip">IP通過權限設定(管理員)</a>
+                        </li>
+                    @endif
                     <!--
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
