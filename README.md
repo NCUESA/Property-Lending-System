@@ -5,7 +5,9 @@
 目前已完成
 
 ## 版本
-Ver 1.0
+- Ver 1.0
+- 最近Commit日期：
+- Commit Name：
 
 ## 開發人員資訊
 - Email:  ncuesa@gm.ncue.edu.tw

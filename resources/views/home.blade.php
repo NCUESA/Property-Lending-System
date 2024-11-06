@@ -60,7 +60,7 @@
         </div>
         <div class="form-group">
             <label for="phone">聯絡電話</label>
-            <input type="input" class="form-control" id="phone" required maxlength="10">
+            <input type="input" class="form-control" id="phone" required maxlength="10" min="10">
             <div class="valid-feedback" id='check_phone'>
 
             </div>

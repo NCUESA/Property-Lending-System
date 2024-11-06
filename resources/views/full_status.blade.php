@@ -3,25 +3,93 @@
 @section('content')
     <h2>器材借用狀況</h2>
     <hr>
-    <div class="alert alert-success" role="alert">
-        <h4 class="alert-heading">注意事項</h4>
-        <ul>
-            <li>依照地點分顏色，寶山灰色、進德青色</li>
-            <li>借用器材請用條碼機掃描器材上方條碼</li>
-            <!--<li></li>
-            <li></li>-->
-        </ul>
+    <form>
+        <div class="row g-3 align-items-center">
+            <div class="col-4 d-grid gap-2">
+                <button class="btn btn-success" type="button" data-bs-toggle="collapse" data-bs-target="#lendingInfo"
+                    aria-expanded="false" aria-controls="lendingInfo">
+                    點選展開注意事項
+                </button>
+            </div>
+            <div class="col-4 d-grid gap-2">
+                <button class="btn btn-primary" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#searchInfo" aria-expanded="false" aria-controls="searchInfo">
+                    點選展開查詢列表
+                </button>
+            </div>
+            <div class="col-1">
+                <label for="place" class="col-form-label">查詢地點</label>
+              </div>
+            <div class="col-3">
+                <select class="form-control" id='place'>
+                    <option disabled selected>請選擇地點...</option>
+                    <option value="jinde">進德</option>
+                    <option value="baosan">寶山</option>
+                    <option value="all">全部地點</option>
+                </select>
+            </div>
+        </div>
+    </form>
+
+    <div class="collapse" id="lendingInfo">
+        <div class="alert alert-success" role="alert">
+            <h4 class="alert-heading">注意事項</h4>
+            <ul>
+                <li>依照地點分顏色，寶山灰色、進德青色</li>
+                <li>借用器材請用條碼機掃描器材上方條碼</li>
+                <li>掃描時請切換成英文輸入法</li>
+                <li>如果逼了沒有反應，請點一下輸入框</li>
+                <li><strong>請一定要選擇是借出還是歸還</strong></li>
+                <li><strong>請一定要選擇是借出還是歸還</strong></li>
+                <li><strong>請一定要選擇是借出還是歸還</strong></li>
+            </ul>
+        </div>
+    </div>
+    <div class="collapse" id="searchInfo">
+        <h4>查詢</h4>
+        <form id="search">
+            <div class="row g-3 align-items-center">
+                <label for="search_contact" class="col-sm-1 col-form-label">借用聯絡人</label>
+                <div class="col-sm-2">
+                    <input type="text" class="form-control" id="search_contact" value="">
+                </div>
+
+                <label for="search_property" class="col-sm-1 col-form-label">借用器材</label>
+                <div class="col-sm-2">
+                    <input type="text" class="form-control" id="search_property" value="">
+                </div>
+
+                <label for="search_lendout" class="col-sm-1 col-form-label">借出日期</label>
+                <div class="col-sm-2">
+                    <input type="date" class="form-control" id="search_lendout" value="">
+                </div>
+
+                <label for="search_return" class="col-sm-1 col-form-label">歸還日期</label>
+                <div class="col-sm-2">
+                    <input type="date" class="form-control" id="search_return" value="">
+                </div>
+                <label for="search_department" class="col-sm-1 col-form-label">借用單位</label>
+                <div class="col-sm-2">
+                    <input type="text" class="form-control" id="search_department" value="">
+                </div>
+
+                <label for="search_prepare_return" class="col-sm-1 col-form-label">預計歸還日期</label>
+                <div class="col-sm-2">
+                    <input type="date" class="form-control" id="search_prepare_return" value="">
+                </div>
+                <div class="col-sm-3 d-grid gap-2">
+                    <button type="reset" class="btn btn-danger btn-block">取消重填</button>
+                </div>
+                <div class="col-sm-3 d-grid gap-2">
+                    <button type="submit" class="btn btn-success btn-block">查詢</button>
+                </div>
+            </div>
+        </form>
     </div>
     <hr>
-    <select class="form-control" id='place'>
-        <option disabled selected>請選擇地點...</option>
-        <option value="jinde">進德</option>
-        <option value="baosan">寶山</option>
-        <option value="all">全部地點</option>
-    </select>
+
     <div>
-        <div class="modal fade" id="modal" tabindex="-1" aria-labelledby="modal_Label"
-            aria-hidden="true">
+        <div class="modal fade" id="modal" tabindex="-1" aria-labelledby="modal_Label" aria-hidden="true">
             <div class="modal-dialog modal-xl">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -44,7 +112,7 @@
                                     <th scope="col">財產圖片</th>
                                 </thead>
                                 <tbody id="borrow_list">
-                                    
+
                                 </tbody>
                             </table>
                         </div>
@@ -68,8 +136,8 @@
                                         </div>
                                         <div class="col-md-3">
                                             <label class="form-label">借用編號(系統自動帶入)</label>
-                                            <input type="input" class="form-control" placeholder="此處請勿填寫" id="borrow_id"
-                                                value="" disabled>
+                                            <input type="input" class="form-control" placeholder="此處請勿填寫"
+                                                id="borrow_id" value="" disabled>
                                             <div class="invalid-feedback">
                                                 必填
                                             </div>
@@ -98,8 +166,8 @@
                                         </div>
                                         <div class="col-md-3">
                                             <label class="form-label">借出經辦日期</label>
-                                            <input type="date" class="form-control" placeholder="" id="sa_lending_date"
-                                                required disabled value="">
+                                            <input type="date" class="form-control" placeholder=""
+                                                id="sa_lending_date" required disabled value="">
                                         </div>
                                         <div class="col-md-2">
                                             <label class="form-label">押金收取</label>
@@ -184,8 +252,8 @@
                                         </div>
                                         <div class="col-md-2">
                                             <label class="form-label">押金退還</label>
-                                            <select class="form-select form-select mb-3" id="sa_deposit_returned"
-                                                required disabled>
+                                            <select class="form-select form-select mb-3" id="sa_deposit_returned" required
+                                                disabled>
                                                 <option selected disabled value="">請選擇</option>
                                                 <option value="1">退了 YES</option>
                                                 <option value="0">沒退 NO</option>
@@ -227,7 +295,7 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-primary" id="start-lending">開始填寫</button>
                         <button type="button" class="btn btn-success" id="save-data">填寫完成(儲存資料)</button>
-                        <button type="button" class="btn btn-danger" data-bs-dismiss="modal">關閉視窗(不儲存關閉)</button>
+                        <button type="button" class="btn btn-danger" id="modal-close" data-bs-dismiss="modal">關閉視窗(不儲存關閉)</button>
                     </div>
                 </div>
             </div>
@@ -238,7 +306,7 @@
     <table class="table">
         <thead>
             <tr>
-                <th scope="col">流水號</th>
+                <!--<th scope="col">流水號</th>
                 <th scope="col">借出承辦人</th>
                 <th scope="col">借出日期</th>
                 <th scope="col">押金收取</th>
@@ -251,7 +319,7 @@
                 <th scope="col">證件退還</th>
                 <th scope="col">備註</th>
 
-                <th scope="col">填單時間</th>
+                <th scope="col">填單時間</th>-->
                 <th scope="col">Email</th>
                 <th scope="col">借用單位</th>
                 <th scope="col">聯絡人</th>

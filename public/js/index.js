@@ -23,25 +23,27 @@ $(document).ready(function () {
 
     $('#borrow').on('submit', function (event) {
         // The logic of precheck
-        
+        //event.preventDefault();
         //$('.form-control, .form-check-input').removeClass('is-invalid');
         //
         let isValid = true;
-        if(!this.checkValidity()){
+        if (!this.checkValidity()) {
             isValid = false;
         }
 
+        // Know Filling Empty
         if (!$('input[name="know_filling"]:checked').val()) {
             $('#check_know_filling').addClass('invalid-feedback');
             $('#check_know_filling').text('要填');
             isValid = false;
         }
+        // Know Filling Value Wrong
         else if ($('input[name="know_filling"]:checked').val() == 'n') {
             $('#check_know_filling').addClass('invalid-feedback');
             $('#check_know_filling').text('還敢亂填啊');
             isValid = false;
         }
-        else{
+        else {
             $('#check_know_filling').text('');
             $('#check_know_filling').removeClass('invalid-feedback').addClass('valid-feedback');
         }
@@ -51,7 +53,7 @@ $(document).ready(function () {
             $('#check_borrow_place').text('要填');
             isValid = false;
         }
-        else{
+        else {
             $('#check_borrow_place').text('');
             $('#check_borrow_place').removeClass('invalid-feedback').addClass('valid-feedback');
         }
@@ -61,34 +63,34 @@ $(document).ready(function () {
             $('#check_department').text('要填');
             isValid = false;
         }
-        else{
+        else {
             $('#check_department').text('');
             $('#check_department').removeClass('invalid-feedback').addClass('valid-feedback');
         }
-        
 
-        if ($('#contact_person').val().trim() === '') {
+
+        if ($('#contact_person').val().trim() == '') {
             $('#check_contact_person').addClass('invalid-feedback');
             $('#check_contact_person').text('要填');
             isValid = false;
         }
-        else{
+        else {
             $('#check_contact_person').text('');
             $('#check_contact_person').removeClass('invalid-feedback').addClass('valid-feedback');
         }
 
-        const phoneRegex = /^[0-9]{10,15}$/;
+        const phoneRegex = /^\d{10}$/;
         if (!phoneRegex.test($('#phone').val().trim())) {
             $('#check_phone').addClass('invalid-feedback');
             $('#check_phone').text('要填');
             isValid = false;
         }
-        else{
+        else {
             $('#check_phone').text('');
             $('#check_phone').removeClass('invalid-feedback').addClass('valid-feedback');
         }
 
-        if (!$('#email').val().trim()) {
+        if ($('#email').val().trim() == '') {
             $('#check_email').addClass('invalid-feedback');
             isValid = false;
             $('#check_email').text('要填');
@@ -97,72 +99,83 @@ $(document).ready(function () {
             isValid = false;
             $('#check_email').text('不要亂填');
         }
-        else{
+        else {
             $('#check_email').text('');
             $('#check_email').removeClass('invalid-feedback').addClass('valid-feedback');
         }
 
-        if (!$('#borrow_date').val()) {
-            $('#check_borrow_date').addClass('invalid-feedback');
+        // 獲取當前日期
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // 設定時間為午夜，確保只比較日期
+
+        // 獲取欄位值
+        const borrowDateValue = $('#borrow_date').val();
+        const returnDateValue = $('#return_date').val();
+
+        // 將日期字串轉為日期物件
+        const borrowDate = borrowDateValue ? new Date(borrowDateValue) : null;
+        const returnDate = returnDateValue ? new Date(returnDateValue) : null;
+
+        // 檢查 borrow_date
+        if (!borrowDateValue) {
+            $('#check_borrow_date').addClass('invalid-feedback').text('要填');
             isValid = false;
-            $('#check_borrow_date').text('要填');
-        }
-        else{
-            $('#check_borrow_date').text('');
-            $('#check_borrow_date').removeClass('invalid-feedback').addClass('valid-feedback');
+        } else if (borrowDate < today) {
+            $('#check_borrow_date').addClass('invalid-feedback').text('借用日期不能小於當前日期');
+            isValid = false;
+        } else {
+            $('#check_borrow_date').removeClass('invalid-feedback').addClass('valid-feedback').text('');
         }
 
-        if (!$('#return_date').val()) {
-            $('#check_return_date').addClass('invalid-feedback');
+        // 檢查 return_date
+        if (!returnDateValue) {
+            $('#check_return_date').addClass('invalid-feedback').text('要填');
             isValid = false;
-            $('#check_return_date').text('要填');
+        } else if (returnDate < borrowDate) {
+            $('#check_return_date').addClass('invalid-feedback').text('歸還日期不能小於借用日期');
+            isValid = false;
+        } else {
+            $('#check_return_date').removeClass('invalid-feedback').addClass('valid-feedback').text('');
         }
-        else{
-            $('#check_return_date').text('');
-            $('#check_return_date').removeClass('invalid-feedback').addClass('valid-feedback');
-        }
+
 
         var borrow_items = collectBorrowItems();
-        if (borrow_items.length == 0) {
+        if (borrow_items.length <= 0) {
             //$('#check_borrow_item').addClass('invalid-feedback');
             $('#check_borrow_item').show();
             isValid = false;
         }
-        else{
+        else {
             $('#check_borrow_item').hide();
             //$('#check_borrow_item').removeClass('invalid-feedback').addClass('valid-feedback');
         }
-        
+
+        $(this).addClass('was-validated');
         if (!isValid) {
             event.preventDefault();
             event.stopPropagation();
+            return;
         }
-
-        $(this).addClass('was-validated');
-
-        
         // Send Ajax
-        var pack_data = {
-            'understand': $('input[name="know_filling"]').val(),
-            'borrow_place': $('input[name="borrow_place"]').val(),
-            'borrow_department': $('#department').val(),
-            'borrow_person_name': $('#contact_person').val(),
-            'phone': $('#phone').val(),
-            'email': $('#email').val(),
-            'borrow_date': $('#borrow_date').val(),
-            'returned_date': $('#return_date').val(),
-            'borrow_items': borrow_items
-        };
-
         $.ajax({
             type: 'POST',
-            url: '/borrow-items',
+            url: '/borrow/item/',
             data: {
-                pack_data: JSON.stringify(pack_data),
+                understand: $('input[name="know_filling"]').val(),
+                borrow_place: $('input[name="borrow_place"]').val(),
+                borrow_department: $('#department').val(),
+                borrow_person_name: $('#contact_person').val(),
+                phone: $('#phone').val(),
+                email: $('#email').val(),
+                borrow_date: $('#borrow_date').val(),
+                returned_date: $('#return_date').val(),
+                borrow_items: borrow_items,
                 _token: $('meta[name="csrf-token"]').attr('content')  // CSRF Token
             },
             success: function (response) {
                 console.log(response);
+                //event.preventDefault();
+                //event.stopPropagation();
                 if (response.success && response.error == '') {
                     alert('借用表單送出成功，請等待值勤人員提供器材');
                     location.reload();
@@ -173,6 +186,8 @@ $(document).ready(function () {
             },
             error: function (error) {
                 console.log(error);
+                event.preventDefault();
+                event.stopPropagation();
             }
         });
     });
@@ -183,13 +198,13 @@ function genPropertyTable(data) {
     $('#borrowable_item').empty();
     $.each(data, function (index, item) {
         console.log(item);
-        if(item.remark == null){
+        if (item.remark == null) {
             item.remark = '';
         }
-        if(item.format == null){
+        if (item.format == null) {
             item.format = '';
         }
-        if(item.second_name == null){
+        if (item.second_name == null) {
             item.second_name = '';
         }
         var row = '<tr>' +

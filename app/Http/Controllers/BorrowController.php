@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\BorrowRequest;
 use App\Models\BorrowItem;
 use App\Models\BorrowList;
 use App\Models\Property;
@@ -11,9 +12,10 @@ use Carbon\Carbon;
 class BorrowController extends Controller
 {
     //
-    public function sendBorrowRequest(Request $request)
+    public function sendBorrowRequest(BorrowRequest $request)
     {
-        $data = json_decode($request->input('pack_data'), true);
+        $data = $request->validated();
+        //dd($data);
         // Check whether items can be borrowed
         $borrowList = $data['borrow_items'];
 
@@ -83,61 +85,51 @@ class BorrowController extends Controller
         }
 
         $borrowers = BorrowList::whereIn('borrow_place', $location)
-            ->orderBy('borrow_date','desc')
+            ->orderBy('borrow_date', 'desc')
             ->get();
-
-        /*$borrowedItems = BorrowItem::leftjoin('property', 'borrow_item.property_id', '=', 'property.ssid')
-            ->select(
-                'borrow_item.*',
-                'property.*'
-            )
-            ->get();
-
-        $mergedData = [];
-
-        foreach ($borrowers as $borrower) {
-            // 找到与当前借用人相关的借用物品
-            $items = $borrowedItems->where('borrow_id', $borrower->id);
-
-            $mergedData[] = [
-                'borrow_list_id' => $borrower->id,
-                'borrow_place' => $borrower->borrow_place,
-                'borrow_department' => $borrower->borrow_department,
-                'borrow_person_name' => $borrower->borrow_person_name,
-                'phone' => $borrower->phone,
-                'email' => $borrower->email,
-                'borrow_date' => $borrower->borrow_date,
-                'returned_date' => $borrower->returned_date,
-                'filling_time' => $borrower->filling_time,
-                'sa_lending_person_name' => $borrower->sa_lending_person_name,
-                'sa_lending_date' => $borrower->sa_lending_date,
-                'sa_deposit_take' => $borrower->sa_deposit_take,
-                'sa_id_take' => $borrower->sa_id_take,
-                'sa_id_returned' => $borrower->sa_id_returned,
-                'sa_deposit_returned' => $borrower->sa_deposit_returned,
-                'sa_id_deposit_box_number' => $borrower->sa_id_deposit_box_number,
-                'sa_return_person_name' => $borrower->sa_return_person_name,
-                'sa_returned_date' => $borrower->sa_returned_date,
-                'sa_remark' => $borrower->sa_remark,
-
-                'borrow_items' => $items->map(function ($item) {
-                    return [
-                        'property_ssid' => $item->ssid,
-                        'property_name' => $item->name,
-                        'property_second_name' => $item->second_name,
-                        'property_class' => $item->class,
-                        'property_format' => $item->format,
-                        'property_remark' => $item->remark,
-                        'lending_status' => $item->lending_status,
-                        'img_url' => $item->img_url
-                    ];
-                })->toArray()
-            ];
-        }
-            */
 
         return response()->json(['success' => true, 'data' => $borrowers]);
     }
+
+    public function getLendingStatusDataInCondition(Request $request)
+    {
+        $query = BorrowList::query();
+
+        $contact = $request->input('contact');
+        $property = $request->input('property');
+        $lendout_date = $request->input('lendout_date');
+        $return_date = $request->input('return_date');
+        $department = $request->input('department');
+        $prepare_return = $request->input('prepare_return');
+
+        $query->when($property, function ($query, $property) {
+            return $query->join('borrow_item', 'id', '=', 'borrow_item.borrow_id')
+                ->join('property', 'property_id', '=', 'property.ssid')
+                ->where('ssid', $property);
+        });
+
+        $query->when($contact, function ($query, $contact) {
+            return $query->where('borrow_person_name', $contact);
+        });
+        $query->when($lendout_date, function ($query, $lendout_date) {
+            return $query->where('borrow_date', $lendout_date);
+        });
+        $query->when($return_date, function ($query, $return_date) {
+            return $query->where('returned_date', $return_date);
+        });
+        $query->when($department, function ($query, $department) {
+            return $query->where('borrow_department', $department);
+        });
+        $query->when($prepare_return, function ($query, $prepare_return) {
+            return $query->where('sa_returned_date', $prepare_return);
+        });
+        
+        $result = $query->get();
+
+        return response()->json(['success' => true, 'data' => $result]);
+    }
+
+
 
     public function sendFinalRequest(Request $request)
     {

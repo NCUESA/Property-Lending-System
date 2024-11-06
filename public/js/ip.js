@@ -10,7 +10,7 @@ $(document).ready(function () {
 
         $.ajax({
             type: 'POST',
-            url: '/add-ip',
+            url: '/ip/add',
             data: {
                 id: $('#add_id').val(),
                 ip: $('#add_ip').val(),
@@ -38,7 +38,7 @@ $(document).ready(function () {
 
         $.ajax({
             type: 'POST',
-            url: '/delete-ip',
+            url: '/ip/delete',
             data: {
                 id: $('#add_id').val(),
                 ip: $('#add_ip').val(),
@@ -61,7 +61,7 @@ $(document).ready(function () {
 
     $.ajax({
         type: 'POST',
-        url: '/show-ip',
+        url: '/ip/show',
         data: {
             _token: $('meta[name="csrf-token"]').attr('content')  // CSRF Token
         },

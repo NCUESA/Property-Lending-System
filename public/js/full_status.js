@@ -3,10 +3,11 @@ $(document).ready(function () {
         $('#place').val(sessionStorage.getItem('place'));
     }
 
+    // 地點查詢
     $('#place').on('change', function () {
         $.ajax({
             type: 'POST',
-            url: '/show-lending-status',
+            url: '/borrow/getData/',
             data: {
                 location: $(this).val(),
                 _token: $('meta[name="csrf-token"]').attr('content')  // CSRF Token
@@ -23,6 +24,34 @@ $(document).ready(function () {
             }
         });
     });
+    // 搜尋
+    $('#search').submit(function (e) {
+        e.preventDefault();
+        $.ajax({
+            type: 'POST',
+            url: '/borrow/getData/condition',
+            data: {
+                contact: $('#search_contact').val(),
+                property: $('#search_property').val(),
+                lendout_date: $('#search_lendout').val(),
+                return_date: $('#search_return').val(),
+                department: $('#search_department').val(),
+                prepare_return: $('#search_prepare_return').val(),
+                _token: $('meta[name="csrf-token"]').attr('content')  // CSRF Token
+            },
+            success: function (response) {
+                if (response.success) {
+                    startFillingForm();
+                    genDataButton(response.data);
+                }
+            },
+            error: function (error) {
+                console.log(error);
+            }
+        });
+    });
+
+    // 將資料帶入Modal邏輯
     $(document).on('click', '.btn-bring-data', function () {
         let combine_data = lending_data_store[$(this).data('combine')];
         let borrowListId = combine_data['borrow_list_id'];
@@ -31,6 +60,7 @@ $(document).ready(function () {
         });
     });
 
+    // Modal 開始借用
     $('#start-lending').on('click', function () {
         $(':input').prop('disabled', false);
         $('#borrow_id').prop('disabled', true);
@@ -126,7 +156,7 @@ $(document).ready(function () {
 
             $.ajax({
                 type: 'POST',
-                url: '/items-final',
+                url: '/borrow/item/final',
                 data: {
                     pack_data: JSON.stringify(pack_data),
                     _token: $('meta[name="csrf-token"]').attr('content')  // CSRF Token
@@ -151,6 +181,21 @@ $(document).ready(function () {
             return;
         }
         return;
+    });
+
+    $('#modal-close').on('click', function () {
+        $('#borrow_list').empty();
+        $('#borrow_id').val();
+        $('#sa_lending_person_name').val();
+        $('#sa_lending_date').val();
+        $('#sa_deposit_take').val();
+        $('#sa_id_take').val();
+        $('#sa_id_deposit_box_number').val();
+        $('#sa_return_person_name').val();
+        $('#sa_returned_date').val();
+        $('#sa_deposit_returned').val();
+        $('#sa_id_returned').val();
+        $('#sa_remark').val();
     });
 });
 
@@ -209,6 +254,7 @@ function getPropertyWithID(id, callback) {
         }
     });
 }
+
 function bringDataIntoModal(combine_data, lending_property) {
     console.log(combine_data);
     console.log(lending_property);
@@ -258,7 +304,7 @@ function bringDataIntoModal(combine_data, lending_property) {
 function genDataButton(data) {
     $('#lending_status').empty();
     $.each(data, function (index, item) {
-       
+
 
         let sa_lending_person_name = item.sa_lending_person_name == null ? '' : item.sa_lending_person_name;
         let sa_lending_date = item.sa_lending_date == null ? '' : item.sa_lending_date;
@@ -301,18 +347,18 @@ function genDataButton(data) {
         // Generate table row
         let row = `
             <tr class="${bg_color}">
-                <td>${item.id}</td>
-                <td>${sa_lending_person_name}</td>
-                <td>${sa_lending_date}</td>
-                <td>${sa_id_take}</td>
-                <td>${sa_deposit_take}</td>
-                <td>${sa_id_deposit_box_number}</td>
-                <td>${sa_return_person_name}</td>
-                <td>${sa_returned_date}</td>
-                <td>${sa_id_returned}</td>
-                <td>${sa_deposit_returned}</td>
-                <td>${sa_remark}</td>
-                <td>${item.filling_time}</td>
+                <td style="display: none">${item.id}</td>
+                <td style="display: none">${sa_lending_person_name}</td>
+                <td style="display: none">${sa_lending_date}</td>
+                <td style="display: none">${sa_id_take}</td>
+                <td style="display: none">${sa_deposit_take}</td>
+                <td style="display: none">${sa_id_deposit_box_number}</td>
+                <td style="display: none">${sa_return_person_name}</td>
+                <td style="display: none">${sa_returned_date}</td>
+                <td style="display: none">${sa_id_returned}</td>
+                <td style="display: none">${sa_deposit_returned}</td>
+                <td style="display: none">${sa_remark}</td>
+                <td style="display: none">${item.filling_time}</td>
                 <td>${item.email}</td>
                 <td>${item.borrow_department}</td>
                 <td>${item.borrow_person_name}</td>
