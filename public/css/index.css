@@ -24,9 +24,22 @@ input.invalid {
     font-size: 24px;
 }
 
+
+.logo-title{
+    text-align: center;
+    font-family: "cwTeXFangSong", serif;
+    font-size: 3vw;
+}
+@media (max-width: 768px) { /* 小於 768px，例如手機 */
+    .logo-title{
+        font-size: 5vw; /* 手機上字體稍微放大 */
+    }
+}
+
 .name-en {
     font-family: 'Raleway', sans-serif;
 }
+
 
 .center {
     display: block;

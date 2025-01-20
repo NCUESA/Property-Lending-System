@@ -8,18 +8,28 @@
             <div class="col-4 d-grid gap-2">
                 <button class="btn btn-success" type="button" data-bs-toggle="collapse" data-bs-target="#lendingInfo"
                     aria-expanded="false" aria-controls="lendingInfo">
-                    點選展開注意事項
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                        class="bi bi-info-circle-fill" viewBox="0 0 16 16">
+                        <path
+                            d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2" />
+                    </svg>
+                    注意事項
                 </button>
             </div>
             <div class="col-4 d-grid gap-2">
-                <button class="btn btn-primary" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#searchInfo" aria-expanded="false" aria-controls="searchInfo">
-                    點選展開查詢列表
+                <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#searchInfo"
+                    aria-expanded="false" aria-controls="searchInfo">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                        class="bi bi-search" viewBox="0 0 16 16">
+                        <path
+                            d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
+                    </svg>
+                    查詢列表
                 </button>
             </div>
             <div class="col-1">
                 <label for="place" class="col-form-label">查詢地點</label>
-              </div>
+            </div>
             <div class="col-3">
                 <select class="form-control" id='place'>
                     <option disabled selected>請選擇地點...</option>
@@ -78,10 +88,21 @@
                     <input type="date" class="form-control" id="search_prepare_return" value="">
                 </div>
                 <div class="col-sm-3 d-grid gap-2">
-                    <button type="reset" class="btn btn-danger btn-block">取消重填</button>
+                    <button type="reset" class="btn btn-danger btn-block">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                            class="bi bi-x-circle" viewBox="0 0 16 16">
+                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
+                            <path
+                                d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708" />
+                        </svg>取消重填</button>
                 </div>
                 <div class="col-sm-3 d-grid gap-2">
-                    <button type="submit" class="btn btn-success btn-block">查詢</button>
+                    <button type="submit" class="btn btn-success btn-block">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                            class="bi bi-search" viewBox="0 0 16 16">
+                            <path
+                                d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
+                        </svg>查詢</button>
                 </div>
             </div>
         </form>
@@ -295,7 +316,8 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-primary" id="start-lending">開始填寫</button>
                         <button type="button" class="btn btn-success" id="save-data">填寫完成(儲存資料)</button>
-                        <button type="button" class="btn btn-danger" id="modal-close" data-bs-dismiss="modal">關閉視窗(不儲存關閉)</button>
+                        <button type="button" class="btn btn-danger" id="modal-close"
+                            data-bs-dismiss="modal">關閉視窗(不儲存關閉)</button>
                     </div>
                 </div>
             </div>
@@ -307,19 +329,19 @@
         <thead>
             <tr>
                 <!--<th scope="col">流水號</th>
-                <th scope="col">借出承辦人</th>
-                <th scope="col">借出日期</th>
-                <th scope="col">押金收取</th>
-                <th scope="col">證件收取</th>
-                <th scope="col">證件押金盒編號</th>
+                                <th scope="col">借出承辦人</th>
+                                <th scope="col">借出日期</th>
+                                <th scope="col">押金收取</th>
+                                <th scope="col">證件收取</th>
+                                <th scope="col">證件押金盒編號</th>
 
-                <th scope="col">歸還承辦人</th>
-                <th scope="col">歸還日期</th>
-                <th scope="col">押金退還</th>
-                <th scope="col">證件退還</th>
-                <th scope="col">備註</th>
+                                <th scope="col">歸還承辦人</th>
+                                <th scope="col">歸還日期</th>
+                                <th scope="col">押金退還</th>
+                                <th scope="col">證件退還</th>
+                                <th scope="col">備註</th>
 
-                <th scope="col">填單時間</th>-->
+                                <th scope="col">填單時間</th>-->
                 <th scope="col">Email</th>
                 <th scope="col">借用單位</th>
                 <th scope="col">聯絡人</th>

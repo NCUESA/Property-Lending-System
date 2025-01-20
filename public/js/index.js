@@ -195,35 +195,40 @@ $(document).ready(function () {
 });
 
 function genPropertyTable(data) {
-    $('#borrowable_item').empty();
+    $('#borrowable_item').empty(); // 清空容器
     $.each(data, function (index, item) {
-        console.log(item);
-        if (item.remark == null) {
-            item.remark = '';
-        }
-        if (item.format == null) {
-            item.format = '';
-        }
-        if (item.second_name == null) {
-            item.second_name = '';
-        }
-        var row = '<tr>' +
-            '<td>' + '<input type="checkbox" class="form-check-input" id="' + item.ssid + '"></input>' + '</td>' +
-            '<td>' + item.ssid + '</td>' +
-            '<td>' + item.class + '</td>' +
-            '<td>' + item.name + '</td>' +
-            '<td>' + item.second_name + '</td>' +
+        // 處理 null 值
+        item.remark = item.remark || '';
+        item.format = item.format || '';
+        item.second_name = item.second_name || '';
 
-            '<td>' + item.belong_place + '</td>' +
-
-            '<td>' + item.format + '</td>' +
-            '<td>' + item.remark + '</td>' +
-            '<td>' + '<img src="./storage/propertyImgs/' + item.img_url + '" alt="NO IMG" style="width: 200px; height: auto;"></img>' + '</td>' +  // Img Column
-            '</tr>';
-        // 將生成的行添加到表格的 tbody 中
-        $('#borrowable_item').append(row);
+        // 動態生成卡片結構
+        let card = `
+            <div class="col">
+                <div class="card">
+                    <input type="hidden" value="${item.ssid}">
+                    <img src="./storage/propertyImgs/${item.img_url}" class="card-img-top rounded" alt="No Image" onerror="this.src='https://dummyimage.com/1920x1080/cccccc/000000&text=No+Image';">
+                    <div class="card-body">
+                        <input type="checkbox" class="form-check-input" id="${item.ssid}">
+                        <label for="${item.ssid}">${item.name}</label>
+                        <p><span class="badge bg-primary">${item.class}</span></p>
+                        <p class="card-text">
+                            財產編號：${item.ssid}<br>
+                            規格：${item.format || '無'}<br>
+                            ${item.remark ? `備註：${item.remark}` : ''}
+                        </p>
+                    </div>
+                    <div class="card-footer">
+                        <small class="text-muted">存放地點：${item.belong_place || '未知'}</small>
+                    </div>
+                </div>
+            </div>`;
+        
+        // 將生成的卡片添加到容器中
+        $('#borrowable_item').append(card);
     });
 }
+
 
 function collectBorrowItems() {
     var checkItems = [];
