@@ -148,6 +148,7 @@
                             </div>-->
             </div>
 
+            <hr>
 
             <div class="d-grid gap-2">
                 <button type="submit" id='send_form' class="btn btn-success">

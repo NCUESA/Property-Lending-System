@@ -34,7 +34,7 @@ class AuthMiddleWare
         if ((int)$requireLevel == 10) {
             session(['hasAdminAccess' => true]);
         }
-
+        $request->session()->save();
         // 如果通過驗證，繼續處理請求
         return $next($request);
     }

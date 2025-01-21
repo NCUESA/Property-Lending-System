@@ -21,10 +21,11 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         //
-        View::composer('template', function ($view) {
+        View::composer('*', function ($view) {
             $hasAccess = session('hasAccess', false);
             $hasAdminAccess = session('hasAdminAccess', false);
-            $view->with(compact('hasAccess', 'hasAdminAccess'));
+            $clientIp = request()->ip(); // 獲取用戶 IP
+            $view->with(compact('hasAccess', 'hasAdminAccess', 'clientIp'));
         });
     }
 }

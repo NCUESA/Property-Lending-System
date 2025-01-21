@@ -15,7 +15,7 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <div class="container-fluid">
-            <a class="navbar-brand name-cn" href="./">學生會器材借用網</a>
+            <a class="navbar-brand name-cn" href="./">學生會器材借用系統</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                 data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
                 aria-label="Toggle navigation">
@@ -29,12 +29,12 @@
                     <li class="nav-item">
                         <a class="nav-link active" aria-current="page" href="./status">器材借用狀態</a>
                     </li>
-                    @if (session('hasAccess'))
+                    @if (request()->session()->get('hasAccess'))
                         <li class="nav-item">
                             <a class="nav-link active" aria-current="page" href="./full_status">器材借用狀態(管理員)</a>
                         </li>
                     @endif
-                    @if (session('hasAdminAccess'))
+                    @if (request()->session()->get('hasAdminAccess'))
                         <li class="nav-item">
                             <a class="nav-link active" aria-current="page" href="./maintain">器材清單維護(管理員)</a>
                         </li>
@@ -45,6 +45,8 @@
                             <a class="nav-link active" aria-current="page" href="./ip">IP通過權限設定(管理員)</a>
                         </li>
                     @endif
+
+
                     <!--
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
@@ -65,6 +67,16 @@
                     </li>
                 -->
                 </ul>
+
+            </div>
+            <!-- 新增 IP 和權限顯示 -->
+            <div class="d-flex align-items-center">
+                <span class="badge bg-primary me-2">
+                    IP：{{ request()->ip() }}
+                </span>
+                <span class="badge {{ session('hasAdminAccess') ? 'bg-black' : (session('hasAccess') ? 'bg-success' : 'bg-secondary') }}">
+                    權限：{{ session('hasAdminAccess') ? '高級管理員' : (session('hasAccess') ? '一般管理員' : '訪客') }}
+                </span>
             </div>
     </nav>
 
