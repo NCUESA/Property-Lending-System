@@ -5,13 +5,12 @@
 目前已完成
 
 ## 版本
-- Ver 1.0.3
-- 最近Commit日期：2024/11/6
-- Commit Name：Frontend Optimized
+- Ver 1.0.4
+- 最近Commit日期：2025/1/20
+- Commit Name：BorrowPage Table Remake
 - 更新內容：
-    1. 修正表單提交未檢查的bug
-    2. 修正值勤人員控管頁面，簡化版面
-    3. 值勤人員頁面新增查詢功能 
+    1. 重製借用頁面器材列表呈現方式
+    2. 按鈕增加圖示，提升辨別度
 
 ## 開發人員資訊
 - Email:  ncuesa@gm.ncue.edu.tw
@@ -22,3 +21,10 @@
 - PHP 8
 
 # 歷史紀錄
+- Ver 1.0.3
+- 最近Commit日期：2024/11/6
+- Commit Name：Frontend Optimized
+- 更新內容：
+    1. 修正表單提交未檢查的bug
+    2. 修正值勤人員控管頁面，簡化版面
+    3. 值勤人員頁面新增查詢功能 
