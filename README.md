@@ -5,13 +5,13 @@
 目前已完成
 
 ## 版本
-- Ver 1.0.5
-- 最近Commit日期：2025/1/21
-- Commit Name：RWD Optimized
+- Ver 1.0.6
+- 最近Commit日期：2025/1/22
+- Commit Name：Auth Hot Fixed
 - 更新內容：
-    1. 修正Session登入權限問題
-    2. 修改Status Table呈現方式
-    3. UI調整
+    1. 刪除Session認證機制
+    2. 調整身分認證機制
+    3. Bug Fixed
 
 ## 開發人員資訊
 - Email:  ncuesa@gm.ncue.edu.tw
@@ -22,6 +22,14 @@
 - PHP 8
 
 # 歷史紀錄
+- Ver 1.0.5
+- 最近Commit日期：2025/1/21
+- Commit Name：RWD Optimized
+- 更新內容：
+    1. 修正Session登入權限問題
+    2. 修改Status Table呈現方式
+    3. UI調整
+       
 - Ver 1.0.4
 - 最近Commit日期：2025/1/20
 - Commit Name：BorrowPage Table Remake
