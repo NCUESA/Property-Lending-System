@@ -18,24 +18,21 @@ class AuthMiddleWare
     {
         $clientIp = $request->ip();
 
-        if((int)$requireLevel == 0){
+        // 無需權限檢查
+        if ((int)$requireLevel == 0) {
             return $next($request);
         }
+
+        // 查詢權限等級
         $isAllowed = AuthIP::select('auth_level')
             ->where('ip', $clientIp)
             ->first();
+
+        // 驗證權限是否足夠
         if (!$isAllowed || $isAllowed->auth_level < $requireLevel) {
-            return abort(403);
+            return abort(403, '您沒有權限訪問該頁面');
         }
-        
-        // With Permition IP will generate URL to admin page
-        session(['hasAccess' => true]);
-       
-        if ((int)$requireLevel == 10) {
-            session(['hasAdminAccess' => true]);
-        }
-        $request->session()->save();
-        // 如果通過驗證，繼續處理請求
+
         return $next($request);
     }
 }

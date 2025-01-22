@@ -29,12 +29,12 @@
                     <li class="nav-item">
                         <a class="nav-link active" aria-current="page" href="./status">器材借用狀態</a>
                     </li>
-                    @if (request()->session()->get('hasAccess'))
+                    @if ($hasAccess)
                         <li class="nav-item">
                             <a class="nav-link active" aria-current="page" href="./full_status">器材借用狀態(管理員)</a>
                         </li>
                     @endif
-                    @if (request()->session()->get('hasAdminAccess'))
+                    @if ($hasAdminAccess)
                         <li class="nav-item">
                             <a class="nav-link active" aria-current="page" href="./maintain">器材清單維護(管理員)</a>
                         </li>
@@ -72,10 +72,10 @@
             <!-- 新增 IP 和權限顯示 -->
             <div class="d-flex align-items-center">
                 <span class="badge bg-primary me-2">
-                    IP：{{ request()->ip() }}
+                    IP：{{ $clientIp }}
                 </span>
-                <span class="badge {{ session('hasAdminAccess') ? 'bg-black' : (session('hasAccess') ? 'bg-success' : 'bg-secondary') }}">
-                    權限：{{ session('hasAdminAccess') ? '高級管理員' : (session('hasAccess') ? '一般管理員' : '訪客') }}
+                <span class="badge {{ $hasAdminAccess ? 'bg-black' : ($hasAccess ? 'bg-success' : 'bg-secondary') }}">
+                    權限：{{ $hasAdminAccess ? '高級管理員' : ($hasAccess ? '一般管理員' : '訪客') }}
                 </span>
             </div>
     </nav>

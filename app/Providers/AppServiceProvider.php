@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\AuthIP;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -22,10 +23,15 @@ class AppServiceProvider extends ServiceProvider
     {
         //
         View::composer('*', function ($view) {
-            $hasAccess = session('hasAccess', false);
-            $hasAdminAccess = session('hasAdminAccess', false);
-            $clientIp = request()->ip(); // 獲取用戶 IP
-            $view->with(compact('hasAccess', 'hasAdminAccess', 'clientIp'));
+            $clientIp = request()->ip();
+            $isAllowed = AuthIP::select('auth_level')
+                ->where('ip', $clientIp)
+                ->first();
+    
+            $hasAccess = $isAllowed && $isAllowed->auth_level >= 5;
+            $hasAdminAccess = $isAllowed && $isAllowed->auth_level >= 10;
+    
+            $view->with(compact('clientIp', 'hasAccess', 'hasAdminAccess'));
         });
     }
 }
