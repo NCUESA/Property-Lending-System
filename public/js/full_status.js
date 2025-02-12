@@ -1,7 +1,8 @@
 $(document).ready(function () {
-    if (sessionStorage.getItem('place')) {
+    
+    /*if (sessionStorage.getItem('place')) {
         $('#place').val(sessionStorage.getItem('place'));
-    }
+    }*/
 
     // 地點查詢
     $('#place').on('change', function () {
@@ -339,14 +340,14 @@ function genDataButton(data) {
         // Lending Property Info
 
 
-        let bg_color = item.borrow_place == '進德' ? 'table-info' : 'table-secondary';
+        //let bg_color = item.borrow_place == '進德' ? 'table-info' : 'table-secondary';
 
         // Generate modal and button
         let trig_btn = `<button type="button" class="btn btn-info btn-bring-data" data-bs-toggle="modal" data-bs-target="#modal" data-combine="${item.id}_combine">借用資訊</button>`;
 
         // Generate table row
         let row = `
-            <tr class="${bg_color}">
+            <tr class="">
                 <td style="display: none">${item.id}</td>
                 <td style="display: none">${sa_lending_person_name}</td>
                 <td style="display: none">${sa_lending_date}</td>
@@ -358,7 +359,7 @@ function genDataButton(data) {
                 <td style="display: none">${sa_id_returned}</td>
                 <td style="display: none">${sa_deposit_returned}</td>
                 <td style="display: none">${sa_remark}</td>
-                <td style="display: none">${item.filling_time}</td>
+                <td>${item.filling_time}</td>
                 <td>${item.email}</td>
                 <td>${item.borrow_department}</td>
                 <td>${item.borrow_person_name}</td>

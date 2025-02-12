@@ -14,14 +14,14 @@ class PropertyController extends Controller
     public function getPropertyData(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'selected' => 'required|in:all,jinde,baosan,307,405'
+            'selected' => 'required|in:jinde,baosan,307,405'
         ]);
 
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        $selectedValue = $request->input('selected');   
+        $selectedValue = $request->input('selected');
         if($selectedValue == 'jinde'){
             $selectedValue = '進德';
         }
@@ -128,7 +128,8 @@ class PropertyController extends Controller
                 'borrowlist.borrow_department',
                 'borrowlist.borrow_date',
                 'borrowlist.returned_date',
-                'property.lending_status'
+                'property.lending_status',
+                'property.belong_place'
             )
             ->where('property.enable_lending', 1)
             ->whereIn('property.belong_place', $location)

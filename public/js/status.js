@@ -88,10 +88,6 @@ function genTable(data) {
         <span class="badge bg-secondary">期間：${item.borrow_date}~${item.returned_date}</span>`
             : '';
 
-
-
-
-
         let row = `
             <div class="col">
                 <div class="card border-${lending_color}">
@@ -107,6 +103,9 @@ function genTable(data) {
                             規格：${item.format || '無'}<br>
                             ${item.remark ? `備註：${item.remark}` : ''}
                         </p>
+                    </div>
+                    <div class="card-footer text-muted">
+                        地點：${item.belong_place || '未知'}
                     </div>
                 </div>
             </div>`;

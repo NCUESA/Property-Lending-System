@@ -35,7 +35,7 @@
                     <option disabled selected>請選擇地點...</option>
                     <option value="jinde">進德</option>
                     <option value="baosan">寶山</option>
-                    <option value="all">全部地點</option>
+                    <!--<option value="all">全部地點</option>-->
                 </select>
             </div>
         </div>
@@ -218,7 +218,7 @@
                                             <label class="form-label">押金證件盒編號</label>
                                             <select class="form-select form-select mb-3" id="sa_id_deposit_box_number"
                                                 required disabled>
-                                                <option selected disabled value="">請選擇</option>
+                                                <option selected disabled value="-1">請選擇</option>
                                                 <option value="1">1</option>
                                                 <option value="2">2</option>
                                                 <option value="3">3</option>
@@ -329,19 +329,19 @@
         <thead>
             <tr>
                 <!--<th scope="col">流水號</th>
-                                <th scope="col">借出承辦人</th>
-                                <th scope="col">借出日期</th>
-                                <th scope="col">押金收取</th>
-                                <th scope="col">證件收取</th>
-                                <th scope="col">證件押金盒編號</th>
+                                    <th scope="col">借出承辦人</th>
+                                    <th scope="col">借出日期</th>
+                                    <th scope="col">押金收取</th>
+                                    <th scope="col">證件收取</th>
+                                    <th scope="col">證件押金盒編號</th>
 
-                                <th scope="col">歸還承辦人</th>
-                                <th scope="col">歸還日期</th>
-                                <th scope="col">押金退還</th>
-                                <th scope="col">證件退還</th>
-                                <th scope="col">備註</th>
+                                    <th scope="col">歸還承辦人</th>
+                                    <th scope="col">歸還日期</th>
+                                    <th scope="col">押金退還</th>
+                                    <th scope="col">證件退還</th>
+                                    <th scope="col">備註</th>-->
 
-                                <th scope="col">填單時間</th>-->
+                <th scope="col">填單時間</th>
                 <th scope="col">Email</th>
                 <th scope="col">借用單位</th>
                 <th scope="col">聯絡人</th>
