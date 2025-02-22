@@ -30,8 +30,10 @@ class AppServiceProvider extends ServiceProvider
             $clientIp = $_SERVER['HTTP_CF_CONNECTING_IP'];
           } elseif (isset($_SERVER["HTTP_X_REAL_IP"])) {
             $clientIp = $_SERVER["HTTP_X_REAL_IP"];
-          } elseif (isset($_SERVER['HTTP_X_FORWARED_FOR'])) {
-            $clientIp = $_SERVER['HTTP_X_FORWARED_FOR'];
+          } elseif (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            $clientIp = $_SERVER('HTTP_X_FORWARDED_FOR');
+            $clientIps = explode(',', $clientIp);
+            $clientIp = $clientIps[0];
           } elseif (isset($_SERVER['HTTP_CLIENT_IP'])) {
             $clientIp = $_SERVER['HTTP_CLIENT_IP'];
           } else {
