@@ -6,8 +6,11 @@ use Illuminate\Http\Request;
 use App\Models\Property;
 use PhpOption\None;
 use Illuminate\Support\Facades\Validator;
-use Intervention\Image\Facades\Image;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Intervention\Image\Laravel\Facades\Image;
 
 class PropertyController extends Controller
 {
