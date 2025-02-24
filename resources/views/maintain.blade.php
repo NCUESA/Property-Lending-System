@@ -157,7 +157,7 @@
                                         </div>
                                         <div class="col-md-3">
                                             <label class="form-label">上傳照片</label>
-                                        <input type="file" class="form-control" id="prop_img" accept="image/jpeg, image/png, image/webp, image/heic" capture="environment">
+                                        <input type="file" class="form-control" id="prop_img" accept="image/jpeg, image/png, image/webp, image/heic">
                                             <div class="invalid-feedback">
                                                 必填
                                             </div>
