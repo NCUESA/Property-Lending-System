@@ -108,44 +108,32 @@ class PropertyController extends Controller
             $finding_status = [0, 1, 2];
         }
     
-        // **子查詢：獲取每個物品最新的 borrow_date**
-        $latestBorrowQuery = \DB::table('borrow_item')
-            ->join('borrowlist', 'borrow_item.borrow_id', '=', 'borrowlist.id')
-            ->select('borrow_item.property_id', \DB::raw('MAX(borrowlist.borrow_date) as latest_borrow_date'))
-            ->groupBy('borrow_item.property_id');
-    
-        // **主查詢：只 JOIN 最新的 borrow_date**
-        $properties = Property::leftJoinSub($latestBorrowQuery, 'latest_borrow', function ($join) {
-                $join->on('property.ssid', '=', 'latest_borrow.property_id');
-            })
-            ->leftJoin('borrow_item', function ($join) {
-                $join->on('property.ssid', '=', 'borrow_item.property_id');
-            })
-            ->leftJoin('borrowlist', function ($join) {
-                $join->on('borrow_item.borrow_id', '=', 'borrowlist.id')
-                    ->on('borrowlist.borrow_date', '=', 'latest_borrow.latest_borrow_date'); // **只取最新借用日期的資料**
-            })
-            ->select(
-                'property.ssid',
-                'property.class',
-                'property.name',
-                'property.second_name',
-                'property.format',
-                'property.img_url',
-                'borrowlist.borrow_department',
-                'borrowlist.borrow_date',
-                'borrowlist.returned_date',
-                'property.lending_status',
-                'property.belong_place'
-            )
-            ->where('property.enable_lending', 1)
-            ->whereIn('property.belong_place', $location)
-            ->whereIn('property.lending_status', $finding_status)
-            ->get();
+        $properties = Property::leftJoin('borrow_item', function ($join) {
+            $join->on('property.ssid', '=', 'borrow_item.property_id')
+                 ->whereRaw('borrow_item.borrow_id = (SELECT MIN(bi.borrow_id) FROM borrow_item bi WHERE bi.property_id = property.ssid)');
+        })
+        ->leftJoin('borrowlist', 'borrow_item.borrow_id', '=', 'borrowlist.id')
+        ->select(
+            'property.ssid',
+            'property.class',
+            'property.name',
+            'property.second_name',
+            'property.format',
+            'property.img_url',
+            'borrowlist.borrow_department',
+            'borrowlist.borrow_date',
+            'borrowlist.returned_date',
+            'property.lending_status',
+            'property.belong_place'
+        )
+        ->where('property.enable_lending', 1)
+        ->whereIn('property.belong_place', $location)
+        ->whereIn('property.lending_status', $finding_status)
+        ->groupBy('property.ssid') // 確保 ssid 唯一
+        ->get();
     
         return response()->json(['success' => true, 'data' => $properties]);
     }
-
     public function getPropertyDataWithBorrowID(Request $request)
     {
         $borrow_id = $request->input('borrow_id');
