@@ -165,7 +165,7 @@ class PropertyController extends Controller
         // 驗證表單資料，包含圖片檔案
         $request->validate([
             'ssid' => 'required|string|max:255',
-            'prop_img' => 'nullable|image|max:20480' // 允許所有圖片格式
+            'prop_img' => 'nullable|mimes:jpg,jpeg,png,webp,heic|max:20480' // 明確允許 HEIC
         ]);
 
         // 獲取所有輸入資料
