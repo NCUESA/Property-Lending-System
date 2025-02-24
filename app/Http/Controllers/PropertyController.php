@@ -108,20 +108,23 @@ class PropertyController extends Controller
             $finding_status = [0, 1, 2];
         }
     
-        // **子查詢：獲取每個 property.ssid 最新的 borrow_id**
+        // **子查詢：獲取每個物品最新的 borrow_date**
         $latestBorrowQuery = \DB::table('borrow_item')
-            ->selectRaw('MAX(borrow_id) as max_borrow_id, property_id')
-            ->groupBy('property_id');
+            ->join('borrowlist', 'borrow_item.borrow_id', '=', 'borrowlist.id')
+            ->select('borrow_item.property_id', \DB::raw('MAX(borrowlist.borrow_date) as latest_borrow_date'))
+            ->groupBy('borrow_item.property_id');
     
-        // **主查詢：只 JOIN 最新的 borrow_id**
+        // **主查詢：只 JOIN 最新的 borrow_date**
         $properties = Property::leftJoinSub($latestBorrowQuery, 'latest_borrow', function ($join) {
                 $join->on('property.ssid', '=', 'latest_borrow.property_id');
             })
             ->leftJoin('borrow_item', function ($join) {
-                $join->on('property.ssid', '=', 'borrow_item.property_id')
-                    ->on('latest_borrow.max_borrow_id', '=', 'borrow_item.borrow_id');
+                $join->on('property.ssid', '=', 'borrow_item.property_id');
             })
-            ->leftJoin('borrowlist', 'borrow_item.borrow_id', '=', 'borrowlist.id')
+            ->leftJoin('borrowlist', function ($join) {
+                $join->on('borrow_item.borrow_id', '=', 'borrowlist.id')
+                    ->on('borrowlist.borrow_date', '=', 'latest_borrow.latest_borrow_date'); // **只取最新借用日期的資料**
+            })
             ->select(
                 'property.ssid',
                 'property.class',
