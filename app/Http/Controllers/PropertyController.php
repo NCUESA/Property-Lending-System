@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\Property;
 use PhpOption\None;
 use Illuminate\Support\Facades\Validator;
+use Intervention\Image\Facades\Image;
+use Illuminate\Support\Facades\Storage;
 
 class PropertyController extends Controller
 {
@@ -164,8 +166,10 @@ class PropertyController extends Controller
     {
         // 驗證表單資料，包含圖片檔案
         $request->validate([
-            'ssid' => 'required|string|max:255',
-            'prop_img' => 'nullable|mimes:jpg,jpeg,png,webp,heic|max:20480' // 明確允許 HEIC
+            'ssid' => 'required|string|max:8',
+            //'class' => 'required|string|max:255',
+            // 根據需求新增其他欄位的驗證
+            'prop_img' => 'nullable|mimes:jpg,jpeg,png,webp,JPG,JPEG,PNG,WEPB,heic,HEIC|max:204800' // 驗證圖片格式和大小
         ]);
 
         // 獲取所有輸入資料
@@ -182,12 +186,21 @@ class PropertyController extends Controller
             // 檢查是否有上傳圖片
             if ($request->hasFile('prop_img')) {
                 $file = $request->file('prop_img');
-                // 使用 auto increment 的 id 作為檔名
-                $filename = $propertyId . '.' . $file->getClientOriginalExtension();
-
-                // 儲存圖片到指定路徑
-                $path = $file->storeAs('public/propertyImgs', $filename);
-
+                $extension = strtolower($file->getClientOriginalExtension()); // 取得副檔名並轉小寫
+                $filename = $propertyId . '.jpg'; // 強制轉存為 .jpg
+            
+                // 檢查是否為 HEIC
+                if ($extension === 'heic' || $extension === 'heif') {
+                    // 讀取 HEIC 並轉換為 JPG
+                    $img = Image::make($file->getRealPath())->encode('jpg', 90);
+                    
+                    // 儲存轉換後的圖片
+                    Storage::put("public/propertyImgs/{$filename}", $img);
+                } else {
+                    // 如果是 JPG、PNG 等格式，直接存
+                    $file->storeAs('public/propertyImgs', $filename);
+                }
+            
                 // 更新圖片路徑到資料庫
                 $property->update(['img_url' => $filename]);
             }
