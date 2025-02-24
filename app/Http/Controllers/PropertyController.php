@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Property;
 use PhpOption\None;
 use Illuminate\Support\Facades\Validator;
-use Intervention\Image\Facades\Image;
+use Intervention\Image\ImageManagerStatic as Image;
 use Illuminate\Support\Facades\Storage;
 
 class PropertyController extends Controller
