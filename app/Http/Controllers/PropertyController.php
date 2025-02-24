@@ -194,7 +194,8 @@ class PropertyController extends Controller
                 // 檢查是否為 HEIC
                 if ($extension === 'heic' || $extension === 'heif') {
                     // 讀取 HEIC 並轉換為 JPG
-                    $img = Image::make($file->getRealPath())->encode('jpg', 90);
+                    $manager = new ImageManager();
+                    $img = $manager->make($file)->encode('jpg', 90);
                     
                     // 儲存轉換後的圖片
                     Storage::put("public/propertyImgs/{$filename}", $img);
@@ -224,7 +225,8 @@ class PropertyController extends Controller
                 // 檢查是否為 HEIC
                 if ($extension === 'heic' || $extension === 'heif') {
                     // 讀取 HEIC 並轉換為 JPG
-                    $img = Image::make($file->getRealPath())->encode('jpg', 90);
+                    $manager = new ImageManager();
+                    $img = $manager->make($file)->encode('jpg', 90);
             
                     // 儲存轉換後的圖片
                     Storage::put("public/propertyImgs/{$filename}", $img);
