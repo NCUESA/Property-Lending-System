@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Intervention\Image\Laravel\Facades\Image;
+use Illuminate\Support\Facades\DB;
 
 class PropertyController extends Controller
 {
@@ -72,25 +73,23 @@ class PropertyController extends Controller
         return response()->json(['success' => true, 'data' => $data]);
     }
 
-
-
     public function getPropertyStatusData(Request $request)
     {
-
         $validator = Validator::make($request->all(), [
             'place' => 'required|in:all,jinde,baosan',
             'finding_status' => 'required|in:all,borrowable,lent'
         ]);
-
+    
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
         }
-
+    
         $location = $request->input('place');
         $finding_status = $request->input('finding_status');
-
+    
+        // 轉換 place 參數
         if ($location == 'jinde') {
-            $location = ['進德','307'];
+            $location = ['進德', '307'];
         } elseif ($location == 'baosan') {
             $location = ['寶山'];
         } elseif ($location == '307') {
@@ -100,7 +99,8 @@ class PropertyController extends Controller
         } else {
             $location = ['進德', '寶山', '307', '405'];
         }
-
+    
+        // 轉換 finding_status 參數
         if ($finding_status == 'borrowable') {
             $finding_status = [0];
         } elseif ($finding_status == 'lent') {
@@ -108,38 +108,46 @@ class PropertyController extends Controller
         } else {
             $finding_status = [0, 1, 2];
         }
-
-        //$first_data = Property::select('', 'class', 'name', 'second_name', 'format')
-
-
-        // 使用 Eloquent 查詢建構器進行三表 JOIN 操作
-        $properties = Property::leftJoin('borrow_item', function ($join) {
-            $join->on('property.ssid', '=', 'borrow_item.property_id')
-                 ->whereRaw('borrow_item.borrow_id = (SELECT MIN(borrow_id) FROM borrow_item WHERE property_id = property.ssid)');
-        })
-        ->leftJoin('borrowlist', 'borrow_item.borrow_id', '=', 'borrowlist.id')
-        ->select(
-            'property.ssid',
-            'property.class',
-            'property.name',
-            'property.second_name',
-            'property.format',
-            'property.img_url',
-            'borrowlist.borrow_department',
-            'borrowlist.borrow_date',
-            'borrowlist.returned_date',
-            'property.lending_status',
-            'property.belong_place'
-        )
-        ->where('property.enable_lending', 1)
-        ->whereIn('property.belong_place', $location)
-        ->whereIn('property.lending_status', $finding_status)
-        ->groupBy('property.ssid') // ✅ 確保每個物品只出現一次
-        ->get();
-
+    
+        // 查詢時確保每個 property.ssid 只顯示最小的 borrowlist.id
+        $properties = Property::leftJoin('borrow_item', 'property.ssid', '=', 'borrow_item.property_id')
+            ->leftJoin('borrowlist', function ($join) {
+                $join->on('borrow_item.borrow_id', '=', 'borrowlist.id')
+                    ->whereRaw('borrowlist.id = (SELECT MIN(b.id) FROM borrowlist b WHERE b.id = borrow_item.borrow_id)');
+            })
+            ->select(
+                'property.ssid',
+                'property.class',
+                'property.name',
+                'property.second_name',
+                'property.format',
+                'property.img_url',
+                'borrowlist.borrow_department',
+                'borrowlist.borrow_date',
+                'borrowlist.returned_date',
+                'property.lending_status',
+                'property.belong_place'
+            )
+            ->where('property.enable_lending', 1)
+            ->whereIn('property.belong_place', $location)
+            ->whereIn('property.lending_status', $finding_status)
+            ->groupBy(
+                'property.ssid',
+                'property.class',
+                'property.name',
+                'property.second_name',
+                'property.format',
+                'property.img_url',
+                'borrowlist.borrow_department',
+                'borrowlist.borrow_date',
+                'borrowlist.returned_date',
+                'property.lending_status',
+                'property.belong_place'
+            )
+            ->get();
+    
         return response()->json(['success' => true, 'data' => $properties]);
     }
-
     
     public function getPropertyDataWithBorrowID(Request $request)
     {
