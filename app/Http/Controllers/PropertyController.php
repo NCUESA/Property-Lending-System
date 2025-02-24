@@ -108,32 +108,31 @@ class PropertyController extends Controller
             $finding_status = [0, 1, 2];
         }
     
-        $properties = Property::leftJoin('borrow_item', function ($join) {
-            $join->on('property.ssid', '=', 'borrow_item.property_id')
-                 ->whereRaw('borrow_item.borrow_id = (SELECT MIN(bi.borrow_id) FROM borrow_item bi WHERE bi.property_id = property.ssid)');
-        })
-        ->leftJoin('borrowlist', 'borrow_item.borrow_id', '=', 'borrowlist.id')
-        ->select(
-            'property.ssid',
-            'property.class',
-            'property.name',
-            'property.second_name',
-            'property.format',
-            'property.img_url',
-            'borrowlist.borrow_department',
-            'borrowlist.borrow_date',
-            'borrowlist.returned_date',
-            'property.lending_status',
-            'property.belong_place'
-        )
-        ->where('property.enable_lending', 1)
-        ->whereIn('property.belong_place', $location)
-        ->whereIn('property.lending_status', $finding_status)
-        ->groupBy('property.ssid') // 確保 ssid 唯一
-        ->get();
+        // 使用 Eloquent 查詢建構器進行三表 JOIN 操作
+        $properties = Property::leftJoin('borrow_item', 'property.ssid', '=', 'borrow_item.property_id')
+            ->leftJoin('borrowlist', 'borrow_item.borrow_id', '=', 'borrowlist.id')
+            ->select(
+                'property.ssid',
+                'property.class',
+                'property.name',
+                'property.second_name',
+                'property.format',
+                'property.img_url',
+                'borrowlist.borrow_department',
+                'borrowlist.borrow_date',
+                'borrowlist.returned_date',
+                'property.lending_status',
+                'property.belong_place'
+            )
+            ->where('property.enable_lending', 1)
+            ->whereIn('property.belong_place', $location)
+            ->whereIn('property.lending_status', $finding_status)
+            ->whereRaw('borrow_item.borrow_id = (SELECT MIN(bi.borrow_id) FROM borrow_item bi WHERE bi.property_id = property.ssid)')
+            ->get();
     
         return response()->json(['success' => true, 'data' => $properties]);
     }
+    
     public function getPropertyDataWithBorrowID(Request $request)
     {
         $borrow_id = $request->input('borrow_id');
