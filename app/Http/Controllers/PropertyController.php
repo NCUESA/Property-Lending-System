@@ -51,31 +51,24 @@ class PropertyController extends Controller
         $validator = Validator::make($request->all(), [
             'place' => 'required|in:all,jinde,baosan'
         ]);
-
+    
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
         }
         $location = $request->input('place');
-
+    
         $query = Property::select('ssid', 'class', 'name', 'second_name', 'belong_place', 'format', 'remark', 'img_url')
             ->where('enable_lending', 1)
             ->where('lending_status', 0);
-
-
+    
         if ($location == 'jinde') {
-            //$location = '';
-            $query->where(function($query) {
-                $query->where('belong_place', '進德')
-                      ->orWhere('belong_place', '307');
-            });
-            
+            $query->whereIn('belong_place', ['進德', '307']); // 用 whereIn 避免重複條件
         } elseif ($location == 'baosan') {
-           $query->where('belong_place','寶山');
+            $query->where('belong_place', '寶山');
         }
-
-
-        $data = $query->get();
-
+    
+        $data = $query->distinct()->get(); // 加入 distinct 避免重複
+    
         return response()->json(['success' => true, 'data' => $data]);
     }
 
