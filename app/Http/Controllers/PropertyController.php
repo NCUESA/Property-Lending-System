@@ -167,7 +167,7 @@ class PropertyController extends Controller
             'ssid' => 'required|string|max:8',
             //'class' => 'required|string|max:255',
             // 根據需求新增其他欄位的驗證
-            'prop_img' => 'nullable|mimes:jpg,jpeg,png,webp|max:10240' // 驗證圖片格式和大小
+            'prop_img' => 'nullable|mimes:jpg,jpeg,png,webp,JPG,JPEG,PNG,WEPB,heic,HEIC|max:204800' // 驗證圖片格式和大小
         ]);
 
         // 獲取所有輸入資料
