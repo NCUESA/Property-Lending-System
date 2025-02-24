@@ -87,7 +87,6 @@ class PropertyController extends Controller
         $location = $request->input('place');
         $finding_status = $request->input('finding_status');
     
-        // 轉換 place 參數
         if ($location == 'jinde') {
             $location = ['進德', '307'];
         } elseif ($location == 'baosan') {
@@ -100,7 +99,6 @@ class PropertyController extends Controller
             $location = ['進德', '寶山', '307', '405'];
         }
     
-        // 轉換 finding_status 參數
         if ($finding_status == 'borrowable') {
             $finding_status = [0];
         } elseif ($finding_status == 'lent') {
@@ -109,12 +107,21 @@ class PropertyController extends Controller
             $finding_status = [0, 1, 2];
         }
     
-        // 查詢時確保每個 property.ssid 只顯示最小的 borrowlist.id
-        $properties = Property::leftJoin('borrow_item', 'property.ssid', '=', 'borrow_item.property_id')
-            ->leftJoin('borrowlist', function ($join) {
-                $join->on('borrow_item.borrow_id', '=', 'borrowlist.id')
-                    ->whereRaw('borrowlist.id = (SELECT MIN(b.id) FROM borrowlist b WHERE b.id = borrow_item.borrow_id)');
+        // **子查詢 (Subquery) 找到最大的 borrowlist.id**
+        $latestBorrowSubquery = DB::table('borrow_item')
+            ->selectRaw('MAX(borrowlist.id) as latest_borrow_id, property_id')
+            ->join('borrowlist', 'borrow_item.borrow_id', '=', 'borrowlist.id')
+            ->groupBy('borrow_item.property_id');
+    
+        // **主查詢**
+        $properties = Property::leftJoinSub($latestBorrowSubquery, 'latest_borrow', function ($join) {
+                $join->on('property.ssid', '=', 'latest_borrow.property_id');
             })
+            ->leftJoin('borrow_item', function ($join) {
+                $join->on('property.ssid', '=', 'borrow_item.property_id')
+                     ->on('borrow_item.borrow_id', '=', 'latest_borrow.latest_borrow_id');
+            })
+            ->leftJoin('borrowlist', 'borrow_item.borrow_id', '=', 'borrowlist.id')
             ->select(
                 'property.ssid',
                 'property.class',
@@ -131,19 +138,6 @@ class PropertyController extends Controller
             ->where('property.enable_lending', 1)
             ->whereIn('property.belong_place', $location)
             ->whereIn('property.lending_status', $finding_status)
-            ->groupBy(
-                'property.ssid',
-                'property.class',
-                'property.name',
-                'property.second_name',
-                'property.format',
-                'property.img_url',
-                'borrowlist.borrow_department',
-                'borrowlist.borrow_date',
-                'borrowlist.returned_date',
-                'property.lending_status',
-                'property.belong_place'
-            )
             ->get();
     
         return response()->json(['success' => true, 'data' => $properties]);
