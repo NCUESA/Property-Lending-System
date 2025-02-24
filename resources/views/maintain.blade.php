@@ -157,7 +157,8 @@
                                         </div>
                                         <div class="col-md-3">
                                             <label class="form-label">上傳照片</label>
-                                        <input type="file" class="form-control" id="prop_img" accept="image/jpeg, image/png, image/webp, image/heic">
+                                        <input type="file" class="form-control" placeholder="" id="prop_img"
+                                                value="" accept=".jpg,.jpeg,.png,.webp,.JPG,.KPEG,.PNG,.WEPB,.heic,.HEIC">
                                             <div class="invalid-feedback">
                                                 必填
                                             </div>
