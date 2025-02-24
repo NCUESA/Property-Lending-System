@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Intervention\Image\Laravel\Facades\Image;
+use Illuminate\Support\Facades\DB;
 
 class PropertyController extends Controller
 {
@@ -72,8 +73,6 @@ class PropertyController extends Controller
         return response()->json(['success' => true, 'data' => $data]);
     }
 
-
-
     public function getPropertyStatusData(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -108,8 +107,19 @@ class PropertyController extends Controller
             $finding_status = [0, 1, 2];
         }
     
-        // 使用 Eloquent 查詢建構器進行三表 JOIN 操作
-        $properties = Property::leftJoin('borrow_item', 'property.ssid', '=', 'borrow_item.property_id')
+        // 取得每個 property.ssid 最新的 borrowlist.id
+        $latestBorrowQuery = DB::table('borrow_item')
+            ->select('property_id', DB::raw('MAX(borrow_id) as latest_borrow_id'))
+            ->groupBy('property_id');
+    
+        // 主要查詢：只取得最新的 borrowlist 記錄
+        $properties = Property::leftJoinSub($latestBorrowQuery, 'latest_borrow', function ($join) {
+                $join->on('property.ssid', '=', 'latest_borrow.property_id');
+            })
+            ->leftJoin('borrow_item', function ($join) {
+                $join->on('property.ssid', '=', 'borrow_item.property_id')
+                     ->on('latest_borrow.latest_borrow_id', '=', 'borrow_item.borrow_id');
+            })
             ->leftJoin('borrowlist', 'borrow_item.borrow_id', '=', 'borrowlist.id')
             ->select(
                 'property.ssid',
@@ -127,7 +137,6 @@ class PropertyController extends Controller
             ->where('property.enable_lending', 1)
             ->whereIn('property.belong_place', $location)
             ->whereIn('property.lending_status', $finding_status)
-            ->whereRaw('borrow_item.borrow_id = (SELECT MIN(bi.borrow_id) FROM borrow_item bi WHERE bi.property_id = property.ssid)')
             ->get();
     
         return response()->json(['success' => true, 'data' => $properties]);
