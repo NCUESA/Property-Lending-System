@@ -281,7 +281,7 @@ function bringDataIntoModal(combine_data, lending_property) {
             <td>${item.format}</td>
             <td>${item.remark}</td>
             <td>${item.lending_status}</td>
-            <td><img src="${item.img_url}"></td>
+            <td><img src="./storage/propertyImgs/${item.img_url}"></td>
         `
         col += '</tr>'
         formattedInfo += col;
