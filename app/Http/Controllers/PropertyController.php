@@ -216,11 +216,22 @@ class PropertyController extends Controller
             // 檢查是否有上傳新圖片
             if ($request->hasFile('prop_img')) {
                 $file = $request->file('prop_img');
-                // 使用現有的主鍵 id 作為檔名
-                $filename = $property->id . '.' . $file->getClientOriginalExtension();
-
-                // 儲存圖片並更新路徑
-                $path = $file->storeAs('public/propertyImgs', $filename);
+                $extension = strtolower($file->getClientOriginalExtension()); // 取得副檔名並轉小寫
+                $filename = $property->id . '.jpg'; // 強制轉存為 .jpg
+            
+                // 檢查是否為 HEIC
+                if ($extension === 'heic' || $extension === 'heif') {
+                    // 讀取 HEIC 並轉換為 JPG
+                    $img = Image::make($file->getRealPath())->encode('jpg', 90);
+            
+                    // 儲存轉換後的圖片
+                    Storage::put("public/propertyImgs/{$filename}", $img);
+                } else {
+                    // 如果是 JPG、PNG 等格式，直接存
+                    $file->storeAs('public/propertyImgs', $filename);
+                }
+            
+                // 更新圖片路徑
                 $data['img_url'] = $filename;
                 $flagA = $data['img_url'];
             } else {
