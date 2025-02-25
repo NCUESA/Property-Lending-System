@@ -93,7 +93,7 @@ function genTable(data) {
                 <div class="card border-${lending_color}">
                     <div class="card-header text-white bg-${lending_color}">${borrowSvg}${lending_status}</div>
                     <input type="hidden" value="${item.ssid}">
-                    <img src="./storage/propertyImgs/${item.img_url}" style="width: 100%; aspect-ratio: 16 / 9; object-fit: cover;" class="card-img-top" alt="No Image" 
+                    <img src="./storage/propertyImgs/${item.img_url}" style="width: 100%; aspect-ratio: 16 / 9; object-fit: contain;" class="card-img-top" alt="No Image" 
                          onerror="this.src='https://dummyimage.com/1920x1080/cccccc/000000&text=No+Image';">
                     <div class="card-body">
                         <label for="${item.ssid}">${item.name} ${item.second_name}</label>
