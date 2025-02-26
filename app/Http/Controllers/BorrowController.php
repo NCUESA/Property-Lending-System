@@ -153,6 +153,7 @@ class BorrowController extends Controller
         $data['sa_deposit_take'] = $data['sa_deposit_take'] == null ? 0 : $data['sa_deposit_take'];
         $data['sa_id_returned'] = $data['sa_id_returned'] == null ? 0 : $data['sa_id_returned'];
         $data['sa_deposit_returned'] = $data['sa_deposit_returned'] == null ? 0 : $data['sa_deposit_returned'];
+        $data['sa_id_deposit_box_number'] = $data['sa_id_deposit_box_number'] == null ? -1 : $data['sa_id_deposit_box_number'];
 
         $borrow_status = Property::where('ssid', $borrow_id)
             ->get();
