@@ -103,9 +103,9 @@ class BorrowController extends Controller
         $prepare_return = $request->input('prepare_return');
 
         $query->when($property, function ($query, $property) {
-            return $query->join('borrow_item', 'id', '=', 'borrow_item.borrow_id')
-                ->join('property', 'property_id', '=', 'property.ssid')
-                ->where('ssid', $property);
+            return $query->join('borrow_item', 'borrow_list.id', '=', 'borrow_item.borrow_id')
+                ->join('property', 'borrow_item.property_id', '=', 'property.ssid')
+                ->where('property.ssid', $property);
         });
 
         $query->when($contact, function ($query, $contact) {
@@ -123,14 +123,13 @@ class BorrowController extends Controller
         $query->when($prepare_return, function ($query, $prepare_return) {
             return $query->where('sa_returned_date', $prepare_return);
         });
-        
-        $result = $query->get();
 
         // 按 borrow_item.borrow_id 升冪排序
         $result = $query->orderBy('borrow_item.borrow_id', 'asc')->get();
 
         return response()->json(['success' => true, 'data' => $result]);
     }
+
 
 
 
