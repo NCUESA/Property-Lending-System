@@ -94,7 +94,7 @@ function genTable(data) {
                     <div class="card-header text-white bg-${lending_color}">${borrowSvg}${lending_status}</div>
                     <input type="hidden" value="${item.ssid}">
                     <img src="./storage/propertyImgs/${item.img_url}" style="width: 100%; aspect-ratio: 4 / 3; object-fit: contain;" class="card-img-top" alt="No Image" 
-                         onerror="this.src='https://dummyimage.com/1920x1080/cccccc/000000&text=No+Image';">
+                         onerror="this.src='https://dummyimage.com/1440x1080/cccccc/000000&text=No+Image';">
                     <div class="card-body">
                         <label for="${item.ssid}">${item.name} ${item.second_name}</label>
                         <p><span class="badge bg-primary">${item.class}</span></p>
