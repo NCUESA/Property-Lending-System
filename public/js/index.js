@@ -207,7 +207,7 @@ function genPropertyTable(data) {
             <div class="col">
                 <div class="card">
                     <input type="hidden" value="${item.ssid}">
-                    <img src="./storage/propertyImgs/${item.img_url}" style="width: 100%; aspect-ratio: 4 / 3; object-fit: contain;" class="card-img-top" alt="No Image" onerror="this.src='https://dummyimage.com/1920x1080/cccccc/000000&text=No+Image';">
+                    <img src="./storage/propertyImgs/${item.img_url}" style="width: 100%; aspect-ratio: 4 / 3; object-fit: contain;" class="card-img-top" alt="No Image" onerror="this.src='https://dummyimage.com/1440x1080/cccccc/000000&text=No+Image';">
                     <div class="card-body">
                         <input type="checkbox" class="form-check-input" id="${item.ssid}">
                         <label for="${item.ssid}">${item.name} ${item.second_name}</label>
