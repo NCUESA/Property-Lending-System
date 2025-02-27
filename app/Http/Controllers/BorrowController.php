@@ -125,7 +125,7 @@ class BorrowController extends Controller
         });
 
         // 升冪排序
-        $result = $query->orderBy('id', 'asc')->get();
+        $result = $query->orderBy('id', 'desc')->get();
 
         return response()->json(['success' => true, 'data' => $result]);
     }
