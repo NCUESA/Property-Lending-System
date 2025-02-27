@@ -124,8 +124,8 @@ class BorrowController extends Controller
             return $query->where('sa_returned_date', $prepare_return);
         });
 
-        // 按 borrow_item.borrow_id 升冪排序
-        $result = $query->orderBy('borrow_list.id', 'asc')->get();
+        // 升冪排序
+        $result = $query->orderBy('id', 'asc')->get();
 
         return response()->json(['success' => true, 'data' => $result]);
     }
