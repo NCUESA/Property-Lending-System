@@ -241,7 +241,7 @@ function genTable(data) {
             '<td>' + item.class + '</td>' +
             '<td>' + item.name + '</td>' +
             '<td>' + item.second_name + '</td>' +
-            '<td>' + 'N' + '</td>' +
+            '<td>' + item.school_property + '</td>' +
             '<td>' + lending_status + '</td>' +
             '<td>' + item.order_number + '</td>' +
             '<td>' + item.price + '</td>' +
