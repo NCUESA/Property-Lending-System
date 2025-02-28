@@ -234,6 +234,7 @@ function genTable(data) {
         item.second_name = item.second_name == null ? "" : item.second_name;
         item.remark = item.remark == null ? "" : item.remark;
         item.format = item.format == null ? "" : item.format;
+        item.school_property = item.school_property == 1 ? "Y" : "N";
 
         let trig_btn = `<button type="button" class="btn btn-dark btn-prop-info" data-bs-toggle="modal" data-bs-target="#modal" data-property="${item.ssid}_prop">修改</button>`;
         var row = '<tr class="' + bg_color + '">' +
@@ -241,7 +242,7 @@ function genTable(data) {
             '<td>' + item.class + '</td>' +
             '<td>' + item.name + '</td>' +
             '<td>' + item.second_name + '</td>' +
-            '<td>' + item.school_property == 1 ? "Y" : "N" + '</td>' +
+            '<td>' + item.school_property + '</td>' +
             '<td>' + lending_status + '</td>' +
             '<td>' + item.order_number + '</td>' +
             '<td>' + item.price + '</td>' +
