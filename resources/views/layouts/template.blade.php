@@ -11,7 +11,7 @@
     <link href="{{ asset('css/index.css') }}" rel="stylesheet">
     <link rel="shortcut icon" href="{{ asset('/image/favicon.ico') }}">
     <link rel="bookmark" href="{{ asset('/image/favicon.ico') }}">
-    <title>彰師學生會器材借用網站</title>
+    <title>器材借用網站 - 國立彰化師範大學學生會</title>
 </head>
 
 <body>
