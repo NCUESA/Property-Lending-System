@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BorrowItem;
 use Illuminate\Http\Request;
 use App\Models\Property;
 use PhpOption\None;
@@ -55,7 +56,7 @@ class PropertyController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'errors'  => $validator->errors(),
+                'errors' => $validator->errors(),
             ], 422);
         }
         $location = $request->input('place');
@@ -113,8 +114,22 @@ class PropertyController extends Controller
             $finding_status = [0, 1, 2];
         }
 
-        $properties = Property::leftJoin('borrow_item', 'property.ssid', '=', 'borrow_item.property_id')
-            ->leftJoin('borrowlist', 'borrow_item.borrow_id', '=', 'borrowlist.id')
+
+        // 待修改
+        // **子查詢 (Subquery) 找到最大的 borrowlist.id**
+        $latestBorrowSubquery = DB::table('borrow_item')
+            ->selectRaw('MAX(borrowlist.id) as latest_borrow_id, property_id')
+            ->join('borrowlist', 'borrow_item.borrow_id', '=', 'borrowlist.id')
+            ->groupBy('borrow_item.property_id');
+
+        // **主查詢**
+        $properties = Property::leftJoinSub($latestBorrowSubquery, 'latest_borrow', function ($join) {
+            $join->on('property.ssid', '=', 'latest_borrow.property_id');
+        })
+            ->leftJoin('borrow_item', function ($join) {
+                $join->on('property.ssid', '=', 'borrow_item.property_id')
+                    ->on('borrow_item.borrow_id', '=', 'latest_borrow.latest_borrow_id');
+            })->leftJoin('borrowlist', 'borrow_item.borrow_id', '=', 'borrowlist.id')
             ->select(
                 'property.ssid',
                 'property.class',
@@ -129,14 +144,10 @@ class PropertyController extends Controller
                 'property.belong_place'
             )
             ->where('property.enable_lending', 1)
-            ->whereIn('borrow_item.borrow_id', function ($query) {
-                $query->selectRaw('MAX(borrow_id)')
-                    ->from('borrow_item')
-                    ->groupBy('property_id');
-            })
             ->whereIn('property.belong_place', $location)
             ->whereIn('property.lending_status', $finding_status)
             ->get();
+
 
 
         return response()->json(['success' => true, 'data' => $properties]);

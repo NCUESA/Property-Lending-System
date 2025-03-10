@@ -19,7 +19,7 @@ class Property extends Model
      *  (Laravel will automatically infers the database name)
      * 
      * 2024-08-29
-     * */ 
+     * */
     protected $table = 'property';
     protected $fillable = [
         'ssid',
@@ -45,4 +45,5 @@ class Property extends Model
     {
         return $this->hasMany(BorrowItem::class, 'property_id', 'ssid');
     }
+
 }

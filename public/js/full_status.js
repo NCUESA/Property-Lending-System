@@ -14,7 +14,7 @@ $(document).ready(function () {
                 _token: $('meta[name="csrf-token"]').attr('content')  // CSRF Token
             },
             success: function (response) {
-                //console.log(response);
+                console.log(response);
                 if (response.success) {
                     startFillingForm();
                     genDataButton(response.data);
