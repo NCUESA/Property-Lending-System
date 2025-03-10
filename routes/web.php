@@ -71,6 +71,7 @@ Route::name('responsible')->group(function () {
     Route::post('/show-user', [ResponsibleController::class, 'showUserFull']);
     Route::post('/show-user-name', [ResponsibleController::class, 'showUserNameOnly']);
     Route::post('/add-user', [ResponsibleController::class, 'addUser']);
+    Route::post('/delete-user',[ResponsibleController::class, 'deleteUser']);
 });
 
 Route::prefix('ip')->group(function () {

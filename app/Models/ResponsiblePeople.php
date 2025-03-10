@@ -12,7 +12,9 @@ class ResponsiblePeople extends Model
     protected $table = 'responsible_person';
 
     protected $fillable = [
+        'stu_id',
         'name',
+        'level',
         'status'
     ];
 }

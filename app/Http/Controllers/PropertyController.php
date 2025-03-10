@@ -27,10 +27,9 @@ class PropertyController extends Controller
         }
 
         $selectedValue = $request->input('selected');
-        if($selectedValue == 'jinde'){
+        if ($selectedValue == 'jinde') {
             $selectedValue = '進德';
-        }
-        elseif($selectedValue == 'baosan'){
+        } elseif ($selectedValue == 'baosan') {
             $selectedValue = '寶山';
         }
 
@@ -38,9 +37,8 @@ class PropertyController extends Controller
         if ($selectedValue == 'all') {
             $data = Property::orderBy('ssid')
                 ->get();
-        } else
-        {
-            $data = Property::where('belong_place',$selectedValue)
+        } else {
+            $data = Property::where('belong_place', $selectedValue)
                 ->orderBy('ssid')
                 ->get();
         }
@@ -50,26 +48,34 @@ class PropertyController extends Controller
     public function getBorrowableData(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'place' => 'required|in:all,jinde,baosan'
+            'place' => 'required|in:all,jinde,baosan',
+            'filter' => 'nullable|string',
         ]);
-    
+
         if ($validator->fails()) {
-            return redirect()->back()->withErrors($validator)->withInput();
+            return response()->json([
+                'success' => false,
+                'errors'  => $validator->errors(),
+            ], 422);
         }
         $location = $request->input('place');
-    
+        $filter = $request->input('filter') ?? '';
+
         $query = Property::select('ssid', 'class', 'name', 'second_name', 'belong_place', 'format', 'remark', 'img_url')
             ->where('enable_lending', 1)
             ->where('lending_status', 0);
-    
+
         if ($location == 'jinde') {
             $query->whereIn('belong_place', ['進德', '307']); // 用 whereIn 避免重複條件
         } elseif ($location == 'baosan') {
             $query->where('belong_place', '寶山');
         }
-    
+        if ($filter != '') {
+            $query->where('name', 'like', "%$filter%");
+        }
+
         $data = $query->distinct()->get(); // 加入 distinct 避免重複
-    
+
         return response()->json(['success' => true, 'data' => $data]);
     }
 
@@ -79,14 +85,14 @@ class PropertyController extends Controller
             'place' => 'required|in:all,jinde,baosan',
             'finding_status' => 'required|in:all,borrowable,lent'
         ]);
-    
+
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
         }
-    
+
         $location = $request->input('place');
         $finding_status = $request->input('finding_status');
-    
+
         if ($location == 'jinde') {
             $location = ['進德', '307'];
         } elseif ($location == 'baosan') {
@@ -98,7 +104,7 @@ class PropertyController extends Controller
         } else {
             $location = ['進德', '寶山', '307', '405'];
         }
-    
+
         if ($finding_status == 'borrowable') {
             $finding_status = [0];
         } elseif ($finding_status == 'lent') {
@@ -106,21 +112,8 @@ class PropertyController extends Controller
         } else {
             $finding_status = [0, 1, 2];
         }
-    
-        // **子查詢 (Subquery) 找到最大的 borrowlist.id**
-        $latestBorrowSubquery = DB::table('borrow_item')
-            ->selectRaw('MAX(borrowlist.id) as latest_borrow_id, property_id')
-            ->join('borrowlist', 'borrow_item.borrow_id', '=', 'borrowlist.id')
-            ->groupBy('borrow_item.property_id');
-    
-        // **主查詢**
-        $properties = Property::leftJoinSub($latestBorrowSubquery, 'latest_borrow', function ($join) {
-                $join->on('property.ssid', '=', 'latest_borrow.property_id');
-            })
-            ->leftJoin('borrow_item', function ($join) {
-                $join->on('property.ssid', '=', 'borrow_item.property_id')
-                     ->on('borrow_item.borrow_id', '=', 'latest_borrow.latest_borrow_id');
-            })
+
+        $properties = Property::leftJoin('borrow_item', 'property.ssid', '=', 'borrow_item.property_id')
             ->leftJoin('borrowlist', 'borrow_item.borrow_id', '=', 'borrowlist.id')
             ->select(
                 'property.ssid',
@@ -136,13 +129,19 @@ class PropertyController extends Controller
                 'property.belong_place'
             )
             ->where('property.enable_lending', 1)
+            ->whereIn('borrow_item.borrow_id', function ($query) {
+                $query->selectRaw('MAX(borrow_id)')
+                    ->from('borrow_item')
+                    ->groupBy('property_id');
+            })
             ->whereIn('property.belong_place', $location)
             ->whereIn('property.lending_status', $finding_status)
             ->get();
-    
+
+
         return response()->json(['success' => true, 'data' => $properties]);
     }
-    
+
     public function getPropertyDataWithBorrowID(Request $request)
     {
         $borrow_id = $request->input('borrow_id');
@@ -190,19 +189,19 @@ class PropertyController extends Controller
                 $file = $request->file('prop_img');
                 $extension = strtolower($file->getClientOriginalExtension()); // 取得副檔名並轉小寫
                 $filename = $propertyId . '.jpg'; // 強制轉存為 .jpg
-            
+
                 // 檢查是否為 HEIC
                 if ($extension === 'heic' || $extension === 'heif') {
                     // 讀取 HEIC 並轉換為 JPG
                     $img = Image::read($file->getRealPath())->encode('jpg', 90);
-                    
+
                     // 儲存轉換後的圖片
                     Storage::put("public/propertyImgs/{$filename}", $img);
                 } else {
                     // 如果是 JPG、PNG 等格式，直接存
                     $file->storeAs('public/propertyImgs', $filename);
                 }
-            
+
                 // 更新圖片路徑到資料庫
                 $property->update(['img_url' => $filename]);
             }
@@ -220,19 +219,19 @@ class PropertyController extends Controller
                 $file = $request->file('prop_img');
                 $extension = strtolower($file->getClientOriginalExtension()); // 取得副檔名並轉小寫
                 $filename = $property->id . '.jpg'; // 強制轉存為 .jpg
-            
+
                 // 檢查是否為 HEIC
                 if ($extension === 'heic' || $extension === 'heif') {
                     // 讀取 HEIC 並轉換為 JPG
                     $img = Image::read($file->getRealPath())->encode('jpg', 90);
-            
+
                     // 儲存轉換後的圖片
                     Storage::put("public/propertyImgs/{$filename}", $img);
                 } else {
                     // 如果是 JPG、PNG 等格式，直接存
                     $file->storeAs('public/propertyImgs', $filename);
                 }
-            
+
                 // 更新圖片路徑
                 $data['img_url'] = $filename;
                 $flagA = $data['img_url'];

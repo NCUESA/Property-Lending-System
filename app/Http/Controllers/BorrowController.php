@@ -150,7 +150,7 @@ class BorrowController extends Controller
             return response()->json(['success' => true, 'message' => '操作錯誤'], 405);
         }
 
-        // 未填視為0 
+        // 未填視為0
         $data['sa_id_take'] = $data['sa_id_take'] == null ? 0 : $data['sa_id_take'];
         $data['sa_deposit_take'] = $data['sa_deposit_take'] == null ? 0 : $data['sa_deposit_take'];
         $data['sa_id_returned'] = $data['sa_id_returned'] == null ? 0 : $data['sa_id_returned'];

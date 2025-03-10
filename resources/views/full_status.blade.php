@@ -24,15 +24,15 @@
                         <path
                             d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
                     </svg>
-                    查詢列表
+                    進階查詢
                 </button>
             </div>
-            <div class="col-1">
-                <label for="place" class="col-form-label">查詢地點</label>
-            </div>
-            <div class="col-3">
-                <select class="form-control" id='place'>
-                    <option disabled selected>請選擇地點...</option>
+            <!--<div class="col-1">
+                <label for="place" class="col-form-label"></label>
+            </div>-->
+            <div class="col-4">
+                <select class="form-control btn btn-secondary" id='place'>
+                    <option disabled selected>快速查詢</option>
                     <option value="jinde">進德</option>
                     <option value="baosan">寶山</option>
                     <!--<option value="all">全部地點</option>-->
@@ -45,9 +45,8 @@
         <div class="alert alert-success" role="alert">
             <h4 class="alert-heading">注意事項</h4>
             <ul>
-                <li>依照地點分顏色，寶山灰色、進德青色</li>
                 <li>借用器材請用條碼機掃描器材上方條碼</li>
-                <li>掃描時請切換成英文輸入法</li>
+                <li>掃描時請切換成<strong>英文輸入法</strong></li>
                 <li>如果逼了沒有反應，請點一下輸入框</li>
                 <li><strong>請一定要選擇是借出還是歸還</strong></li>
                 <li><strong>請一定要選擇是借出還是歸還</strong></li>

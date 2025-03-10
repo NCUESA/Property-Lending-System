@@ -20,16 +20,32 @@ $(document).ready(function () {
             }
         });
     });
+    $('#find').on('change', function () {
+        var condition = $(this).val();
 
-    $('#borrow').on('submit', function (event) {
+        $.ajax({
+            type: 'POST',
+            url: '/show-borrowable-item',
+            data: {
+                place:  $('input[name="borrow_place"]').val(),
+                filter: condition,
+                _token: $('meta[name="csrf-token"]').attr('content')  // CSRF Token
+            },
+            success: function (response) {
+                //console.log(response);
+                if (response.success) {
+                    genPropertyTable(response.data);
+                }
+            },
+            error: function (error) {
+                console.log(error);
+            }
+        });
+    });
+
+    $('#send_form').on('click', function (event) {
         // The logic of precheck
-        //event.preventDefault();
-        //$('.form-control, .form-check-input').removeClass('is-invalid');
-        //
         let isValid = true;
-        if (!this.checkValidity()) {
-            isValid = false;
-        }
 
         // Know Filling Empty
         if (!$('input[name="know_filling"]:checked').val()) {
@@ -150,7 +166,7 @@ $(document).ready(function () {
             //$('#check_borrow_item').removeClass('invalid-feedback').addClass('valid-feedback');
         }
 
-        $(this).addClass('was-validated');
+        $("#borrow").addClass('was-validated');
         if (!isValid) {
             event.preventDefault();
             event.stopPropagation();
@@ -173,9 +189,7 @@ $(document).ready(function () {
                 _token: $('meta[name="csrf-token"]').attr('content')  // CSRF Token
             },
             success: function (response) {
-                console.log(response);
-                //event.preventDefault();
-                //event.stopPropagation();
+                console.log(response);                
                 if (response.success && response.error == '') {
                     alert('借用表單送出成功，請等待值勤人員提供器材');
                     location.reload();
