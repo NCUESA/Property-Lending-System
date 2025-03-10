@@ -1,12 +1,12 @@
 $(document).ready(function () {
     $('input[name="borrow_place"]').on('change', function () {
-        var seleced_place = $(this).val();
-
+        var selected_place = $(this).val();
+        console.log(selected_place);
         $.ajax({
             type: 'POST',
             url: '/show-borrowable-item',
             data: {
-                place: seleced_place,
+                place: selected_place,
                 _token: $('meta[name="csrf-token"]').attr('content')  // CSRF Token
             },
             success: function (response) {
@@ -23,12 +23,13 @@ $(document).ready(function () {
     });
     $('#find').on('change', function () {
         var condition = $(this).val();
-
+        var selected_place = $('input[name="borrow_place"]:checked').val();
+        console.log(selected_place);
         $.ajax({
             type: 'POST',
             url: '/show-borrowable-item',
             data: {
-                place: $('input[name="borrow_place"]').val(),
+                place: selected_place,
                 filter: condition,
                 _token: $('meta[name="csrf-token"]').attr('content')  // CSRF Token
             },
