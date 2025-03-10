@@ -13,6 +13,7 @@ $(document).ready(function () {
                 //console.log(response);
                 if (response.success) {
                     genPropertyTable(response.data);
+                    refreshFilter(response.data);
                 }
             },
             error: function (error) {
@@ -27,12 +28,12 @@ $(document).ready(function () {
             type: 'POST',
             url: '/show-borrowable-item',
             data: {
-                place:  $('input[name="borrow_place"]').val(),
+                place: $('input[name="borrow_place"]').val(),
                 filter: condition,
                 _token: $('meta[name="csrf-token"]').attr('content')  // CSRF Token
             },
             success: function (response) {
-                //console.log(response);
+                console.log(response);
                 if (response.success) {
                     genPropertyTable(response.data);
                 }
@@ -189,7 +190,7 @@ $(document).ready(function () {
                 _token: $('meta[name="csrf-token"]').attr('content')  // CSRF Token
             },
             success: function (response) {
-                console.log(response);                
+                console.log(response);
                 if (response.success && response.error == '') {
                     alert('借用表單送出成功，請等待值勤人員提供器材');
                     location.reload();
@@ -207,6 +208,19 @@ $(document).ready(function () {
     });
 
 });
+function refreshFilter(data){
+    $('#find').empty();
+    $('#find').append(`<option value="">全部器材</option>`);
+    let filter = new Set();
+    $.each(data, function (index, item){
+        filter.add(item.name);
+    });
+    console.log(filter);
+    filter.forEach((type) => {
+        let option = `<option value="${type}">${type}</option>`
+        $('#find').append(option);
+    });
+}
 
 function genPropertyTable(data) {
     $('#borrowable_item').empty(); // 清空容器
@@ -237,7 +251,7 @@ function genPropertyTable(data) {
                     </div>
                 </div>
             </div>`;
-        
+
         // 將生成的卡片添加到容器中
         $('#borrowable_item').append(card);
     });
