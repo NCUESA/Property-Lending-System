@@ -20,7 +20,7 @@
 - Dev:    Enderman
 
 # 套件版本
-- Laravel 8
+- Laravel 11
 - PHP 8
 
 # 歷史紀錄
