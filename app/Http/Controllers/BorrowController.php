@@ -141,16 +141,8 @@ class BorrowController extends Controller
         $noitemList = $data['no_borrow_items'];
 
         $borrow_id = $data['borrow_id'];
-        $manuplate = $data['sa_manuplate'];
-        if ($manuplate == 'borrow') {
-            $manuplate = 1;
-        } elseif ($manuplate == 'return') {
-            $manuplate = 0;
-        } else {
-            return response()->json(['success' => true, 'message' => '操作錯誤'], 405);
-        }
 
-        // 未填視為0
+        // Default Value When Empty
         $data['sa_id_take'] = $data['sa_id_take'] == null ? 0 : $data['sa_id_take'];
         $data['sa_deposit_take'] = $data['sa_deposit_take'] == null ? 0 : $data['sa_deposit_take'];
         $data['sa_id_returned'] = $data['sa_id_returned'] == null ? 0 : $data['sa_id_returned'];
@@ -180,34 +172,67 @@ class BorrowController extends Controller
                 'sa_remark' => $data['sa_remark']
             ]);
 
-        // Borrow_Item Update
-        // 檢查 itemList 是否為空
-        if (!empty($itemList)) {
-            BorrowItem::where('borrow_id', $borrow_id)
+
+
+        $manuplate = $data['sa_manuplate'];
+        if ($manuplate == 'borrow') {
+            $lend_out = 1;
+            $back_to_sys = 0;
+
+            // Borrow_Item Update
+            // 檢查 itemList 是否為空
+            if (!empty($itemList)) {
+                BorrowItem::where('borrow_id', $borrow_id)
+                    ->whereIn('property_id', $itemList)
+                    ->update(['status' => $lend_out]);
+            }
+            // Property Update
+            if (!empty($itemList)) {
+                Property::whereIn('ssid', $itemList)
+                    ->update(['lending_status' => $manuplate]);
+            }
+
+            // 檢查 noitemList 是否為空
+            // BorrowItem Update
+            if (!empty($noitemList)) {
+                BorrowItem::where('borrow_id', $borrow_id)
+                    ->whereIn('property_id', $noitemList)
+                    ->update(['status' => $back_to_sys]);
+            }
+            // Property Update
+            if (!empty($itemList)) {
+                Property::whereIn('ssid', $noitemList)
+                    ->update(['lending_status' => $back_to_sys]);
+            }
+            return response()->json(['success' => true, 'message' => '成功借用']);
+        } elseif ($manuplate == 'return') {
+            $property_returned = 0;
+            $returned = 3;
+
+            // 取得還未被歸還的項目（status 不是 3）
+            $pendingItems = BorrowItem::where('borrow_id', $borrow_id)
                 ->whereIn('property_id', $itemList)
-                ->update(['status' => $manuplate]);
-        }
-        // Property Update
-        if (!empty($itemList)) {
-            Property::whereIn('ssid', $itemList)
-                ->update(['lending_status' => $manuplate]);
-        }
+                ->where('status', '!=', $returned) // 過濾已經是 3 的項目
+                ->pluck('property_id')
+                ->toArray();
 
+            // 如果所有項目都已經被歸還了（都為 3），則返回錯誤
+            if (empty($pendingItems)) {
+                return response()->json(['success' => false, 'error' => '所有選取的項目已經被歸還過了！']);
+            }
 
-        // 檢查 noitemList 是否為空
-        // BorrowItem Update
-        if (!empty($noitemList)) {
             BorrowItem::where('borrow_id', $borrow_id)
-                ->whereIn('property_id', $noitemList)
-                ->update(['status' => !$manuplate]);
-        }
-        // Property Update
-        if (!empty($itemList)) {
-            Property::whereIn('ssid', $noitemList)
-                ->update(['lending_status' => !$manuplate]);
-        }
+                ->whereIn('property_id', $pendingItems)
+                ->update(['status' => $returned]);
 
+            // 更新 Property（只更新那些未被歸還的）
+            Property::whereIn('ssid', $pendingItems)
+                ->update(['lending_status' => $property_returned]);
 
-        return response()->json(['success' => true, 'error' => '']);
+            return response()->json(['success' => true, 'message' => '成功歸還部分或全部項目']);
+        } else {
+            return response()->json(['success' => true, 'message' => '操作錯誤'], 405);
+        }
+        
     }
 }

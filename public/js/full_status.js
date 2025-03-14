@@ -1,8 +1,4 @@
 $(document).ready(function () {
-    
-    /*if (sessionStorage.getItem('place')) {
-        $('#place').val(sessionStorage.getItem('place'));
-    }*/
 
     // 地點查詢
     $('#place').on('change', function () {
@@ -264,14 +260,17 @@ function bringDataIntoModal(combine_data, lending_property) {
     let formattedInfo = '';
     $.each(lending_property, function (index, item) {
         let col = '<tr>';
-        if (item.lending_status == 1) {
-            item.lending_status = '外借中';
+        if (item.status == 1) {
+            item.status = '外借中';
         }
-        else if (item.lending_status == 2) {
-            item.lending_status = '待借出';
+        else if (item.status == 2) {
+            item.status = '待借出';
         }
-        else {
-            return true;
+        else if(item.status == 3){
+            item.status = '已歸還';
+        }
+        else if(item.status == 0){
+            item.status = '在會辦';
         }
         col +=
             `<td>${item.ssid}</td>
@@ -280,7 +279,7 @@ function bringDataIntoModal(combine_data, lending_property) {
             <td>${item.class}</td>
             <td>${item.format}</td>
             <td>${item.remark}</td>
-            <td>${item.lending_status}</td>
+            <td>${item.status}</td>
             <td><img src="./storage/propertyImgs/${item.img_url}" style="width: 100px; height: auto;"></td>
         `
         col += '</tr>'

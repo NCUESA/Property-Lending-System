@@ -59,13 +59,13 @@ Route::prefix('borrow')->group(function () {
     Route::prefix('getData')->group(function () {
         Route::post('/', [BorrowController::class, 'getLendingStatusData']);
         Route::post('/condition', [BorrowController::class, 'getLendingStatusDataInCondition']);
-    });
+    })->name('getData');
 
     Route::prefix('item')->group(function () {
         Route::post('/', [BorrowController::class, 'sendBorrowRequest']);
         Route::post('/final', [BorrowController::class, 'sendFinalRequest']);
     });
-});
+})->name('borrow');
 
 Route::name('responsible')->group(function () {
     Route::post('/show-user', [ResponsibleController::class, 'showUserFull']);
