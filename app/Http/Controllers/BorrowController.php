@@ -41,7 +41,7 @@ class BorrowController extends Controller
         }
 
         // BorrowList Insert
-        $borrowListId  = BorrowList::insertGetId([
+        $borrowListId = BorrowList::insertGetId([
             'understand' => $understading,
             'borrow_place' => $borrow_place,
             'borrow_department' => $data['borrow_department'],
@@ -85,8 +85,23 @@ class BorrowController extends Controller
         }
 
         $borrowers = BorrowList::whereIn('borrow_place', $location)
-            ->orderBy('borrow_date', 'desc')
-            ->get();
+            ->with([
+                'borrowItems' => function ($query) {
+                    $query->select('borrow_id', 'status'); // 只取需要的欄位
+                }
+            ])
+            ->orderBy('id', 'desc')
+            ->get()
+            ->map(function ($borrower) {
+                // 取得所有的 status
+                $statuses = $borrower->borrowItems->pluck('status');
+
+                // 如果有任何一個 status 是 1，則返回 1，否則返回最大 status
+                $borrower->status = $statuses->contains(1) ? 1 : $statuses->max();
+
+                return $borrower;
+            });
+
 
         return response()->json(['success' => true, 'data' => $borrowers]);
     }
@@ -125,13 +140,24 @@ class BorrowController extends Controller
         });
 
         // 升冪排序
-        $result = $query->orderBy('id', 'desc')->get();
+        $result = $query->with([
+            'borrowItems' => function ($query) {
+                $query->select('borrow_id', 'status'); // 只取需要的欄位
+            }
+        ])->orderBy('id', 'desc')
+            ->get()
+            ->map(function ($borrower) {
+                // 取得所有的 status
+                $statuses = $borrower->borrowItems->pluck('status');
+
+                // 如果有任何一個 status 是 1，則返回 1，否則返回最大 status
+                $borrower->status = $statuses->contains(1) ? 1 : $statuses->max();
+
+                return $borrower;
+            });
 
         return response()->json(['success' => true, 'data' => $result]);
     }
-
-
-
 
     public function sendFinalRequest(Request $request)
     {
@@ -189,7 +215,7 @@ class BorrowController extends Controller
             // Property Update
             if (!empty($itemList)) {
                 Property::whereIn('ssid', $itemList)
-                    ->update(['lending_status' => $manuplate]);
+                    ->update(['lending_status' => $lend_out]);
             }
 
             // 檢查 noitemList 是否為空
@@ -233,6 +259,6 @@ class BorrowController extends Controller
         } else {
             return response()->json(['success' => true, 'message' => '操作錯誤'], 405);
         }
-        
+
     }
 }

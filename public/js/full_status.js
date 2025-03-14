@@ -2,24 +2,7 @@ $(document).ready(function () {
 
     // 地點查詢
     $('#place').on('change', function () {
-        $.ajax({
-            type: 'POST',
-            url: '/borrow/getData/',
-            data: {
-                location: $(this).val(),
-                _token: $('meta[name="csrf-token"]').attr('content')  // CSRF Token
-            },
-            success: function (response) {
-                console.log(response);
-                if (response.success) {
-                    startFillingForm();
-                    genDataButton(response.data);
-                }
-            },
-            error: function (error) {
-                console.log(error);
-            }
-        });
+        pageReload();
     });
     // 搜尋
     $('#search').submit(function (e) {
@@ -37,6 +20,7 @@ $(document).ready(function () {
                 _token: $('meta[name="csrf-token"]').attr('content')  // CSRF Token
             },
             success: function (response) {
+                console.log(response);
                 if (response.success) {
                     startFillingForm();
                     genDataButton(response.data);
@@ -47,6 +31,12 @@ $(document).ready(function () {
             }
         });
     });
+
+    $('#reset_search_query').click(function(){
+        $('#place').val('');
+        pageReload();
+    });
+
 
     // 將資料帶入Modal邏輯
     $(document).on('click', '.btn-bring-data', function () {
@@ -68,11 +58,16 @@ $(document).ready(function () {
 
         if (inputVal.length >= 8) {
             let itemArray = [];
+           
 
             // 從 modal 中的 tbody 名稱為 'borrow_list' 的每個 tr 中提取第一個 td 的值
             $('#borrow_list tr').each(function () {
-                const firstTdValue = $(this).find('td:first').text().trim();
-                itemArray.push(firstTdValue);
+                const firstTdValue = $(this).find('td').eq(0).text().trim(); // 第一個 <td>
+                const statusTdValue = $(this).find('td').eq(6).text().trim(); // 第7個 <td>（索引從 0 開始）
+
+                if(statusTdValue !== '退回系統')
+                    itemArray.push(firstTdValue);
+                
             });
 
             console.log(itemArray);
@@ -88,7 +83,7 @@ $(document).ready(function () {
                     }
                 });
             } else {
-                alert("未借用此物品");
+                alert("清單無此物品或此物已退回系統");
             }
             $('#scan_list').val('');
         }
@@ -160,10 +155,11 @@ $(document).ready(function () {
                 },
                 success: function (response) {
                     //console.log(response);
-                    if (response.success && response.error == '') {
+                    if (response.success) {
                         sessionStorage.setItem('place', $('#place').val());
                         alert('完成');
-                        location.reload();
+                        $("#modal").modal("hide");
+                        pageReload();
                     }
                     else {
                         alert(response.error);
@@ -259,30 +255,35 @@ function bringDataIntoModal(combine_data, lending_property) {
     $('#borrow_list').empty();
     let formattedInfo = '';
     $.each(lending_property, function (index, item) {
-        let col = '<tr>';
+        let unable_borrow = "table-secondary";
+        // Status為 Borrow之Column 非財產現在借用狀態
         if (item.status == 1) {
             item.status = '外借中';
+            unable_borrow = "";
         }
         else if (item.status == 2) {
             item.status = '待借出';
+            unable_borrow = "";
         }
-        else if(item.status == 3){
+        else if (item.status == 3) { // Status 3 代表已歸還
             item.status = '已歸還';
+            unable_borrow = "";
         }
-        else if(item.status == 0){
-            item.status = '在會辦';
+        else { // Status 0 不可以被借
+            item.status = '退回系統';
         }
-        col +=
-            `<td>${item.ssid}</td>
-            <td>${item.name}</td>
-            <td>${item.second_name}</td>
-            <td>${item.class}</td>
-            <td>${item.format}</td>
-            <td>${item.remark}</td>
-            <td>${item.status}</td>
-            <td><img src="./storage/propertyImgs/${item.img_url}" style="width: 100px; height: auto;"></td>
-        `
-        col += '</tr>'
+        let col =
+        `<tr class="${unable_borrow}">
+                <td>${item.ssid}</td>
+                <td>${item.name}</td>
+                <td>${item.second_name}</td>
+                <td>${item.class}</td>
+                <td>${item.format}</td>
+                <td>${item.remark}</td>
+                <td>${item.status}</td>
+                <td><img src="./storage/propertyImgs/${item.img_url}" style="width: 100px; height: auto;"></td>
+            </tr>`;
+         
         formattedInfo += col;
     });
     $('#borrow_list').append(formattedInfo);
@@ -304,7 +305,22 @@ function bringDataIntoModal(combine_data, lending_property) {
 function genDataButton(data) {
     $('#lending_status').empty();
     $.each(data, function (index, item) {
+        let lending_status = item.status;
 
+        switch (lending_status) {
+            case 0:
+                lending_status = 'table-danger';
+                break;
+            case 1:
+                lending_status = 'table-success';
+                break;
+            case 2:
+                lending_status = 'table-primary';
+                break;
+            case 3:
+                lending_status = 'table-secondary';
+                break;
+        }
 
         let sa_lending_person_name = item.sa_lending_person_name == null ? '' : item.sa_lending_person_name;
         let sa_lending_date = item.sa_lending_date == null ? '' : item.sa_lending_date;
@@ -346,7 +362,7 @@ function genDataButton(data) {
 
         // Generate table row
         let row = `
-            <tr class="">
+            <tr class="${lending_status}">
                 <td style="display: none">${item.id}</td>
                 <td style="display: none">${sa_lending_person_name}</td>
                 <td style="display: none">${sa_lending_date}</td>
@@ -374,3 +390,24 @@ function genDataButton(data) {
     });
 }
 
+function pageReload() {
+    $('#borrow_list').empty();
+    $.ajax({
+        type: 'POST',
+        url: '/borrow/getData/',
+        data: {
+            location: $('#place').val(),
+            _token: $('meta[name="csrf-token"]').attr('content')  // CSRF Token
+        },
+        success: function (response) {
+            console.log(response);
+            if (response.success) {
+                startFillingForm();
+                genDataButton(response.data);
+            }
+        },
+        error: function (error) {
+            console.log(error);
+        }
+    });
+}
