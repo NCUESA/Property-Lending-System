@@ -2,7 +2,7 @@ $(document).ready(function () {
 
     // 地點查詢
     $('#place').on('change', function () {
-        pageReload();
+        reloadPage();
     });
     // 搜尋
     $('#search').submit(function (e) {
@@ -32,9 +32,9 @@ $(document).ready(function () {
         });
     });
 
-    $('#reset_search_query').click(function(){
+    $('#reset_search_query').click(function () {
         $('#place').val('');
-        pageReload();
+        reloadPage();
     });
 
 
@@ -58,16 +58,16 @@ $(document).ready(function () {
 
         if (inputVal.length >= 8) {
             let itemArray = [];
-           
+
 
             // 從 modal 中的 tbody 名稱為 'borrow_list' 的每個 tr 中提取第一個 td 的值
             $('#borrow_list tr').each(function () {
                 const firstTdValue = $(this).find('td').eq(0).text().trim(); // 第一個 <td>
                 const statusTdValue = $(this).find('td').eq(6).text().trim(); // 第7個 <td>（索引從 0 開始）
 
-                if(statusTdValue !== '退回系統')
+                if (statusTdValue !== '退回系統')
                     itemArray.push(firstTdValue);
-                
+
             });
 
             console.log(itemArray);
@@ -159,7 +159,7 @@ $(document).ready(function () {
                         sessionStorage.setItem('place', $('#place').val());
                         alert('完成');
                         $("#modal").modal("hide");
-                        pageReload();
+                        reloadPage();
                     }
                     else {
                         alert(response.error);
@@ -212,6 +212,7 @@ function startFillingForm() {
         }
     });
 }
+
 // 完成勿動
 function updateFormWithPersonList(personList) {
     const lending_person_list = $("#sa_lending_person_name");
@@ -273,7 +274,7 @@ function bringDataIntoModal(combine_data, lending_property) {
             item.status = '退回系統';
         }
         let col =
-        `<tr class="${unable_borrow}">
+            `<tr class="${unable_borrow}">
                 <td>${item.ssid}</td>
                 <td>${item.name}</td>
                 <td>${item.second_name}</td>
@@ -283,7 +284,7 @@ function bringDataIntoModal(combine_data, lending_property) {
                 <td>${item.status}</td>
                 <td><img src="./storage/propertyImgs/${item.img_url}" style="width: 100px; height: auto;"></td>
             </tr>`;
-         
+
         formattedInfo += col;
     });
     $('#borrow_list').append(formattedInfo);
@@ -305,23 +306,6 @@ function bringDataIntoModal(combine_data, lending_property) {
 function genDataButton(data) {
     $('#lending_status').empty();
     $.each(data, function (index, item) {
-        let lending_status = item.status;
-
-        switch (lending_status) {
-            case 0:
-                lending_status = 'table-danger';
-                break;
-            case 1:
-                lending_status = 'table-success';
-                break;
-            case 2:
-                lending_status = 'table-primary';
-                break;
-            case 3:
-                lending_status = 'table-secondary';
-                break;
-        }
-
         let sa_lending_person_name = item.sa_lending_person_name == null ? '' : item.sa_lending_person_name;
         let sa_lending_date = item.sa_lending_date == null ? '' : item.sa_lending_date;
 
@@ -335,6 +319,34 @@ function genDataButton(data) {
         let sa_returned_date = item.sa_returned_date == null ? '' : item.sa_returned_date;
         let sa_remark = item.sa_remark == null ? '' : item.sa_remark;
 
+
+        let lending_status = item.status;
+        let expired_return = new Date(item.returned_date);
+        expired_return.setHours(0, 0, 0, 0);
+        //console.log(getTodayDate());
+        console.log(expired_return <= getTodayDate());
+
+        switch (lending_status) {
+            case 0:     // Dispatch
+                lending_status = 'table-danger';
+                break;
+            case 1:
+                lending_status = 'table-success';   // Lendout
+                if(expired_return <= getTodayDate()){
+                    lending_status = 'table-warning'
+                }
+                break;
+            case 2:     //Waiting
+                lending_status = 'table-primary';
+                break;
+            case 3:     //Return
+                lending_status = 'table-secondary';
+                break;
+        }
+
+        
+
+    
         let combine_data = {
             borrow_list_id: item.id,
             sa_lending_person_name: item.sa_lending_person_name,
@@ -390,7 +402,7 @@ function genDataButton(data) {
     });
 }
 
-function pageReload() {
+function reloadPage() {
     $('#borrow_list').empty();
     $.ajax({
         type: 'POST',
@@ -411,3 +423,10 @@ function pageReload() {
         }
     });
 }
+
+function getTodayDate() {
+    const now = new Date();
+    const localDate = new Date(new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Taipei' }).format(now));
+    return localDate;
+}
+

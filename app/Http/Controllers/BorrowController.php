@@ -226,7 +226,7 @@ class BorrowController extends Controller
                     ->update(['status' => $back_to_sys]);
             }
             // Property Update
-            if (!empty($itemList)) {
+            if (!empty($noitemList)) {
                 Property::whereIn('ssid', $noitemList)
                     ->update(['lending_status' => $back_to_sys]);
             }

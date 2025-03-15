@@ -3,6 +3,7 @@
 @section('content')
     <h2>器材借用狀況</h2>
     <hr>
+
     <form>
         <div class="row g-3 align-items-center">
             <div class="col-4 d-grid gap-2">
@@ -19,8 +20,8 @@
             <div class="col-4 d-grid gap-2">
                 <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#searchInfo"
                     aria-expanded="false" aria-controls="searchInfo">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                        class="bi bi-search" viewBox="0 0 16 16">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search"
+                        viewBox="0 0 16 16">
                         <path
                             d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
                     </svg>
@@ -28,8 +29,8 @@
                 </button>
             </div>
             <!--<div class="col-1">
-                <label for="place" class="col-form-label"></label>
-            </div>-->
+                                                <label for="place" class="col-form-label"></label>
+                                            </div>-->
             <div class="col-4">
                 <select class="form-control btn btn-secondary" id='place'>
                     <option disabled selected>快速查詢</option>
@@ -156,8 +157,8 @@
                                         </div>
                                         <div class="col-md-3">
                                             <label class="form-label">借用編號(系統自動帶入)</label>
-                                            <input type="input" class="form-control" placeholder="此處請勿填寫"
-                                                id="borrow_id" value="" disabled>
+                                            <input type="input" class="form-control" placeholder="此處請勿填寫" id="borrow_id"
+                                                value="" disabled>
                                             <div class="invalid-feedback">
                                                 必填
                                             </div>
@@ -186,8 +187,8 @@
                                         </div>
                                         <div class="col-md-3">
                                             <label class="form-label">借出經辦日期</label>
-                                            <input type="date" class="form-control" placeholder=""
-                                                id="sa_lending_date" required disabled value="">
+                                            <input type="date" class="form-control" placeholder="" id="sa_lending_date"
+                                                required disabled value="">
                                         </div>
                                         <div class="col-md-2">
                                             <label class="form-label">押金收取</label>
@@ -203,8 +204,7 @@
                                         </div>
                                         <div class="col-md-2">
                                             <label class="form-label">證件收取</label>
-                                            <select class="form-select form-select mb-3" id="sa_id_take" required
-                                                disabled>
+                                            <select class="form-select form-select mb-3" id="sa_id_take" required disabled>
                                                 <option selected disabled value="">請選擇</option>
                                                 <option value="1">收了 YES</option>
                                                 <option value="0">沒收 NO</option>
@@ -256,8 +256,8 @@
                                     <div class="row">
                                         <div class="col-md-3">
                                             <label class="form-label">歸還承辦人</label>
-                                            <select class="form-select form-select mb-3" id="sa_return_person_name"
-                                                required disabled>
+                                            <select class="form-select form-select mb-3" id="sa_return_person_name" required
+                                                disabled>
                                                 <option selected disabled value="">請選擇承辦人</option>
                                                 <option value=""></option>
                                             </select>
@@ -267,8 +267,8 @@
                                         </div>
                                         <div class="col-md-3">
                                             <label class="form-label">歸還經辦日期</label>
-                                            <input type="date" class="form-control" placeholder=""
-                                                id="sa_returned_date" disabled>
+                                            <input type="date" class="form-control" placeholder="" id="sa_returned_date"
+                                                disabled>
                                         </div>
                                         <div class="col-md-2">
                                             <label class="form-label">押金退還</label>
@@ -301,7 +301,8 @@
                                         <div class="col-md-12">
                                             <label class="form-label">備註</label>
                                             <div class="form-floating">
-                                                <textarea disabled class="form-control" placeholder="請在這邊詳細填寫" id="sa_remark" style="height: 150px" required></textarea>
+                                                <textarea disabled class="form-control" placeholder="請在這邊詳細填寫"
+                                                    id="sa_remark" style="height: 150px" required></textarea>
                                                 <div class="invalid-feedback">
                                                     必填
                                                 </div>
@@ -328,17 +329,17 @@
         <thead>
             <tr>
                 <!--<th scope="col">流水號</th>
-                                    <th scope="col">借出承辦人</th>
-                                    <th scope="col">借出日期</th>
-                                    <th scope="col">押金收取</th>
-                                    <th scope="col">證件收取</th>
-                                    <th scope="col">證件押金盒編號</th>
+                                                                    <th scope="col">借出承辦人</th>
+                                                                    <th scope="col">借出日期</th>
+                                                                    <th scope="col">押金收取</th>
+                                                                    <th scope="col">證件收取</th>
+                                                                    <th scope="col">證件押金盒編號</th>
 
-                                    <th scope="col">歸還承辦人</th>
-                                    <th scope="col">歸還日期</th>
-                                    <th scope="col">押金退還</th>
-                                    <th scope="col">證件退還</th>
-                                    <th scope="col">備註</th>-->
+                                                                    <th scope="col">歸還承辦人</th>
+                                                                    <th scope="col">歸還日期</th>
+                                                                    <th scope="col">押金退還</th>
+                                                                    <th scope="col">證件退還</th>
+                                                                    <th scope="col">備註</th>-->
 
                 <th scope="col">填單時間</th>
                 <th scope="col">Email</th>
@@ -354,4 +355,31 @@
 
         </tbody>
     </table>
+
+    <!--
+    <div class="toast-container" >
+        <div class="toast" role="alert" aria-live="assertive" aria-atomic="true" id="toast1">
+            <div class="toast-header">
+                
+                <strong class="me-auto">Bootstrap</strong>
+                <small class="text-muted">just now</small>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                See? Just like this.
+            </div>
+        </div>
+
+        <div class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                
+                <strong class="me-auto">Bootstrap</strong>
+                <small class="text-muted">2 seconds ago</small>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                Heads up, toasts will stack automatically
+            </div>
+        </div>
+    </div>-->
 @endsection

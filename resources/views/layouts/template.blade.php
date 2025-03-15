@@ -41,7 +41,7 @@
                             <a class="nav-link active" aria-current="page" href="./maintain">器材清單維護(管理員)</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link active" aria-current="page" href="./responsible">人員清單管理(管理員)</a>
+                            <a class="nav-link active" aria-current="page" href="./responsible">人員權限控管(管理員)</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link active" aria-current="page" href="./ip">IP通過權限設定(管理員)</a>
