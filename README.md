@@ -18,7 +18,7 @@
     7. 修正已經歸還的清單可以幫別人還器材的bug
 
 ## 開發人員資訊
-- Email:  ncuesa@gm.ncue.edu.tw
+- Email:  studentgovernment-general-it@gm.ncue.edu.tw
 - Dev:    Enderman
 
 # 套件版本
