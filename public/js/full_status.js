@@ -40,7 +40,7 @@ $(document).ready(function () {
 
     // 將資料帶入Modal邏輯
     $(document).on('click', '.btn-bring-data', function () {
-        let combine_data = lending_data_store[$(this).data('combine')];
+        let combine_data = fullLendingData[$(this).data('combine')];
         let borrowListId = combine_data['borrow_list_id'];
         getPropertyWithID(borrowListId, function (lending_property) {
             bringDataIntoModal(combine_data, lending_property);
@@ -190,9 +190,25 @@ $(document).ready(function () {
         $('#sa_id_returned').val();
         $('#sa_remark').val();
     });
+
+    $('button#waiting').on('click', function () {
+        reloadPage('waiting');
+    });
+    $('button#lend_out').on('click', function () {
+        reloadPage('lend_out');
+    });
+    $('button#out_of_time').on('click', function () {
+        reloadPage('out_of_time');
+    });
+    $('button#returned').on('click', function () {
+        reloadPage('returned');
+    });
+    $('button#banned').on('click', function () {
+        reloadPage('banned');
+    });
 });
 
-var lending_data_store = {};
+var fullLendingData = {};
 // 完成勿動
 function startFillingForm() {
     // 發送 AJAX 
@@ -303,8 +319,10 @@ function bringDataIntoModal(combine_data, lending_property) {
 }
 
 // 完成勿動
-function genDataButton(data) {
+function genDataButton(data, statusFiltering = 'no') {
     $('#lending_status').empty();
+    fullLendingData = {};
+
     $.each(data, function (index, item) {
         let sa_lending_person_name = item.sa_lending_person_name == null ? '' : item.sa_lending_person_name;
         let sa_lending_date = item.sa_lending_date == null ? '' : item.sa_lending_date;
@@ -323,8 +341,7 @@ function genDataButton(data) {
         let lending_status = item.status;
         let expired_return = new Date(item.returned_date);
         expired_return.setHours(0, 0, 0, 0);
-        //console.log(getTodayDate());
-        console.log(expired_return <= getTodayDate());
+        
 
         switch (lending_status) {
             case 0:     // Dispatch
@@ -332,7 +349,7 @@ function genDataButton(data) {
                 break;
             case 1:
                 lending_status = 'table-success';   // Lendout
-                if(expired_return <= getTodayDate()){
+                if (expired_return <= getTodayDate()) {
                     lending_status = 'table-warning'
                 }
                 break;
@@ -344,9 +361,34 @@ function genDataButton(data) {
                 break;
         }
 
-        
+        switch (statusFiltering) {
+            case 'returned':
+                if (lending_status !== 'table-secondary') {
+                    return;
+                }
+                break;
+            case 'lend_out':
+                if (lending_status !== 'table-success') {
+                    return;
+                }
+                break;
+            case 'out_of_time':
+                if (lending_status !== 'table-warning') {
+                    return;
+                }
+                break;
+            case 'waiting':
+                if (lending_status !== 'table-primary') {
+                    return;
+                }
+                break;
+            case 'banned':
+                if (lending_status !== 'table-danger') {
+                    return;
+                }
+                break;
+        }
 
-    
         let combine_data = {
             borrow_list_id: item.id,
             sa_lending_person_name: item.sa_lending_person_name,
@@ -363,7 +405,7 @@ function genDataButton(data) {
         };
 
 
-        lending_data_store[item.id + '_combine'] = combine_data;
+        fullLendingData[item.id + '_combine'] = combine_data;
         // Lending Property Info
 
 
@@ -402,7 +444,7 @@ function genDataButton(data) {
     });
 }
 
-function reloadPage() {
+function reloadPage(statusFiltering = 'no') {
     $('#borrow_list').empty();
     $.ajax({
         type: 'POST',
@@ -415,7 +457,7 @@ function reloadPage() {
             console.log(response);
             if (response.success) {
                 startFillingForm();
-                genDataButton(response.data);
+                genDataButton(response.data, statusFiltering);
             }
         },
         error: function (error) {

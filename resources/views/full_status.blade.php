@@ -29,8 +29,8 @@
                 </button>
             </div>
             <!--<div class="col-1">
-                                                <label for="place" class="col-form-label"></label>
-                                            </div>-->
+                                                        <label for="place" class="col-form-label"></label>
+                                                    </div>-->
             <div class="col-4">
                 <select class="form-control btn btn-secondary" id='place'>
                     <option disabled selected>快速查詢</option>
@@ -108,7 +108,15 @@
         </form>
     </div>
     <hr>
-
+    
+    <div> <!-- Filter -->
+    簡單過濾->
+        <button type="button" class="badge btn btn-primary" id="waiting">藍色：待借出</button>
+        <button type="button" class="badge btn btn-success" id="lend_out">綠色：外借中</button>
+        <button type="button" class="badge btn btn-warning" id="out_of_time">黃色：逾期未還</button>
+        <button type="button" class="badge btn btn-secondary" id="returned">灰色：已歸還</button>
+        <button type="button" class="badge btn btn-danger" id="banned">紅色：借用遭管理員拒絕</button>
+    </div>
     <div>
         <div class="modal fade" id="modal" tabindex="-1" aria-labelledby="modal_Label" aria-hidden="true">
             <div class="modal-dialog modal-xl">
@@ -329,17 +337,17 @@
         <thead>
             <tr>
                 <!--<th scope="col">流水號</th>
-                                                                    <th scope="col">借出承辦人</th>
-                                                                    <th scope="col">借出日期</th>
-                                                                    <th scope="col">押金收取</th>
-                                                                    <th scope="col">證件收取</th>
-                                                                    <th scope="col">證件押金盒編號</th>
+                                                                            <th scope="col">借出承辦人</th>
+                                                                            <th scope="col">借出日期</th>
+                                                                            <th scope="col">押金收取</th>
+                                                                            <th scope="col">證件收取</th>
+                                                                            <th scope="col">證件押金盒編號</th>
 
-                                                                    <th scope="col">歸還承辦人</th>
-                                                                    <th scope="col">歸還日期</th>
-                                                                    <th scope="col">押金退還</th>
-                                                                    <th scope="col">證件退還</th>
-                                                                    <th scope="col">備註</th>-->
+                                                                            <th scope="col">歸還承辦人</th>
+                                                                            <th scope="col">歸還日期</th>
+                                                                            <th scope="col">押金退還</th>
+                                                                            <th scope="col">證件退還</th>
+                                                                            <th scope="col">備註</th>-->
 
                 <th scope="col">填單時間</th>
                 <th scope="col">Email</th>
@@ -357,29 +365,29 @@
     </table>
 
     <!--
-    <div class="toast-container" >
-        <div class="toast" role="alert" aria-live="assertive" aria-atomic="true" id="toast1">
-            <div class="toast-header">
-                
-                <strong class="me-auto">Bootstrap</strong>
-                <small class="text-muted">just now</small>
-                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-            <div class="toast-body">
-                See? Just like this.
-            </div>
-        </div>
+            <div class="toast-container" >
+                <div class="toast" role="alert" aria-live="assertive" aria-atomic="true" id="toast1">
+                    <div class="toast-header">
 
-        <div class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="toast-header">
-                
-                <strong class="me-auto">Bootstrap</strong>
-                <small class="text-muted">2 seconds ago</small>
-                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-            <div class="toast-body">
-                Heads up, toasts will stack automatically
-            </div>
-        </div>
-    </div>-->
+                        <strong class="me-auto">Bootstrap</strong>
+                        <small class="text-muted">just now</small>
+                        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                    <div class="toast-body">
+                        See? Just like this.
+                    </div>
+                </div>
+
+                <div class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="toast-header">
+
+                        <strong class="me-auto">Bootstrap</strong>
+                        <small class="text-muted">2 seconds ago</small>
+                        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                    <div class="toast-body">
+                        Heads up, toasts will stack automatically
+                    </div>
+                </div>
+            </div>-->
 @endsection
