@@ -5,11 +5,17 @@
 目前已完成
 
 ## 版本
-- Ver 1.2.3
-- 最近Commit日期：2025/3/10
-- Commit Name：Small Hot Fixed Fixed Fixed
+- Ver 1.3
+- 最近Commit日期：2025/3/14
+- Commit Name：Issue 2 Fixed
 - 更新內容：
-    1. 修正表單篩選只會出現進德的Bug
+    1. 現在可以在借還清單看到每個借用狀態了，綠色代表借用中，灰色代表已經順利歸還，藍色代表未借出，紅色代表有人在破壞系統
+    2. 完成借用後頁面不會整個再重新整理，而是會刷新頁面內容
+    3. 修正過往借用紀錄不會出現的問題
+    4. 修正進階借用與快速查詢排序不同的問題
+    5. 修正未借出物品退還系統的狀態問題，未被借出的物品會被標註為退還系統，且會顯示在借用清單上
+    6. 過往的順利歸還紀錄會被標註為紅色，這是正常現象
+    7. 修正已經歸還的清單可以幫別人還器材的bug
 
 ## 開發人員資訊
 - Email:  ncuesa@gm.ncue.edu.tw
@@ -20,6 +26,13 @@
 - PHP 8
 
 # 歷史紀錄
+
+- Ver 1.2.3
+- 最近Commit日期：2025/3/10
+- Commit Name：Small Hot Fixed Fixed Fixed
+- 更新內容：
+    1. 修正表單篩選只會出現進德的Bug
+       
 - Ver 1.2.2
 - 最近Commit日期：2025/3/10
 - Commit Name：Small Hot Fixed Fixed 
@@ -42,7 +55,7 @@
     3. 修正網頁上說明文字
     5. 身分認證改變，預留串接SAO的欄位
     6. Bug Fixed
-    7. 
+       
 - Ver 1.0.6
 - 最近Commit日期：2025/1/22
 - Commit Name：Auth Hot Fixed

@@ -165,7 +165,7 @@ class PropertyController extends Controller
                 'property.second_name',
                 'property.format',
                 'property.remark',
-                'borrow_item.status',
+                'borrow_item.status',   //獲取借用狀態，非物品狀態
                 'property.img_url'
             )
             ->where('borrow_item.borrow_id', $borrow_id)

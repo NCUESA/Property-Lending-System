@@ -174,6 +174,8 @@ $(document).ready(function () {
             event.stopPropagation();
             return;
         }
+        console.log($('#borrow_date').val());
+        console.log($('#return_date').val());
         // Send Ajax
         $.ajax({
             type: 'POST',
