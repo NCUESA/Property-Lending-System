@@ -242,15 +242,15 @@ function genPropertyTable(data) {
                     <div class="card-body">
                         <input type="checkbox" class="form-check-input" id="${item.ssid}">
                         <label for="${item.ssid}">${item.name} ${item.second_name}</label>
-                        <p><span class="badge bg-primary">${item.class}</span></p>
+                        <p>
+                            <span class="badge bg-success" style="margin: 0.1rem">${item.belong_place || '未知'}</span>
+                            <span class="badge bg-secondary" style="margin: 0.1rem">${item.ssid}</span>
+                            <span class="badge bg-primary" style="margin: 0.1rem">${item.class}</span>
+                        </p>
                         <p class="card-text">
-                            財產編號：${item.ssid}<br>
                             規格：${item.format || '無'}<br>
                             ${item.remark ? `備註：${item.remark}` : ''}
                         </p>
-                    </div>
-                    <div class="card-footer">
-                        <small class="text-muted">存放地點：${item.belong_place || '未知'}</small>
                     </div>
                 </div>
             </div>`;
