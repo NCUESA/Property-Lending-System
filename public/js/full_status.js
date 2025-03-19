@@ -89,11 +89,50 @@ $(document).ready(function () {
         }
     });
 
-    $('#save-data').on('click', function () {
+    $('#save-data').on('click', function (e) {
         const borrowListId = $(this).data('borrowListId');
+        
+        // The logic of precheck
+        let isValid = function () {
+            let valid = true; // 預設為通過驗證
+
+            if (!$('#sa_manuplate').val()) {
+                $('#check_sa_manuplate').addClass('invalid-feedback').text('要填');
+                valid = false;
+            } else {
+                $('#check_sa_manuplate').text('').removeClass('invalid-feedback').addClass('valid-feedback');
+            }
+            /*
+            if (!$('#sa_lending_person_name').val()) {
+                $('#check_sa_lending_person_name').addClass('invalid-feedback').text('要填');
+                valid = false;
+            } else {
+                $('#check_sa_lending_person_name').text('').removeClass('invalid-feedback').addClass('valid-feedback');
+            }
+
+            if (!$('#sa_return_person_name').val()) {
+                $('#check_sa_return_person_name').addClass('invalid-feedback').text('要填');
+                valid = false;
+            } else {
+                $('#check_sa_return_person_name').text('').removeClass('invalid-feedback').addClass('valid-feedback');
+            }*/
+
+            return valid;
+        };
+
+        // 這裡要執行函式，判斷結果
+        $('#modal-form').addClass('was-validated');
+        if (!isValid()) {
+            
+            e.preventDefault()
+            e.stopPropagation()
+            return false;
+        }
+
+
 
         // 找到按鈕所在的 Modal，然後向上或向下找到相關的子區塊
-        const modal = $('#modal'); // 找到最近的 modal
+        const modal = $('#modal'); // 找到 modal
 
         // 提取出借用清單ssid
         let borrow = [];
@@ -191,21 +230,10 @@ $(document).ready(function () {
         $('#sa_remark').val();
     });
 
-    $('button#waiting').on('click', function () {
-        reloadPage('waiting');
+    $('input[name="btnradio"]').on('change', function () {
+        reloadPage($(this).val());
     });
-    $('button#lend_out').on('click', function () {
-        reloadPage('lend_out');
-    });
-    $('button#out_of_time').on('click', function () {
-        reloadPage('out_of_time');
-    });
-    $('button#returned').on('click', function () {
-        reloadPage('returned');
-    });
-    $('button#banned').on('click', function () {
-        reloadPage('banned');
-    });
+    
 });
 
 var fullLendingData = {};
@@ -341,7 +369,7 @@ function genDataButton(data, statusFiltering = 'no') {
         let lending_status = item.status;
         let expired_return = new Date(item.returned_date);
         expired_return.setHours(0, 0, 0, 0);
-        
+
 
         switch (lending_status) {
             case 0:     // Dispatch
