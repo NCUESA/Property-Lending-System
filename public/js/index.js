@@ -141,6 +141,9 @@ $(document).ready(function () {
         } else if (borrowDate < today) {
             $('#check_borrow_date').addClass('invalid-feedback').text('借用日期不能小於當前日期');
             isValid = false;
+        } else if (borrowDate > today) {
+            $('#check_borrow_date').addClass('invalid-feedback').text('不開放預借，借用日期不能大於當前日期');
+            isValid = false;
         } else {
             $('#check_borrow_date').removeClass('invalid-feedback').addClass('valid-feedback').text('');
         }
@@ -174,15 +177,15 @@ $(document).ready(function () {
             event.stopPropagation();
             return;
         }
-        console.log($('#borrow_date').val());
-        console.log($('#return_date').val());
+        
         // Send Ajax
+        
         $.ajax({
             type: 'POST',
             url: '/borrow/item/',
             data: {
                 understand: $('input[name="know_filling"]').val(),
-                borrow_place: $('input[name="borrow_place"]').val(),
+                borrow_place: $('input[name="borrow_place"]:checked').val(),
                 borrow_department: $('#department').val(),
                 borrow_person_name: $('#contact_person').val(),
                 phone: $('#phone').val(),
@@ -211,14 +214,14 @@ $(document).ready(function () {
     });
 
 });
-function refreshFilter(data){
+function refreshFilter(data) {
     $('#find').empty();
     $('#find').append(`<option value="">全部器材</option>`);
     let filter = new Set();
-    $.each(data, function (index, item){
+    $.each(data, function (index, item) {
         filter.add(item.name);
     });
-    console.log(filter);
+
     filter.forEach((type) => {
         let option = `<option value="${type}">${type}</option>`
         $('#find').append(option);
