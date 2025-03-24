@@ -64,6 +64,22 @@ $(document).ready(function () {
             return;
         }
 
+        let sending_items = [...selectedItems].flat();
+        console.log(sending_items);
+
+        data = {
+            understand: $('input[name="know_filling"]').val(),
+            borrow_place: $('input[name="borrow_place"]:checked').val(),
+            borrow_department: $('#department').val(),
+            borrow_person_name: $('#contact_person').val(),
+            phone: $('#phone').val(),
+            email: $('#email').val(),
+            borrow_date: $('#borrow_date').val(),
+            returned_date: $('#return_date').val(),
+            borrow_items: sending_items,
+            _token: $('meta[name="csrf-token"]').attr('content')  // CSRF Token
+        };
+        console.log(data);
         // Send Ajax
         $.ajax({
             type: 'POST',
@@ -77,7 +93,7 @@ $(document).ready(function () {
                 email: $('#email').val(),
                 borrow_date: $('#borrow_date').val(),
                 returned_date: $('#return_date').val(),
-                borrow_items: selectedItems,
+                borrow_items: sending_items,
                 _token: $('meta[name="csrf-token"]').attr('content')  // CSRF Token
             },
             success: function (response) {
@@ -275,16 +291,22 @@ function formValidationCheck() {
     const borrowDateValue = $('#borrow_date').val();
     const returnDateValue = $('#return_date').val();
 
+
+
     // 將日期字串轉為日期物件
     const borrowDate = borrowDateValue ? new Date(borrowDateValue) : null;
     const returnDate = returnDateValue ? new Date(returnDateValue) : null;
+
+     // 設定時間為午夜，確保只比較日期
+    borrowDate.setHours(0, 0, 0, 0);
+    returnDate.setHours(0, 0, 0, 0);
 
     // 檢查 borrow_date
     if (!borrowDateValue) {
         $('#check_borrow_date').addClass('invalid-feedback').text('要填');
         isValid = false;
     } else if (borrowDate < today) {
-        $('#check_borrow_date').addClass('invalid-feedback').text('借用日期不能小於當前日期');
+        $('#check_borrow_date').addClass('invalid-feedback').text('你應該不是時間旅人吧');
         isValid = false;
     } else if (borrowDate > today) {
         $('#check_borrow_date').addClass('invalid-feedback').text('不開放預借，借用日期不能大於當前日期');
