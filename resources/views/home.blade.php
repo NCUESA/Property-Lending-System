@@ -7,8 +7,8 @@
     <h2 class="name-cn logo-title">國立彰化師範大學學生會 器材借用表單</h2>
     <div class="alert alert-dark" role="alert">
         <h4 class="alert-heading">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-info-square"
-                viewBox="0 0 16 16">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                class="bi bi-info-square" viewBox="0 0 16 16">
                 <path
                     d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z" />
                 <path
@@ -77,8 +77,8 @@
             </div>
         </div>
         <div class="form-group">
-            <label for="department"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                    class="bi bi-bookmark-star" viewBox="0 0 16 16">
+            <label for="department"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                    fill="currentColor" class="bi bi-bookmark-star" viewBox="0 0 16 16">
                     <path
                         d="M7.84 4.1a.178.178 0 0 1 .32 0l.634 1.285a.18.18 0 0 0 .134.098l1.42.206c.145.021.204.2.098.303L9.42 6.993a.18.18 0 0 0-.051.158l.242 1.414a.178.178 0 0 1-.258.187l-1.27-.668a.18.18 0 0 0-.165 0l-1.27.668a.178.178 0 0 1-.257-.187l.242-1.414a.18.18 0 0 0-.05-.158l-1.03-1.001a.178.178 0 0 1 .098-.303l1.42-.206a.18.18 0 0 0 .134-.098z" />
                     <path
@@ -90,8 +90,8 @@
             </div>
         </div>
         <div class="form-group">
-            <label for="contact_person"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                    class="bi bi-person-badge" viewBox="0 0 16 16">
+            <label for="contact_person"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                    fill="currentColor" class="bi bi-person-badge" viewBox="0 0 16 16">
                     <path d="M6.5 2a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1zM11 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0" />
                     <path
                         d="M4.5 0A2.5 2.5 0 0 0 2 2.5V14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2.5A2.5 2.5 0 0 0 11.5 0zM3 2.5A1.5 1.5 0 0 1 4.5 1h7A1.5 1.5 0 0 1 13 2.5v10.795a4.2 4.2 0 0 0-.776-.492C11.392 12.387 10.063 12 8 12s-3.392.387-4.224.803a4.2 4.2 0 0 0-.776.492z" />
@@ -102,8 +102,8 @@
             </div>
         </div>
         <div class="form-group">
-            <label for="phone"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                    class="bi bi-telephone" viewBox="0 0 16 16">
+            <label for="phone"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                    fill="currentColor" class="bi bi-telephone" viewBox="0 0 16 16">
                     <path
                         d="M3.654 1.328a.678.678 0 0 0-1.015-.063L1.605 2.3c-.483.484-.661 1.169-.45 1.77a17.6 17.6 0 0 0 4.168 6.608 17.6 17.6 0 0 0 6.608 4.168c.601.211 1.286.033 1.77-.45l1.034-1.034a.678.678 0 0 0-.063-1.015l-2.307-1.794a.68.68 0 0 0-.58-.122l-2.19.547a1.75 1.75 0 0 1-1.657-.459L5.482 8.062a1.75 1.75 0 0 1-.46-1.657l.548-2.19a.68.68 0 0 0-.122-.58zM1.884.511a1.745 1.745 0 0 1 2.612.163L6.29 2.98c.329.423.445.974.315 1.494l-.547 2.19a.68.68 0 0 0 .178.643l2.457 2.457a.68.68 0 0 0 .644.178l2.189-.547a1.75 1.75 0 0 1 1.494.315l2.306 1.794c.829.645.905 1.87.163 2.611l-1.034 1.034c-.74.74-1.846 1.065-2.877.702a18.6 18.6 0 0 1-7.01-4.42 18.6 18.6 0 0 1-4.42-7.009c-.362-1.03-.037-2.137.703-2.877z" />
                 </svg>聯絡電話</label>
@@ -113,8 +113,8 @@
             </div>
         </div>
         <div class="form-group">
-            <label for="email"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                    class="bi bi-envelope" viewBox="0 0 16 16">
+            <label for="email"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                    fill="currentColor" class="bi bi-envelope" viewBox="0 0 16 16">
                     <path
                         d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z" />
                 </svg>電子郵件</label>
@@ -139,8 +139,8 @@
         </div>
         <hr>
         <div class="form-group" style='margin-bottom: 1rem;'>
-            <label for="find"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                    class="bi bi-search" viewBox="0 0 16 16">
+            <label for="find"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                    fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
                     <path
                         d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
                 </svg>查詢物品名稱</label>
@@ -154,32 +154,34 @@
         <div class="container">
             <div class="row row-cols-1 row-cols-md-4 g-3" id="borrowable_item">
                 <!-- <div class="col">
-                                            <div class="card">
-                                                <input type="hidden" value="">
-                                                <img src="https://dummyimage.com/1920x1920/cccccc/000000&text=No+Image" class="card-img-top rounded" alt="">
-                                                <div class="card-body">
-                                                    <input type="checkbox" value="" id="">動圈式麥克風
-                                                    <p><span class="badge bg-primary">什項用具</span></p>
-                                                    <p class="card-text">
-                                                        財產編號：J2000001<br>
-                                                        規格：Carol E dur-916S 珍珠白
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <div class="card-footer">
-                                                <small class="text-muted">存放地點：進德</small>
-                                            </div>
-                                        </div>                     
-                                    </div>-->
+                                                                <div class="card">
+                                                                    <input type="hidden" value="">
+                                                                    <img src="https://dummyimage.com/1920x1920/cccccc/000000&text=No+Image" class="card-img-top rounded" alt="">
+                                                                    <div class="card-body">
+                                                                        <input type="checkbox" value="" id="">動圈式麥克風
+                                                                        <p><span class="badge bg-primary">什項用具</span></p>
+                                                                        <p class="card-text">
+                                                                            財產編號：J2000001<br>
+                                                                            規格：Carol E dur-916S 珍珠白
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="card-footer">
+                                                                    <small class="text-muted">存放地點：進德</small>
+                                                                </div>
+                                                            </div>
+                                                        </div>-->
                 
+
+
             </div>
 
             <hr>
 
             <div class="d-grid gap-2">
                 <button type="button" id='send_form' class="btn btn-success">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-send"
-                        viewBox="0 0 16 16">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                        class="bi bi-send" viewBox="0 0 16 16">
                         <path
                             d="M15.854.146a.5.5 0 0 1 .11.54l-5.819 14.547a.75.75 0 0 1-1.329.124l-3.178-4.995L.643 7.184a.75.75 0 0 1 .124-1.33L15.314.037a.5.5 0 0 1 .54.11ZM6.636 10.07l2.761 4.338L14.13 2.576zm6.787-8.201L1.591 6.602l4.339 2.76z" />
                     </svg>送出借用</button>
