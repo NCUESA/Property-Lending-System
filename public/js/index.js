@@ -14,7 +14,7 @@ $(document).ready(function () {
                 _token: $('meta[name="csrf-token"]').attr('content')  // CSRF Token
             },
             success: function (response) {
-                console.log(response);
+                //console.log(response);
                 if (response.success) {
                     genPropertyTable(response.data);
                     refreshFilter(response.data);
@@ -64,22 +64,9 @@ $(document).ready(function () {
             return;
         }
 
+        // Transfer into Array
         let sending_items = [...selectedItems].flat();
-        console.log(sending_items);
 
-        data = {
-            understand: $('input[name="know_filling"]').val(),
-            borrow_place: $('input[name="borrow_place"]:checked').val(),
-            borrow_department: $('#department').val(),
-            borrow_person_name: $('#contact_person').val(),
-            phone: $('#phone').val(),
-            email: $('#email').val(),
-            borrow_date: $('#borrow_date').val(),
-            returned_date: $('#return_date').val(),
-            borrow_items: sending_items,
-            _token: $('meta[name="csrf-token"]').attr('content')  // CSRF Token
-        };
-        console.log(data);
         // Send Ajax
         $.ajax({
             type: 'POST',
@@ -97,7 +84,7 @@ $(document).ready(function () {
                 _token: $('meta[name="csrf-token"]').attr('content')  // CSRF Token
             },
             success: function (response) {
-                console.log(response);
+                //console.log(response);
                 if (response.success && response.error == '') {
                     alert('借用表單送出成功，請等待值勤人員提供器材');
                     location.reload();
