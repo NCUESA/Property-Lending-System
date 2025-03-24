@@ -5,6 +5,22 @@
 目前已完成
 
 ## 版本
+- Ver 1.3.1
+- 最近Commit日期：2025/3/24
+- Commit Name：Issue 6 Fixed and optimize mobile view
+- 更新內容：
+    1. 修正借用過濾的時候，切換到另一個分頁，原本選取的會不見
+    2. 優化移動端的借用頁面，調整Card的Size
+
+## 開發人員資訊
+- Email:  studentgovernment-general-it@gm.ncue.edu.tw
+- Dev:    Enderman
+
+# 套件版本
+- Laravel 11
+- PHP 8
+
+# 歷史紀錄
 - Ver 1.3
 - 最近Commit日期：2025/3/14
 - Commit Name：Issue 2 Fixed
@@ -16,17 +32,7 @@
     5. 修正未借出物品退還系統的狀態問題，未被借出的物品會被標註為退還系統，且會顯示在借用清單上
     6. 過往的順利歸還紀錄會被標註為紅色，這是正常現象
     7. 修正已經歸還的清單可以幫別人還器材的bug
-
-## 開發人員資訊
-- Email:  studentgovernment-general-it@gm.ncue.edu.tw
-- Dev:    Enderman
-
-# 套件版本
-- Laravel 11
-- PHP 8
-
-# 歷史紀錄
-
+       
 - Ver 1.2.3
 - 最近Commit日期：2025/3/10
 - Commit Name：Small Hot Fixed Fixed Fixed
