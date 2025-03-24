@@ -49,8 +49,43 @@ $(document).ready(function () {
 
     // Modal 開始借用
     $('#start-lending').on('click', function () {
-        $(':input').prop('disabled', false);
-        $('#borrow_id').prop('disabled', true);
+        $('#sa_manuplate').prop('disabled', false);
+        $('#scan_list').prop('disabled', false);
+        $('#sa_remark').prop('disabled', false);
+    });
+
+    $('#sa_manuplate').on('change', function () {
+        switch ($(this).val()) {
+            case "borrow":
+                // 借用區 取消 disabled
+                $('#sa_lending_person_name').prop('disabled', false);
+                $('#sa_lending_date').prop('disabled', false);
+                $('#sa_deposit_take').prop('disabled', false);
+                $('#sa_id_take').prop('disabled', false);
+                $('#sa_id_deposit_box_number').prop('disabled', false);
+
+                // 歸還區 disabled
+                $('#sa_return_person_name').prop('disabled', true);
+                $('#sa_returned_date').prop('disabled', true);
+                $('#sa_deposit_returned').prop('disabled', true);
+                $('#sa_id_returned').prop('disabled', true);
+
+                break;
+            case "return":
+                // 借用區 disabled
+                $('#sa_lending_person_name').prop('disabled', true);
+                $('#sa_lending_date').prop('disabled', true);
+                $('#sa_deposit_take').prop('disabled', true);
+                $('#sa_id_take').prop('disabled', true);
+                $('#sa_id_deposit_box_number').prop('disabled', true);
+
+                // 歸還區 取消 disabled
+                $('#sa_return_person_name').prop('disabled', false);
+                $('#sa_returned_date').prop('disabled', false);
+                $('#sa_deposit_returned').prop('disabled', false);
+                $('#sa_id_returned').prop('disabled', false);
+                break;
+        }
     });
 
     $('#scan_list').on('input', function () {
@@ -89,11 +124,50 @@ $(document).ready(function () {
         }
     });
 
-    $('#save-data').on('click', function () {
+    $('#save-data').on('click', function (e) {
         const borrowListId = $(this).data('borrowListId');
 
+        // The logic of precheck
+        let isValid = function () {
+            let valid = true; // 預設為通過驗證
+
+            if (!$('#sa_manuplate').val()) {
+                $('#check_sa_manuplate').addClass('invalid-feedback').text('要填');
+                valid = false;
+            } else {
+                $('#check_sa_manuplate').text('').removeClass('invalid-feedback').addClass('valid-feedback');
+            }
+            /*
+            if (!$('#sa_lending_person_name').val()) {
+                $('#check_sa_lending_person_name').addClass('invalid-feedback').text('要填');
+                valid = false;
+            } else {
+                $('#check_sa_lending_person_name').text('').removeClass('invalid-feedback').addClass('valid-feedback');
+            }
+
+            if (!$('#sa_return_person_name').val()) {
+                $('#check_sa_return_person_name').addClass('invalid-feedback').text('要填');
+                valid = false;
+            } else {
+                $('#check_sa_return_person_name').text('').removeClass('invalid-feedback').addClass('valid-feedback');
+            }*/
+
+            return valid;
+        };
+
+        // 這裡要執行函式，判斷結果
+        $('#modal-form').addClass('was-validated');
+        if (!isValid()) {
+
+            e.preventDefault()
+            e.stopPropagation()
+            return false;
+        }
+
+
+
         // 找到按鈕所在的 Modal，然後向上或向下找到相關的子區塊
-        const modal = $('#modal'); // 找到最近的 modal
+        const modal = $('#modal'); // 找到 modal
 
         // 提取出借用清單ssid
         let borrow = [];
@@ -189,23 +263,26 @@ $(document).ready(function () {
         $('#sa_deposit_returned').val();
         $('#sa_id_returned').val();
         $('#sa_remark').val();
+
+        // 全部關閉
+        $('#sa_lending_person_name').prop('disabled', true);
+        $('#sa_lending_date').prop('disabled', true);
+        $('#sa_deposit_take').prop('disabled', true);
+        $('#sa_id_take').prop('disabled', true);
+        $('#sa_id_deposit_box_number').prop('disabled', true);
+        $('#sa_return_person_name').prop('disabled', true);
+        $('#sa_returned_date').prop('disabled', true);
+        $('#sa_deposit_returned').prop('disabled', true);
+        $('#sa_id_returned').prop('disabled', true);
+        $('#sa_manuplate').prop('disabled', true);
+        $('#scan_list').prop('disabled', true);
+        $('#sa_remark').prop('disabled', true);
     });
 
-    $('button#waiting').on('click', function () {
-        reloadPage('waiting');
+    $('input[name="btnradio"]').on('change', function () {
+        reloadPage($(this).val());
     });
-    $('button#lend_out').on('click', function () {
-        reloadPage('lend_out');
-    });
-    $('button#out_of_time').on('click', function () {
-        reloadPage('out_of_time');
-    });
-    $('button#returned').on('click', function () {
-        reloadPage('returned');
-    });
-    $('button#banned').on('click', function () {
-        reloadPage('banned');
-    });
+
 });
 
 var fullLendingData = {};
@@ -341,7 +418,7 @@ function genDataButton(data, statusFiltering = 'no') {
         let lending_status = item.status;
         let expired_return = new Date(item.returned_date);
         expired_return.setHours(0, 0, 0, 0);
-        
+
 
         switch (lending_status) {
             case 0:     // Dispatch
@@ -412,7 +489,11 @@ function genDataButton(data, statusFiltering = 'no') {
         //let bg_color = item.borrow_place == '進德' ? 'table-info' : 'table-secondary';
 
         // Generate modal and button
-        let trig_btn = `<button type="button" class="btn btn-info btn-bring-data" data-bs-toggle="modal" data-bs-target="#modal" data-combine="${item.id}_combine">借用資訊</button>`;
+        let trig_btn = `<button type="button" class="btn btn-info btn-bring-data" data-bs-toggle="modal" data-bs-target="#modal" data-combine="${item.id}_combine">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard-data-fill" viewBox="0 0 16 16">
+            <path d="M6.5 0A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0zm3 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5z"/>
+            <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1A2.5 2.5 0 0 1 9.5 5h-3A2.5 2.5 0 0 1 4 2.5zM10 8a1 1 0 1 1 2 0v5a1 1 0 1 1-2 0zm-6 4a1 1 0 1 1 2 0v1a1 1 0 1 1-2 0zm4-3a1 1 0 0 1 1 1v3a1 1 0 1 1-2 0v-3a1 1 0 0 1 1-1"/>
+        </svg>借用資訊</button>`;
 
         // Generate table row
         let row = `

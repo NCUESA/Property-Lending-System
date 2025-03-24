@@ -28,15 +28,12 @@
                     進階查詢
                 </button>
             </div>
-            <!--<div class="col-1">
-                                                        <label for="place" class="col-form-label"></label>
-                                                    </div>-->
+
             <div class="col-4">
                 <select class="form-control btn btn-secondary" id='place'>
                     <option disabled selected>快速查詢</option>
                     <option value="jinde">進德</option>
                     <option value="baosan">寶山</option>
-                    <!--<option value="all">全部地點</option>-->
                 </select>
             </div>
         </div>
@@ -45,14 +42,15 @@
     <div class="collapse" id="lendingInfo">
         <div class="alert alert-success" role="alert">
             <h4 class="alert-heading">注意事項</h4>
-            <ul>
+            <ol>
                 <li>借用器材請用條碼機掃描器材上方條碼</li>
                 <li>掃描時請切換成<strong>英文輸入法</strong></li>
                 <li>如果逼了沒有反應，請點一下輸入框</li>
-                <li><strong>請一定要選擇是借出還是歸還</strong></li>
-                <li><strong>請一定要選擇是借出還是歸還</strong></li>
-                <li><strong>請一定要選擇是借出還是歸還</strong></li>
-            </ul>
+                <li>操作說明可以參考<a
+                        href="https://hackmd.io/@NCUESA/HkS_fHB2kl#%E5%A6%82%E6%9E%9C%E4%BD%A0%E5%9C%A8%E5%80%BC%E5%8B%A4">這裡有一個使用手冊</a>
+                </li>
+                <li>請不要去改系統自己帶入的資料，不然你會被管理員Bonk</li>
+            </ol>
         </div>
     </div>
     <div class="collapse" id="searchInfo">
@@ -87,6 +85,29 @@
                 <div class="col-sm-2">
                     <input type="date" class="form-control" id="search_prepare_return" value="">
                 </div>
+                <label for="" class="col-sm-1 col-form-label">篩選借用狀態</label>
+                <div class="col-sm-5">
+                    <div class="btn-group" role="group" aria-label="">
+                        <input type="radio" class="btn-check" id="all" name="btnradio" autocomplete="off" value="">
+                        <label class="btn btn-outline-info" for="all">全部</label>
+                        <input type="radio" class="btn-check" id="waiting" name="btnradio" autocomplete="off"
+                            value="waiting">
+                        <label class="btn btn-outline-primary" for="waiting">待借出</label>
+                        <input type="radio" class="btn-check" id="lend_out" name="btnradio" autocomplete="off"
+                            value="lend_out">
+                        <label class="btn btn-outline-success" for="lend_out">外借中</label>
+                        <input type="radio" class="btn-check" id="out_of_time" name="btnradio" autocomplete="off"
+                            value="out_of_time">
+                        <label class="btn btn-outline-warning" for="out_of_time">逾期未還</label>
+                        <input type="radio" class="btn-check" id="returned" name="btnradio" autocomplete="off"
+                            value="returned">
+                        <label class="btn btn-outline-secondary" for="returned">已歸還</label>
+                        <input type="radio" class="btn-check" id="banned" name="btnradio" autocomplete="off" value="banned">
+                        <label class="btn btn-outline-danger" for="banned">借用遭管理員拒絕</label>
+                    </div>
+                </div>
+
+
                 <div class="col-sm-3 d-grid gap-2">
                     <button type="reset" class="btn btn-danger btn-block" id="reset_search_query">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
@@ -108,15 +129,10 @@
         </form>
     </div>
     <hr>
-    
-    <div> <!-- Filter -->
-    簡單過濾->
-        <button type="button" class="badge btn btn-primary" id="waiting">藍色：待借出</button>
-        <button type="button" class="badge btn btn-success" id="lend_out">綠色：外借中</button>
-        <button type="button" class="badge btn btn-warning" id="out_of_time">黃色：逾期未還</button>
-        <button type="button" class="badge btn btn-secondary" id="returned">灰色：已歸還</button>
-        <button type="button" class="badge btn btn-danger" id="banned">紅色：借用遭管理員拒絕</button>
-    </div>
+
+
+
+
     <div>
         <div class="modal fade" id="modal" tabindex="-1" aria-labelledby="modal_Label" aria-hidden="true">
             <div class="modal-dialog modal-xl">
@@ -147,7 +163,7 @@
                         </div>
                         <hr>
                         <div class="container">
-                            <form>
+                            <form class='needs-validation' id='modal-form'>
                                 <div class="row" style="padding-top: 1rem;">
                                     <h4 style="font-weight: bold;">條碼識別區</h4>
                                     <div class="row">
@@ -159,11 +175,11 @@
                                                 <option value="borrow">借用</option>
                                                 <option value="return">歸還</option>
                                             </select>
-                                            <div class="invalid-feedback">
-                                                必填
+                                            <div class="valid-feedback" id="check_sa_manuplate">
+
                                             </div>
                                         </div>
-                                        <div class="col-md-3">
+                                        <div class="col-md-3" hidden>
                                             <label class="form-label">借用編號(系統自動帶入)</label>
                                             <input type="input" class="form-control" placeholder="此處請勿填寫" id="borrow_id"
                                                 value="" disabled>
@@ -175,29 +191,29 @@
                                             <label class="form-label">掃描條碼ID</label>
                                             <input type="input" class="form-control scan_list" placeholder="此處請勿填寫"
                                                 id="scan_list" maxlength="8" disabled>
-                                            <div class="invalid-feedback">
-                                                必填
-                                            </div>
                                         </div>
                                     </div>
                                     <hr>
                                     <h4 style="font-weight: bold;">借出填寫區</h4>
-                                    <div class="row">
+                                    <div class="row" id='lending_out'>
                                         <div class="col-md-3">
                                             <label class="form-label">借出承辦人</label>
                                             <select class="form-select form-select mb-3" id="sa_lending_person_name"
                                                 required disabled>
                                                 <option selected disabled value="">請選擇承辦人</option>
                                             </select>
-                                            <div class="invalid-feedback">
-                                                必填
+                                            <div class="valid-feedback" id="check_sa_lending_person_name">
                                             </div>
                                         </div>
                                         <div class="col-md-3">
                                             <label class="form-label">借出經辦日期</label>
                                             <input type="date" class="form-control" placeholder="" id="sa_lending_date"
-                                                required disabled value="">
+                                                disabled value="">
+                                            <div class="invalid-feedback">
+                                                必填
+                                            </div>
                                         </div>
+
                                         <div class="col-md-2">
                                             <label class="form-label">押金收取</label>
                                             <select class="form-select form-select mb-3" id="sa_deposit_take" required
@@ -261,7 +277,7 @@
 
                                     <hr>
                                     <h4 style="font-weight: bold;">歸還填寫區</h4>
-                                    <div class="row">
+                                    <div class="row" id='returned'>
                                         <div class="col-md-3">
                                             <label class="form-label">歸還承辦人</label>
                                             <select class="form-select form-select mb-3" id="sa_return_person_name" required
@@ -269,8 +285,8 @@
                                                 <option selected disabled value="">請選擇承辦人</option>
                                                 <option value=""></option>
                                             </select>
-                                            <div class="invalid-feedback">
-                                                必填
+                                            <div class="valid-feedback" id="checksa_return_person_name">
+
                                             </div>
                                         </div>
                                         <div class="col-md-3">
@@ -310,7 +326,7 @@
                                             <label class="form-label">備註</label>
                                             <div class="form-floating">
                                                 <textarea disabled class="form-control" placeholder="請在這邊詳細填寫"
-                                                    id="sa_remark" style="height: 150px" required></textarea>
+                                                    id="sa_remark" style="height: 150px"></textarea>
                                                 <div class="invalid-feedback">
                                                     必填
                                                 </div>
@@ -322,10 +338,24 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-primary" id="start-lending">開始填寫</button>
-                        <button type="button" class="btn btn-success" id="save-data">填寫完成(儲存資料)</button>
-                        <button type="button" class="btn btn-danger" id="modal-close"
-                            data-bs-dismiss="modal">關閉視窗(不儲存關閉)</button>
+                        <button type="button" class="btn btn-primary" id="start-lending"><svg
+                                xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                class="bi bi-pencil" viewBox="0 0 16 16">
+                                <path
+                                    d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325" />
+                            </svg>開始填寫</button>
+                        <button type="button" class="btn btn-success" id="save-data"><svg xmlns="http://www.w3.org/2000/svg"
+                                width="16" height="16" fill="currentColor" class="bi bi-floppy" viewBox="0 0 16 16">
+                                <path d="M11 2H9v3h2z" />
+                                <path
+                                    d="M1.5 0h11.586a1.5 1.5 0 0 1 1.06.44l1.415 1.414A1.5 1.5 0 0 1 16 2.914V14.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 14.5v-13A1.5 1.5 0 0 1 1.5 0M1 1.5v13a.5.5 0 0 0 .5.5H2v-4.5A1.5 1.5 0 0 1 3.5 9h9a1.5 1.5 0 0 1 1.5 1.5V15h.5a.5.5 0 0 0 .5-.5V2.914a.5.5 0 0 0-.146-.353l-1.415-1.415A.5.5 0 0 0 13.086 1H13v4.5A1.5 1.5 0 0 1 11.5 7h-7A1.5 1.5 0 0 1 3 5.5V1H1.5a.5.5 0 0 0-.5.5m3 4a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 .5-.5V1H4zM3 15h10v-4.5a.5.5 0 0 0-.5-.5h-9a.5.5 0 0 0-.5.5z" />
+                            </svg>儲存資料</button>
+                        <button type="button" class="btn btn-danger" id="modal-close" data-bs-dismiss="modal"><svg
+                                xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                class="bi bi-x-square-fill" viewBox="0 0 16 16">
+                                <path
+                                    d="M2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm3.354 4.646L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 1 1 .708-.708" />
+                            </svg>關閉視窗(不儲存)</button>
                     </div>
                 </div>
             </div>
@@ -337,17 +367,17 @@
         <thead>
             <tr>
                 <!--<th scope="col">流水號</th>
-                                                                            <th scope="col">借出承辦人</th>
-                                                                            <th scope="col">借出日期</th>
-                                                                            <th scope="col">押金收取</th>
-                                                                            <th scope="col">證件收取</th>
-                                                                            <th scope="col">證件押金盒編號</th>
+                                                                                                                    <th scope="col">借出承辦人</th>
+                                                                                                                    <th scope="col">借出日期</th>
+                                                                                                                    <th scope="col">押金收取</th>
+                                                                                                                    <th scope="col">證件收取</th>
+                                                                                                                    <th scope="col">證件押金盒編號</th>
 
-                                                                            <th scope="col">歸還承辦人</th>
-                                                                            <th scope="col">歸還日期</th>
-                                                                            <th scope="col">押金退還</th>
-                                                                            <th scope="col">證件退還</th>
-                                                                            <th scope="col">備註</th>-->
+                                                                                                                    <th scope="col">歸還承辦人</th>
+                                                                                                                    <th scope="col">歸還日期</th>
+                                                                                                                    <th scope="col">押金退還</th>
+                                                                                                                    <th scope="col">證件退還</th>
+                                                                                                                    <th scope="col">備註</th>-->
 
                 <th scope="col">填單時間</th>
                 <th scope="col">Email</th>
@@ -365,29 +395,29 @@
     </table>
 
     <!--
-            <div class="toast-container" >
-                <div class="toast" role="alert" aria-live="assertive" aria-atomic="true" id="toast1">
-                    <div class="toast-header">
+                                                    <div class="toast-container" >
+                                                        <div class="toast" role="alert" aria-live="assertive" aria-atomic="true" id="toast1">
+                                                            <div class="toast-header">
 
-                        <strong class="me-auto">Bootstrap</strong>
-                        <small class="text-muted">just now</small>
-                        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-                    </div>
-                    <div class="toast-body">
-                        See? Just like this.
-                    </div>
-                </div>
+                                                                <strong class="me-auto">Bootstrap</strong>
+                                                                <small class="text-muted">just now</small>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                                                            </div>
+                                                            <div class="toast-body">
+                                                                See? Just like this.
+                                                            </div>
+                                                        </div>
 
-                <div class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-                    <div class="toast-header">
+                                                        <div class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+                                                            <div class="toast-header">
 
-                        <strong class="me-auto">Bootstrap</strong>
-                        <small class="text-muted">2 seconds ago</small>
-                        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-                    </div>
-                    <div class="toast-body">
-                        Heads up, toasts will stack automatically
-                    </div>
-                </div>
-            </div>-->
+                                                                <strong class="me-auto">Bootstrap</strong>
+                                                                <small class="text-muted">2 seconds ago</small>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                                                            </div>
+                                                            <div class="toast-body">
+                                                                Heads up, toasts will stack automatically
+                                                            </div>
+                                                        </div>
+                                                    </div>-->
 @endsection
