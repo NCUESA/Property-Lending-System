@@ -105,7 +105,7 @@ $(document).ready(function () {
 
             });
 
-            console.log(itemArray);
+            //console.log(itemArray);
 
             // 檢查 input 的值是否存在於 itemArray 中
             if (itemArray.includes(inputVal)) {
@@ -343,8 +343,8 @@ function getPropertyWithID(id, callback) {
 }
 
 function bringDataIntoModal(combine_data, lending_property) {
-    console.log(combine_data);
-    console.log(lending_property);
+    //console.log(combine_data);
+    //console.log(lending_property);
 
     $('#borrow_list').empty();
     let formattedInfo = '';
@@ -535,7 +535,7 @@ function reloadPage(statusFiltering = 'no') {
             _token: $('meta[name="csrf-token"]').attr('content')  // CSRF Token
         },
         success: function (response) {
-            console.log(response);
+            //console.log(response);
             if (response.success) {
                 startFillingForm();
                 genDataButton(response.data, statusFiltering);

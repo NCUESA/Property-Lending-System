@@ -34,7 +34,7 @@ function getStatusData() {
             _token: $('meta[name="csrf-token"]').attr('content')  // CSRF Token
         },
         success: function (response) {
-            console.log(response);
+            //console.log(response);
             if (response.success) {
                 genTable(response.data);
             }

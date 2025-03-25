@@ -27,8 +27,9 @@ $(document).ready(function () {
     });
     $('#find').on('change', function () {
         // Adding-Selected-Items       
-        collectBorrowItems()
-            .forEach(num => selectedItems.add(num));
+        let arr = collectBorrowItems();
+        
+        arr.forEach(num => selectedItems.add(num));
 
         // Filetering-Search
         var condition = $(this).val();
@@ -66,7 +67,7 @@ $(document).ready(function () {
 
         // Transfer into Array
         let sending_items = [...selectedItems].flat();
-
+        
         // Send Ajax
         $.ajax({
             type: 'POST',
@@ -314,7 +315,9 @@ function formValidationCheck() {
     }
 
 
-    selectedItems.add(collectBorrowItems());
+    let arr = collectBorrowItems();
+    arr.forEach(num => selectedItems.add(num));
+
     if (selectedItems.length <= 0) {
         //$('#check_borrow_item').addClass('invalid-feedback');
         $('#check_borrow_item').show();
