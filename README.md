@@ -4,23 +4,38 @@
 
 目前已完成
 
+# 套件版本
+- 前端框架：Bootstrap 5.1.3 (勉強算是框架吧)
+- 後端框架：Laravel 11
+- 資料庫：MySQL
+- 環境部屬：Dev-Xampp v3.3.0; Server-Nginx
+
 ## 版本
+- Ver 1.3.3
+- 最近Commit日期：2025/3/26
+- Commit Name：issue 5 hot fixed.3
+- 更新內容：
+    1. 修正借用的東西會變成一坨重複的器材
+
+## 開發人員資訊
+- Email:  studentgovernment-general-it@gm.ncue.edu.tw
+- Dev:    Enderman
+
+# 歷史紀錄
+- Ver 1.3.2
+- 最近Commit日期：2025/3/25
+- Commit Name：issue 5 hot fixed.2
+- 更新內容：
+    1. 修正日期顯示超過此天錯誤無法借用的問題
+    2. 修正系統統計借用數量為0的問題
+
 - Ver 1.3.1
 - 最近Commit日期：2025/3/24
 - Commit Name：Issue 6 Fixed and optimize mobile view
 - 更新內容：
     1. 修正借用過濾的時候，切換到另一個分頁，原本選取的會不見
     2. 優化移動端的借用頁面，調整Card的Size
-
-## 開發人員資訊
-- Email:  studentgovernment-general-it@gm.ncue.edu.tw
-- Dev:    Enderman
-
-# 套件版本
-- Laravel 11
-- PHP 8
-
-# 歷史紀錄
+       
 - Ver 1.3
 - 最近Commit日期：2025/3/14
 - Commit Name：Issue 2 Fixed
