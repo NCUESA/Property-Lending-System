@@ -8,6 +8,7 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link href="{{ asset('css/index.css') }}" rel="stylesheet">
     <link rel="shortcut icon" href="{{ asset('/image/favicon.ico') }}">
     <link rel="bookmark" href="{{ asset('/image/favicon.ico') }}">
@@ -24,29 +25,33 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <ul class="navbar-nav nav-tabs me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="./">借用表單</a>
+                        <a class="nav-link {{ Request::is('/') ? 'active' : '' }}" href="./">借用表單</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="./status">器材借用狀態</a>
+                        <a class="nav-link {{ Request::is('status') ? 'active' : '' }}" href="./status">器材借用狀態</a>
                     </li>
                     @if ($hasAccess)
                         <li class="nav-item">
-                            <a class="nav-link active" aria-current="page" href="./full_status">器材借用狀態(管理員)</a>
+                            <a class="nav-link {{ Request::is('full_status') ? 'active' : '' }}"
+                                href="./full_status">器材借用狀態(管理員)</a>
                         </li>
                     @endif
                     @if ($hasAdminAccess)
                         <li class="nav-item">
-                            <a class="nav-link active" aria-current="page" href="./maintain">器材清單維護(管理員)</a>
+                            <a class="nav-link {{ Request::is('maintain') ? 'active' : '' }}"
+                                href="./maintain">器材清單維護(管理員)</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link active" aria-current="page" href="./responsible">人員權限控管(管理員)</a>
+                            <a class="nav-link {{ Request::is('responsible') ? 'active' : '' }}"
+                                href="./responsible">人員權限控管(管理員)</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link active" aria-current="page" href="./ip">IP通過權限設定(管理員)</a>
+                            <a class="nav-link {{ Request::is('ip') ? 'active' : '' }}" href="./ip">IP通過權限設定(管理員)</a>
                         </li>
                     @endif
+
 
 
                     <!--
@@ -86,14 +91,37 @@
         @yield('content')
     </div>
 
+    <div class="container">
+        <footer class="d-flex flex-wrap justify-content-between align-items-center py-3 my-4 border-top">
+            <div class="col-md-4 d-flex align-items-center">
+
+                <a href="https://ncuesa.ncue.edu.tw/" class="mb-3 me-2 mb-md-0 text-muted text-decoration-none lh-1">
+                    <img src="./ncuesalogo.png" alt="NCUESA_IMG" class="center"
+                        style="width: auto; height: 32px; display: block; margin: 0 auto;">
+                </a>
+                <span class="text-muted">© 2025 NCUE SA.</span>
+            </div>
+
+            <ul class="nav col-md-4 justify-content-end list-unstyled d-flex">
+
+                <li class="ms-3"><a class="text-muted" href="https://www.instagram.com/ncuesa"><i
+                            class="bi bi-instagram"></i></a>
+                </li>
+                <li class="ms-3"><a class="text-muted" href="https://www.facebook.com/NCUESA">
+                        <i class="bi bi-facebook"></i></a>
+                </li>
+            </ul>
+        </footer>
+    </div>
+
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"
         integrity="sha384-7+zCNj/IqJ95wo16oMtfsKbZ9ccEh31eOz1HGyDuCQ6wgnyJNSYdrPa03rtR1zdB" crossorigin="anonymous">
-    </script>
+        </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"
         integrity="sha384-QJHtvGhmr9XOIpI6YVutG+2QOK9T+ZnN4kzFN1RtK3zEFEIsxhlmWl5/YESvpZ13" crossorigin="anonymous">
-    </script>
+        </script>
     <script src="{{ asset('js/' . $js_name . '.js') }}"></script>
 </body>
 
