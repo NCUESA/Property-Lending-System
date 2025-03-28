@@ -75,7 +75,7 @@ class PropertyController extends Controller
             $query->where('name', 'like', "%$filter%");
         }
 
-        $data = $query->distinct()->get(); // 加入 distinct 避免重複
+        $data = $query->distinct()->orderBy('ssid')->get(); // 加入 distinct 避免重複
 
         return response()->json(['success' => true, 'data' => $data]);
     }

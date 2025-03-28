@@ -18,13 +18,13 @@ $(document).ready(function () {
             console.log(error);
         }
     });*/
-    $('#lending_status').on('change', getStatusData);
-    $('#location').on('change', getStatusData);
+    $('input[name="location"]').on('change', getStatusData);
+    $('input[name="lending_status"]').on('change', getStatusData);
 });
 
 function getStatusData() {
-    var placeValue = $('#location').val();
-    var lendingValue = $('#lending_status').val();
+    var placeValue = $('input[name="location"]:checked').val();
+    var lendingValue =  $('input[name="lending_status"]:checked').val();
     $.ajax({
         type: 'POST',
         url: '/show-item-status',
