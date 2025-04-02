@@ -1,7 +1,7 @@
 @extends('layouts.template')
 
 @section('content')
-    <h2>器材借用狀況</h2>
+    <h2>器材借用總表</h2>
     <hr>
 
     <form>
@@ -129,12 +129,12 @@
                         <div>
                             <table class="table">
                                 <thead>
-                                    <th scope="col">SSID</th>
-                                    <th scope="col">財產名稱</th>
+                                    <th scope="col">EID</th>
+                                    <th scope="col">名稱</th>
                                     <th scope="col">第二名稱</th>
-                                    <th scope="col">財產類別</th>
+                                    <th scope="col">類別</th>
                                     <th scope="col">規格</th>
-                                    <th scope="col">備註</th>
+                                    <th scope="col">器材備註</th>
                                     <th scope="col">當前狀態</th>
                                     <th scope="col">財產圖片</th>
                                 </thead>
@@ -405,7 +405,7 @@
             <span class="visually-hidden">Loading...</span>
         </div>
     </div>
-    <table class="table">
+    <table class="table table-bordered" id='lending_table' hidden>
         <thead>
             <tr>
                 <th scope="col">填單時間</th>

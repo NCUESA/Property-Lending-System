@@ -1,20 +1,3 @@
-class BorrowInfo {
-    constructor(bindData) {
-        this.borrowlistID = bindData.borrowlistID
-        this.email = bindData.email;
-        this.filling_time = bindData.filling_time;
-        this.borrow_department = bindData.borrow_department;
-        this.borrow_date = bindData.borrow_date;
-        this.return_date = bindData.return_date;
-        this.borrow_person_name = bindData.borrow_person_name;
-        this.phone = bindData.phone;
-    }
-
-    static getDetailBorrowList(){
-        return;
-    }
-}
-
 $(document).ready(function () {
 
     // 地點查詢
@@ -38,8 +21,7 @@ $(document).ready(function () {
             success: function (response) {
                 console.log(response);
                 if (response.success) {
-                    startFillingForm();
-                    genDataButton(response.data);
+                    genDetailButton(response.data);
                     spinnerLoadingAction('hide');
                 }
             },
@@ -49,15 +31,16 @@ $(document).ready(function () {
         });
     });
 
+    // 搜尋重設
     $('#reset_search_query').click(reloadPage);
 
 
     // 將資料帶入Modal邏輯
     $(document).on('click', '.btn-bring-data', function () {
-        let combine_data = fullLendingData[$(this).data('combine')];
-        let borrowListId = combine_data['borrow_list_id'];
+        let borrowListId = $(this).data('combine').split('_')[0];
         getPropertyWithID(borrowListId, function (lending_property) {
-            bringDataIntoModal(combine_data, lending_property);
+            bringLendingDataIntoModal(lending_property);
+            bringSADataIntoModal(borrowListId);
         });
     });
 
@@ -66,7 +49,7 @@ $(document).ready(function () {
         $('#sa_manuplate').prop('disabled', false);
         $('#scan_list').prop('disabled', false);
         $('#sa_remark').prop('disabled', false);
-        $('#save-data').prop('disabled',false);
+        $('#save-data').prop('disabled', false);
     });
 
     $('#sa_manuplate').on('change', function () {
@@ -279,7 +262,7 @@ $(document).ready(function () {
         $('#sa_deposit_returned').val();
         $('#sa_id_returned').val();
         $('#sa_remark').val();
-        
+
 
         // 全部關閉
         $('#sa_lending_person_name').prop('disabled', true);
@@ -294,7 +277,7 @@ $(document).ready(function () {
         $('#sa_manuplate').prop('disabled', true);
         $('#scan_list').prop('disabled', true);
         $('#sa_remark').prop('disabled', true);
-        $('#save-data').prop('disabled',true);
+        $('#save-data').prop('disabled', true);
     });
 
     $('input[name="btnradio"]').on('change', function () {
@@ -303,46 +286,9 @@ $(document).ready(function () {
 
 });
 
-var fullLendingData = {};
-// 完成勿動
-function startFillingForm() {
-    // 發送 AJAX 
-    $.ajax({
-        url: '/show-user-name', // 替換為你的 API URL
-        type: 'POST',
-        data: {
-            _token: $('meta[name="csrf-token"]').attr('content')  // CSRF Token
-        },
-        success: function (response) {
-            // 假設 response 返回新的表格資料，根據需求去更新表格
-            //console.log(response.data);
-            updateFormWithPersonList(response.data);
-        },
-        error: function (error) {
-            console.log('Error:', error);
-        }
-    });
-}
-
-// 完成勿動
-function updateFormWithPersonList(personList) {
-    const lending_person_list = $("#sa_lending_person_name");
-    const return_person_list = $("#sa_return_person_name");
-    lending_person_list.empty(); // 清空舊選項
-    return_person_list.empty();
-
-    lending_person_list.append(`<option selected disabled value="">請選擇承辦人</option>`);
-    return_person_list.append(`<option selected disabled value="">請選擇承辦人</option>`);
-    // 動態添加新選項
-    $.each(personList, function (index, person) {
-        lending_person_list.append(`<option value="${person.name}">${person.name}</option>`);
-        return_person_list.append(`<option value="${person.name}">${person.name}</option>`);
-    });
-}
-
 function getPropertyWithID(id, callback) {
     $.ajax({
-        url: '/get-property-with-borrow-id', // 替換為你的 API URL
+        url: '/property/info/getWithBorrowID', // 替換為你的 API URL
         type: 'POST',
         data: {
             borrow_id: id,
@@ -360,7 +306,8 @@ function getPropertyWithID(id, callback) {
     });
 }
 
-function bringDataIntoModal(combine_data, lending_property) {
+// Modal資料帶入
+function bringLendingDataIntoModal(lending_property) {
     //console.log(combine_data);
     //console.log(lending_property);
 
@@ -388,10 +335,10 @@ function bringDataIntoModal(combine_data, lending_property) {
             `<tr class="${unable_borrow}">
                 <td>${item.ssid}</td>
                 <td>${item.name}</td>
-                <td>${item.second_name}</td>
+                <td>${item.second_name == null ? '' : item.second_name}</td>
                 <td>${item.class}</td>
                 <td>${item.format}</td>
-                <td>${item.remark}</td>
+                <td>${item.remark == null ? '' : item.remark}</td>
                 <td>${item.status}</td>
                 <td><img src="./storage/propertyImgs/${item.img_url}" style="width: 100px; height: auto;"></td>
             </tr>`;
@@ -399,24 +346,79 @@ function bringDataIntoModal(combine_data, lending_property) {
         formattedInfo += col;
     });
     $('#borrow_list').append(formattedInfo);
-
-    $('#borrow_id').val(combine_data['borrow_list_id']);
-    $('#sa_lending_person_name').val(combine_data['sa_lending_person_name']);
-    $('#sa_lending_date').val(combine_data['sa_lending_date']);
-    $('#sa_deposit_take').val(combine_data['sa_deposit_take']);
-    $('#sa_id_take').val(combine_data['sa_id_take']);
-    $('#sa_id_deposit_box_number').val(combine_data['sa_id_deposit_box_number']);
-    $('#sa_return_person_name').val(combine_data['sa_return_person_name']);
-    $('#sa_returned_date').val(combine_data['sa_returned_date']);
-    $('#sa_deposit_returned').val(combine_data['sa_deposit_returned']);
-    $('#sa_id_returned').val(combine_data['sa_id_returned']);
-    $('#sa_remark').val(combine_data['sa_remark']);
 }
 
-// 完成勿動
-function genDataButton(data, statusFiltering = 'no') {
+function bringSADataIntoModal(id) {
+    $.ajax({
+        url: '/borrow/getData/single', // 替換為你的 API URL
+        type: 'POST',
+        data: {
+            id: id,
+            _token: $('meta[name="csrf-token"]').attr('content')  // CSRF Token
+        },
+        success: function (response) {
+            console.log(response.data);
+            let single_info = response.data;
+
+            function setInputValue(selector, value) {
+                $(selector).prop('disabled', false).val(value).prop('disabled', true);
+            }
+
+            $('#borrow_id').val(id);
+            setInputValue('#sa_lending_person_name', single_info.sa_lending_person_name);
+            setInputValue('#sa_lending_date', single_info.sa_lending_date);
+            setInputValue('#sa_deposit_take', single_info.sa_deposit_take);
+            setInputValue('#sa_id_take', single_info.sa_id_take);
+            setInputValue('#sa_id_deposit_box_number', single_info.sa_id_deposit_box_number);
+            setInputValue('#sa_return_person_name', single_info.sa_return_person_name);
+            setInputValue('#sa_returned_date', single_info.sa_returned_date);
+            setInputValue('#sa_deposit_returned', single_info.sa_deposit_returned);
+            setInputValue('#sa_id_returned', single_info.sa_id_returned);
+            setInputValue('#sa_remark', single_info.sa_remark);
+        },
+        error: function (error) {
+            console.log('Error:', error);
+        }
+    });
+
+
+}
+
+function bringChargePersonIntoModal() {
+    // 發送 AJAX 
+    $.ajax({
+        url: '/show-user-name', // 替換為你的 API URL
+        type: 'POST',
+        data: {
+            _token: $('meta[name="csrf-token"]').attr('content')  // CSRF Token
+        },
+        success: function (response) {
+            // 假設 response 返回新的表格資料，根據需求去更新表格
+            //console.log(response.data);
+            let personList = response.data;
+            const lending_person_list = $("#sa_lending_person_name");
+            const return_person_list = $("#sa_return_person_name");
+            lending_person_list.empty(); // 清空舊選項
+            return_person_list.empty();
+
+            lending_person_list.append(`<option selected disabled value="">請選擇承辦人</option>`);
+            return_person_list.append(`<option selected disabled value="">請選擇承辦人</option>`);
+            // 動態添加新選項
+            $.each(personList, function (index, person) {
+                lending_person_list.append(`<option value="${person.name}">${person.name}</option>`);
+                return_person_list.append(`<option value="${person.name}">${person.name}</option>`);
+            });
+        },
+        error: function (error) {
+            console.log('Error:', error);
+        }
+    });
+}
+
+// 產生詳細按鈕
+function genDetailButton(data, statusFiltering = 'no') {
     $('#lending_status').empty();
-    fullLendingData = {};   // Erase stored data
+    bringChargePersonIntoModal();
 
     $.each(data, function (index, item) {
 
@@ -439,29 +441,12 @@ function genDataButton(data, statusFiltering = 'no') {
         if (lending_status === 'table-success' && expired_return <= today) {
             lending_status = 'table-warning';
         }
+
         // 若 `statusFiltering` 需要篩選，且當前 `lending_status` 不匹配，則跳過
         if (filters[statusFiltering] && lending_status !== filters[statusFiltering]) {
             return;
         }
 
-        let combine_data = {
-            borrow_list_id: item.id,
-            sa_lending_person_name: item.sa_lending_person_name,
-            sa_lending_date: item.sa_lending_date,
-            sa_deposit_take: item.sa_deposit_take,
-            sa_id_take: item.sa_id_take,
-            sa_id_returned: item.sa_id_returned,
-            sa_deposit_returned: item.sa_deposit_returned,
-
-            sa_id_deposit_box_number: item.sa_id_deposit_box_number,
-            sa_return_person_name: item.sa_return_person_name,
-            sa_returned_date: item.sa_returned_date,
-            sa_remark: item.sa_remark
-        };
-
-
-        fullLendingData[item.id + '_combine'] = combine_data;
-        
         // Generate modal and button
         let trig_btn = `<button type="button" class="btn btn-info btn-bring-data" data-bs-toggle="modal" data-bs-target="#modal" data-combine="${item.id}_combine">
         <i class="bi bi-clipboard-data"></i> 借用資訊</button>`;
@@ -469,7 +454,6 @@ function genDataButton(data, statusFiltering = 'no') {
         // Generate table row
         let row = `
             <tr class="${lending_status}">
-                <td style="display: none">${item.id}</td>
                 <td>${item.filling_time}</td>
                 <td>${item.borrow_department}</td>
                 <td style="display: none">${item.borrow_date}</td>
@@ -488,6 +472,7 @@ function genDataButton(data, statusFiltering = 'no') {
 
 function reloadPage(statusFiltering = 'no') {
     $('#borrow_list').empty();
+    $('#lending_table').attr('hidden', false);
     spinnerLoadingAction('show');
     $.ajax({
         type: 'POST',
@@ -499,8 +484,7 @@ function reloadPage(statusFiltering = 'no') {
         success: function (response) {
             //console.log(response);
             if (response.success) {
-                startFillingForm();
-                genDataButton(response.data, statusFiltering);
+                genDetailButton(response.data, statusFiltering);
                 spinnerLoadingAction('hide');
             }
         },

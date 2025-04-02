@@ -14,8 +14,8 @@
         <option value="all">查看全部</option>
     </select>
     <hr>
-    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal"
-        data-property="">新增財產</button>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal" data-property=""><i
+            class="bi bi-file-earmark-plus"></i> 新增財產</button>
     <hr>
     <div>
         <div class="modal fade" id="modal" tabindex="-1" aria-labelledby="modal_Label" aria-hidden="true">
@@ -157,7 +157,8 @@
                                         </div>
                                         <div class="col-md-3">
                                             <label class="form-label">上傳照片</label>
-                                            <input type="file" class="form-control" id="prop_img" accept="image/jpeg, image/png, image/webp, image/heic">
+                                            <input type="file" class="form-control" id="prop_img"
+                                                accept="image/jpeg, image/png, image/webp, image/heic">
                                             <div class="invalid-feedback">
                                                 必填
                                             </div>
@@ -217,7 +218,7 @@
         </div>
 
     </div>
-    
+
     <table class="table">
         <thead>
             <tr>

@@ -10,7 +10,7 @@ function getStatusData() {
     var lendingValue = $('input[name="lending_status"]:checked').val();
     $.ajax({
         type: 'POST',
-        url: '/show-item-status',
+        url: '/property/status/show',
         data: {
             place: placeValue,
             finding_status: lendingValue,

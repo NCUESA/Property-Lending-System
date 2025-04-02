@@ -8,7 +8,7 @@ $(document).ready(function () {
 
         $.ajax({
             type: 'POST',
-            url: '/show-borrowable-item',
+            url: '/property/borrowable/show',
             data: {
                 place: selected_place,
                 _token: $('meta[name="csrf-token"]').attr('content')  // CSRF Token
@@ -37,7 +37,7 @@ $(document).ready(function () {
         //console.log(selected_place);
         $.ajax({
             type: 'POST',
-            url: '/show-borrowable-item',
+            url: '/property/borrowable/show',
             data: {
                 place: selected_place,
                 filter: condition,

@@ -35,7 +35,7 @@
                     @if ($hasAccess)
                         <li class="nav-item">
                             <a class="nav-link {{ Request::is('full_status') ? 'active' : '' }}"
-                                href="./full_status">器材借用狀態(管理員)</a>
+                                href="./full_status">器材借用總表</a>
                         </li>
                     @endif
                     @if ($hasAdminAccess)
@@ -100,6 +100,11 @@
                         style="width: auto; height: 32px; display: block; margin: 0 auto;">
                 </a>
                 <span class="text-muted">© 2025 NCUE SA.</span>
+            </div>
+            <div class="col-md-4" style="text-align: center">
+                <a href="mailto:studentgovernment-general-it@gm.ncue.edu.tw" class="text-muted">
+                    回報錯誤？請點這裡
+                </a>
             </div>
 
             <ul class="nav col-md-4 justify-content-end list-unstyled d-flex">
