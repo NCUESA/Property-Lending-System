@@ -95,20 +95,23 @@
         <footer class="d-flex flex-wrap justify-content-between align-items-center py-3 my-4 border-top">
             <div class="col-md-4 d-flex align-items-center">
 
-                <a href="https://ncuesa.ncue.edu.tw/" class="mb-3 me-2 mb-md-0 text-muted text-decoration-none lh-1">
+                <a href="https://www.ncuesa.org.tw" class="mb-3 me-2 mb-md-0 text-muted text-decoration-none lh-1">
                     <img src="./ncuesalogo.png" alt="NCUESA_IMG" class="center"
                         style="width: auto; height: 32px; display: block; margin: 0 auto;">
                 </a>
                 <span class="text-muted">© 2025 NCUE SA.</span>
             </div>
             <div class="col-md-4" style="text-align: center">
-                <a href="mailto:studentgovernment-general-it@gm.ncue.edu.tw" class="text-muted">
+                <a href="mailto:dev@ncuesa.org.tw" class="text-muted">
                     回報錯誤？請點這裡
                 </a>
             </div>
 
             <ul class="nav col-md-4 justify-content-end list-unstyled d-flex">
 
+                <li class="ms-3"><a class="text-muted" href="https://github.com/NCUESA/Property-Lending-System"><i
+                            class="bi bi-github"></i></a>
+                </li>
                 <li class="ms-3"><a class="text-muted" href="https://www.instagram.com/ncuesa"><i
                             class="bi bi-instagram"></i></a>
                 </li>
