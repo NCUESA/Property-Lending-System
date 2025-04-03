@@ -18,7 +18,7 @@
     1. 修正借用的東西會變成一坨重複的器材
 
 ## 開發人員資訊
-- Email:  studentgovernment-general-it@gm.ncue.edu.tw
+- Email:  dev@ncuesa.org.tw
 - Dev:    Enderman
 
 # 歷史紀錄
