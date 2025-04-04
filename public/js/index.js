@@ -64,7 +64,7 @@ $(document).ready(function () {
             event.stopPropagation();
             return;
         }
-
+        spinnerLoadingAction('show');
         // Transfer into Array
         let sending_items = [...selectedItems].flat();
 
@@ -88,6 +88,7 @@ $(document).ready(function () {
                 //console.log(response);
                 if (response.success && response.error == '') {
                     alert('借用表單送出成功，請等待值勤人員提供器材');
+                    spinnerLoadingAction('hide');
                     location.reload();
                 }
                 else {
@@ -326,4 +327,19 @@ function formValidationCheck() {
     $("#borrow").addClass('was-validated');
 
     return isValid;
+}
+
+function spinnerLoadingAction(action) {
+    if (action == 'show') {
+        $('#waiting_spot').removeClass('visually-hidden');
+        $('.bi-send').addClass('visually-hidden');
+        $('#send_form').prop('disabled', true);
+        $('#send_form').text(' 請求處理中...');
+    }
+    else {
+        $('#waiting_spot').addClass('visually-hidden');
+        $('.bi-send').removeClass('visually-hidden');
+        $('#send_form').prop('disabled', false);
+        $('#send_form').text(' 送出借用');
+    }
 }

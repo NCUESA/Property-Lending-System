@@ -81,7 +81,8 @@
                 <label for="" class="col-sm-1 col-form-label">篩選借用狀態</label>
                 <div class="col-sm-5 d-grid gap-2">
                     <div class="btn-group" role="group" aria-label="">
-                        <input type="radio" class="btn-check" id="all" name="btnradio" autocomplete="off" value="">
+                        <input type="radio" class="btn-check" id="all" name="btnradio" autocomplete="off"
+                            value="">
                         <label class="btn btn-outline-info" for="all"><i class="bi bi-three-dots"></i> 全部</label>
                         <input type="radio" class="btn-check" id="waiting" name="btnradio" autocomplete="off"
                             value="waiting">
@@ -98,8 +99,10 @@
                             value="returned">
                         <label class="btn btn-outline-secondary" for="returned"><i class="bi bi-arrow-return-left"></i>
                             已還</label>
-                        <input type="radio" class="btn-check" id="banned" name="btnradio" autocomplete="off" value="banned">
-                        <label class="btn btn-outline-danger" for="banned"><i class="bi bi-slash-circle"></i> 借用遭拒</label>
+                        <input type="radio" class="btn-check" id="banned" name="btnradio" autocomplete="off"
+                            value="banned">
+                        <label class="btn btn-outline-danger" for="banned"><i class="bi bi-slash-circle"></i>
+                            借用遭拒</label>
                     </div>
                 </div>
 
@@ -146,42 +149,76 @@
                         <hr>
                         <div class="container">
                             <form class='needs-validation' id='modal-form'>
-                                <div class="row" style="padding-top: 1rem;">
-                                    <h4 style="font-weight: bold;">條碼識別區</h4>
-                                    <div class="row">
-                                        <div class="col-md-3">
-                                            <label class="form-label">操作(借用還是歸還)</label>
-                                            <select class="form-select form-select mb-3" id="sa_manuplate" required
-                                                disabled>
-                                                <option selected disabled value="">請選擇..</option>
-                                                <option value="borrow">借用</option>
-                                                <option value="return">歸還</option>
-                                            </select>
-                                            <div class="valid-feedback" id="check_sa_manuplate">
 
-                                            </div>
-                                        </div>
-                                        <div class="col-md-3" hidden>
-                                            <label class="form-label">借用編號(系統自動帶入)</label>
-                                            <input type="input" class="form-control" placeholder="此處請勿填寫" id="borrow_id"
-                                                value="" disabled>
-                                            <div class="invalid-feedback">
-                                                必填
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label">掃描條碼ID</label>
-                                            <input type="input" class="form-control scan_list" placeholder="此處請勿填寫"
-                                                id="scan_list" maxlength="8" disabled>
+                                <h4 style="font-weight: bold;">條碼識別區</h4>
+                                <div class="row">
+                                    <div class="col-md-3" id="area_sa_manuplate" hidden>
+                                        <label class="form-label">操作(借用還是歸還)</label>
+                                        <select class="form-select form-select mb-3" id="sa_manuplate" required>
+                                            <option selected value="">請選擇..</option>
+                                            <option value="borrow">借用</option>
+                                            <option value="return">歸還</option>
+                                        </select>
+                                        <div class="valid-feedback" id="check_sa_manuplate">
                                         </div>
                                     </div>
+                                    <div class="col-md-3" id="area_borrow_id" hidden>
+                                        <label class="form-label">借用編號(系統自動帶入)</label>
+                                        <input type="input" class="form-control" placeholder="此處請勿填寫" id="borrow_id"
+                                            value="" disabled>
+                                        <div class="invalid-feedback">
+                                            必填
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">掃描條碼ID</label>
+                                        <input type="input" class="form-control scan_list" placeholder="此處請勿填寫"
+                                            id="scan_list" maxlength="8" disabled>
+                                    </div>
+                                    <div class="col-md-2" id="area_sa_id_deposit_box_number" hidden>
+                                        <label class="form-label">押金證件盒編號</label>
+                                        <select class="form-select form-select mb-3" id="sa_id_deposit_box_number"
+                                            required>
+                                            <option selected disabled value="-1">請選擇</option>
+                                            <option value="1">1</option>
+                                            <option value="2">2</option>
+                                            <option value="3">3</option>
+                                            <option value="4">4</option>
+                                            <option value="5">5</option>
+                                            <option value="6">6</option>
+                                            <option value="7">7</option>
+                                            <option value="8">8</option>
+                                            <option value="9">9</option>
+                                            <option value="10">10</option>
+                                            <option value="11">11</option>
+                                            <option value="12">12</option>
+                                            <option value="13">13</option>
+                                            <option value="14">14</option>
+                                            <option value="15">15</option>
+                                            <option value="16">16</option>
+                                            <option value="17">17</option>
+                                            <option value="18">18</option>
+                                            <option value="19">19</option>
+                                            <option value="20">20</option>
+                                            <option value="21">21</option>
+                                            <option value="22">22</option>
+                                            <option value="23">23</option>
+                                            <option value="24">24</option>
+
+                                        </select>
+                                        <div class="invalid-feedback">
+                                            必填
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id='lending_out' hidden>
                                     <hr>
                                     <h4 style="font-weight: bold;">借出填寫區</h4>
-                                    <div class="row" id='lending_out'>
+                                    <div class="row">
                                         <div class="col-md-3">
                                             <label class="form-label">借出承辦人</label>
                                             <select class="form-select form-select mb-3" id="sa_lending_person_name"
-                                                required disabled>
+                                                required>
                                                 <option selected disabled value="">請選擇承辦人</option>
                                             </select>
                                             <div class="valid-feedback" id="check_sa_lending_person_name">
@@ -189,8 +226,8 @@
                                         </div>
                                         <div class="col-md-3">
                                             <label class="form-label">借出經辦日期</label>
-                                            <input type="date" class="form-control" placeholder="" id="sa_lending_date"
-                                                disabled value="">
+                                            <input type="date" class="form-control" placeholder=""
+                                                id="sa_lending_date" value="">
                                             <div class="invalid-feedback">
                                                 必填
                                             </div>
@@ -199,7 +236,7 @@
                                         <div class="col-md-2">
                                             <label class="form-label">押金收取</label>
                                             <select class="form-select form-select mb-3" id="sa_deposit_take" required
-                                                disabled>
+                                                >
                                                 <option selected disabled value="">請選擇</option>
                                                 <option value="1">收了 YES</option>
                                                 <option value="0">沒收 NO</option>
@@ -210,7 +247,8 @@
                                         </div>
                                         <div class="col-md-2">
                                             <label class="form-label">證件收取</label>
-                                            <select class="form-select form-select mb-3" id="sa_id_take" required disabled>
+                                            <select class="form-select form-select mb-3" id="sa_id_take" required
+                                                >
                                                 <option selected disabled value="">請選擇</option>
                                                 <option value="1">收了 YES</option>
                                                 <option value="0">沒收 NO</option>
@@ -219,52 +257,20 @@
                                                 必填
                                             </div>
                                         </div>
-                                        <div class="col-md-2">
-                                            <label class="form-label">押金證件盒編號</label>
-                                            <select class="form-select form-select mb-3" id="sa_id_deposit_box_number"
-                                                required disabled>
-                                                <option selected disabled value="-1">請選擇</option>
-                                                <option value="1">1</option>
-                                                <option value="2">2</option>
-                                                <option value="3">3</option>
-                                                <option value="4">4</option>
-                                                <option value="5">5</option>
-                                                <option value="6">6</option>
-                                                <option value="7">7</option>
-                                                <option value="8">8</option>
-                                                <option value="9">9</option>
-                                                <option value="10">10</option>
-                                                <option value="11">11</option>
-                                                <option value="12">12</option>
-                                                <option value="13">13</option>
-                                                <option value="14">14</option>
-                                                <option value="15">15</option>
-                                                <option value="16">16</option>
-                                                <option value="17">17</option>
-                                                <option value="18">18</option>
-                                                <option value="19">19</option>
-                                                <option value="20">20</option>
-                                                <option value="21">21</option>
-                                                <option value="22">22</option>
-                                                <option value="23">23</option>
-                                                <option value="24">24</option>
-
-                                            </select>
-                                            <div class="invalid-feedback">
-                                                必填
-                                            </div>
-                                        </div>
+                                        
                                         <hr>
                                     </div>
+                                </div>
 
+                                <div id='return_in' hidden>
                                     <hr>
                                     <h4 style="font-weight: bold;">歸還填寫區</h4>
-                                    <div class="row" id='returned'>
+                                    <div class="row">
                                         <div class="col-md-3">
                                             <label class="form-label">歸還承辦人</label>
-                                            <select class="form-select form-select mb-3" id="sa_return_person_name" required
-                                                disabled>
-                                                <option selected disabled value="">請選擇承辦人</option>
+                                            <select class="form-select form-select mb-3" id="sa_return_person_name"
+                                                required >
+                                                <option selected  value="">請選擇承辦人</option>
                                                 <option value=""></option>
                                             </select>
                                             <div class="valid-feedback" id="checksa_return_person_name">
@@ -273,13 +279,13 @@
                                         </div>
                                         <div class="col-md-3">
                                             <label class="form-label">歸還經辦日期</label>
-                                            <input type="date" class="form-control" placeholder="" id="sa_returned_date"
-                                                disabled>
+                                            <input type="date" class="form-control" placeholder=""
+                                                id="sa_returned_date" >
                                         </div>
                                         <div class="col-md-2">
                                             <label class="form-label">押金退還</label>
                                             <select class="form-select form-select mb-3" id="sa_deposit_returned" required
-                                                disabled>
+                                                >
                                                 <option selected disabled value="">請選擇</option>
                                                 <option value="1">退了 YES</option>
                                                 <option value="0">沒退 NO</option>
@@ -291,7 +297,7 @@
                                         <div class="col-md-2">
                                             <label class="form-label">證件退還</label>
                                             <select class="form-select form-select mb-3" id="sa_id_returned" required
-                                                disabled>
+                                                >
                                                 <option selected disabled value="">請選擇</option>
                                                 <option value="1">退了 YES</option>
                                                 <option value="0">沒退 NO</option>
@@ -302,20 +308,21 @@
                                         </div>
                                         <hr>
                                     </div>
+                                </div>
 
-                                    <div class="row" style="padding-top: 1rem;">
-                                        <div class="col-md-12">
-                                            <label class="form-label">備註</label>
-                                            <div class="form-floating">
-                                                <textarea disabled class="form-control" placeholder="請在這邊詳細填寫"
-                                                    id="sa_remark" style="height: 150px"></textarea>
-                                                <div class="invalid-feedback">
-                                                    必填
-                                                </div>
-                                                <label for="reply_textarea">請在這邊詳細填寫</label>
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <label class="form-label">備註</label>
+                                        <div class="form-floating">
+                                            <textarea disabled class="form-control" placeholder="請在這邊詳細填寫" id="sa_remark" style="height: 150px"></textarea>
+                                            <div class="invalid-feedback">
+                                                必填
                                             </div>
+                                            <label for="reply_textarea">請在這邊詳細填寫</label>
                                         </div>
                                     </div>
+                                </div>
+
                             </form>
                         </div>
                     </div>
@@ -335,7 +342,8 @@
                                     </span>
                                 </div>
                                 <div class="col-2 d-grid gap-2">
-                                    <button type="button" class="btn btn-danger" id="modal-close" data-bs-dismiss="modal">
+                                    <button type="button" class="btn btn-danger" id="modal-close"
+                                        data-bs-dismiss="modal">
                                         <i class="bi bi-x-circle"></i> 關閉(不儲存)</button>
                                 </div>
                             </div>
@@ -376,17 +384,18 @@
                             </table>
                         </div>
                         <hr>
-                        
+
                     </div>
                     <div class="modal-footer">
                         <div class="container">
                             <div class="row">
                                 <div class="col-2 d-grid gap-2">
-                                        <button type="button" class="btn btn-success" id="save-data" disabled>
-                                            <i class="bi bi-floppy2"></i> 確定</button>
+                                    <button type="button" class="btn btn-success" id="save-data" disabled>
+                                        <i class="bi bi-floppy2"></i> 確定</button>
                                 </div>
                                 <div class="col-2 d-grid gap-2">
-                                    <button type="button" class="btn btn-danger" id="modal-close" data-bs-dismiss="modal">
+                                    <button type="button" class="btn btn-danger" id="modal-close"
+                                        data-bs-dismiss="modal">
                                         <i class="bi bi-x-circle"></i> 不確定</button>
                                 </div>
                             </div>

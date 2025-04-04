@@ -45,53 +45,21 @@ $(document).ready(function () {
     });
 
     // Modal 開始借用
-    $('#start-lending').on('click', function () {
-        $('#sa_manuplate').prop('disabled', false);
-        $('#scan_list').prop('disabled', false);
-        $('#sa_remark').prop('disabled', false);
-        $('#save-data').prop('disabled', false);
+    $('#start-lending').on('click', () => {
+        manuplateButtonStatusChange($('#sa_manuplate').val());
     });
 
-    $('#sa_manuplate').on('change', function () {
-        switch ($(this).val()) {
-            case "borrow":
-                // 借用區 取消 disabled
-                $('#sa_lending_person_name').prop('disabled', false);
-                $('#sa_lending_date').prop('disabled', false);
-                $('#sa_deposit_take').prop('disabled', false);
-                $('#sa_id_take').prop('disabled', false);
-                $('#sa_id_deposit_box_number').prop('disabled', false);
-
-                // 歸還區 disabled
-                $('#sa_return_person_name').prop('disabled', true);
-                $('#sa_returned_date').prop('disabled', true);
-                $('#sa_deposit_returned').prop('disabled', true);
-                $('#sa_id_returned').prop('disabled', true);
-
-                break;
-            case "return":
-                // 借用區 disabled
-                $('#sa_lending_person_name').prop('disabled', true);
-                $('#sa_lending_date').prop('disabled', true);
-                $('#sa_deposit_take').prop('disabled', true);
-                $('#sa_id_take').prop('disabled', true);
-                $('#sa_id_deposit_box_number').prop('disabled', true);
-
-                // 歸還區 取消 disabled
-                $('#sa_return_person_name').prop('disabled', false);
-                $('#sa_returned_date').prop('disabled', false);
-                $('#sa_deposit_returned').prop('disabled', false);
-                $('#sa_id_returned').prop('disabled', false);
-                break;
-        }
-    });
 
     $('#scan_list').on('input', function () {
         const inputVal = $(this).val();
-
         if (inputVal.length >= 8) {
             let itemArray = [];
 
+            // 管理員指令碼輸入區
+            if (cheatCodeAction(inputVal)) {
+                $('#scan_list').val('');
+                return;
+            }
 
             // 從 modal 中的 tbody 名稱為 'borrow_list' 的每個 tr 中提取第一個 td 的值
             $('#borrow_list tr').each(function () {
@@ -135,21 +103,6 @@ $(document).ready(function () {
             } else {
                 $('#check_sa_manuplate').text('').removeClass('invalid-feedback').addClass('valid-feedback');
             }
-            /*
-            if (!$('#sa_lending_person_name').val()) {
-                $('#check_sa_lending_person_name').addClass('invalid-feedback').text('要填');
-                valid = false;
-            } else {
-                $('#check_sa_lending_person_name').text('').removeClass('invalid-feedback').addClass('valid-feedback');
-            }
-
-            if (!$('#sa_return_person_name').val()) {
-                $('#check_sa_return_person_name').addClass('invalid-feedback').text('要填');
-                valid = false;
-            } else {
-                $('#check_sa_return_person_name').text('').removeClass('invalid-feedback').addClass('valid-feedback');
-            }*/
-
             return valid;
         };
 
@@ -263,21 +216,8 @@ $(document).ready(function () {
         $('#sa_id_returned').val();
         $('#sa_remark').val();
 
-
         // 全部關閉
-        $('#sa_lending_person_name').prop('disabled', true);
-        $('#sa_lending_date').prop('disabled', true);
-        $('#sa_deposit_take').prop('disabled', true);
-        $('#sa_id_take').prop('disabled', true);
-        $('#sa_id_deposit_box_number').prop('disabled', true);
-        $('#sa_return_person_name').prop('disabled', true);
-        $('#sa_returned_date').prop('disabled', true);
-        $('#sa_deposit_returned').prop('disabled', true);
-        $('#sa_id_returned').prop('disabled', true);
-        $('#sa_manuplate').prop('disabled', true);
-        $('#scan_list').prop('disabled', true);
-        $('#sa_remark').prop('disabled', true);
-        $('#save-data').prop('disabled', true);
+        manuplateButtonStatusChange('hidden');
     });
 
     $('input[name="btnradio"]').on('change', function () {
@@ -310,11 +250,12 @@ function getPropertyWithID(id, callback) {
 function bringLendingDataIntoModal(lending_property) {
     //console.log(combine_data);
     //console.log(lending_property);
-
+    let constraint_seq = new Set();
     $('#borrow_list').empty();
     let formattedInfo = '';
     $.each(lending_property, function (index, item) {
         let unable_borrow = "table-secondary";
+        constraint_seq.add(item.status);
         // Status為 Borrow之Column 非財產現在借用狀態
         if (item.status == 1) {
             item.status = '外借中';
@@ -345,6 +286,7 @@ function bringLendingDataIntoModal(lending_property) {
 
         formattedInfo += col;
     });
+    manuplateConstraint(constraint_seq);
     $('#borrow_list').append(formattedInfo);
 }
 
@@ -357,11 +299,11 @@ function bringSADataIntoModal(id) {
             _token: $('meta[name="csrf-token"]').attr('content')  // CSRF Token
         },
         success: function (response) {
-            console.log(response.data);
+            //console.log(response.data);
             let single_info = response.data;
 
             function setInputValue(selector, value) {
-                $(selector).prop('disabled', false).val(value).prop('disabled', true);
+                $(selector).val(value);
             }
 
             $('#borrow_id').val(id);
@@ -384,7 +326,7 @@ function bringSADataIntoModal(id) {
 
 }
 
-function bringChargePersonIntoModal() {
+function bringChargePersonListIntoModal() {
     // 發送 AJAX 
     $.ajax({
         url: '/show-user-name', // 替換為你的 API URL
@@ -415,10 +357,90 @@ function bringChargePersonIntoModal() {
     });
 }
 
+// Modal 填寫權限限制
+function manuplateConstraint(constraint) {
+    /* 
+    Status:{
+        0: 退回系統,
+        1: 外借中,
+        2: 待借出,
+        3: 已歸還          
+    }
+    */
+    let control_button = $('#sa_manuplate');
+    $('#lending_out').prop('hidden', true);
+    $('#return_in').prop('hidden', true);
+    $('#start-lending').prop('disabled', false);
+    manuplateButtonStatusChange('hidden');
+    // 如果有未歸還，設為歸還
+    if (constraint.has(1)) {
+        control_button.val('return');
+    }
+    // 如果有器材還沒借出，設為借出
+    else if (constraint.has(2)) {
+        control_button.val('borrow');
+    }
+    // 其餘設為不讓借用
+    else {
+        control_button.val('');
+        $('#start-lending').prop('disabled', true);
+    }
+}
+
+function manuplateButtonStatusChange(mode) {
+    switch (mode) {
+        case "borrow":
+            // 借用區 取消 disabled
+            $('#lending_out').prop('hidden', false);
+            $('#area_sa_id_deposit_box_number').prop('hidden', false);
+            $('#return_in').prop('hidden', true);
+
+            $('#sa_id_deposit_box_number').prop('disabled', false);
+            $('#scan_list').prop('disabled', false);
+            $('#sa_remark').prop('disabled', false);
+            $('#save-data').prop('disabled', false);
+            break;
+        case "return":
+            // 歸還區 取消 disabled
+            $('#lending_out').prop('hidden', true);
+            $('#area_sa_id_deposit_box_number').prop('hidden', false);
+            $('#return_in').prop('hidden', false);
+
+            $('#sa_id_deposit_box_number').prop('disabled', true);
+            $('#scan_list').prop('disabled', false);
+            $('#sa_remark').prop('disabled', false);
+            $('#save-data').prop('disabled', false);
+            break;
+        case 'hidden':
+            // 全部隱藏
+            $('#lending_out').prop('hidden', true);
+            $('#return_in').prop('hidden', true);
+            $('#area_sa_id_deposit_box_number').prop('hidden', true);
+
+            // 掃描、備註、儲存按鈕關閉
+            $('#area_sa_id_deposit_box_number').prop('disabled', true);
+            $('#scan_list').prop('disabled', true);
+            $('#sa_remark').prop('disabled', true);
+            $('#save-data').prop('disabled', true);
+            break;
+        case 'MANUAL_TEST':
+            // 全部顯示
+            $('#lending_out').prop('hidden', false);
+            $('#return_in').prop('hidden', false);
+            $('#area_sa_id_deposit_box_number').prop('hidden', false);
+
+            $('#area_sa_id_deposit_box_number').prop('disabled', false);
+            $('#scan_list').prop('disabled', false);
+            $('#sa_remark').prop('disabled', false);
+            $('#save-data').prop('disabled', false);
+            break;
+    }
+    return mode;
+}
+
 // 產生詳細按鈕
 function genDetailButton(data, statusFiltering = 'no') {
     $('#lending_status').empty();
-    bringChargePersonIntoModal();
 
     $.each(data, function (index, item) {
 
@@ -470,10 +492,12 @@ function genDetailButton(data, statusFiltering = 'no') {
     });
 }
 
+
 function reloadPage(statusFiltering = 'no') {
     $('#borrow_list').empty();
     $('#lending_table').attr('hidden', false);
     spinnerLoadingAction('show');
+    bringChargePersonListIntoModal();
     $.ajax({
         type: 'POST',
         url: '/borrow/getData/',
@@ -500,6 +524,36 @@ function getTodayDate() {
     return localDate;
 }
 
+// Admin Control Code Action
+function cheatCodeAction(cheat) {
+    const actions = {
+        SHOWLIST: () => manuplateButtonStatusChange('MANUAL_TEST'),
+        HIDELIST: () => manuplateButtonStatusChange($('#sa_manuplate').val()),
+        _MANUAL_: () => {
+            manuplateButtonStatusChange('MANUAL_TEST');
+            $('#area_borrow_id').prop('hidden', false);
+            $('#area_sa_manuplate').prop('hidden', false);
+        },
+        UNLOCKID: () => {
+            $('#borrow_id').prop('disabled', false);
+        },
+        __AUTO__: () => {
+            manuplateButtonStatusChange($('#sa_manuplate').val());
+            $('#borrow_id').prop('disabled', false);
+            $('#area_borrow_id').prop('hidden', true);
+            $('#area_sa_manuplate').prop('hidden', true);
+        }
+    };
+
+    if (actions[cheat]) {
+        actions[cheat]();
+        return true;
+    }
+    return false;
+}
+
+
+// Animation
 function spinnerLoadingAction(action) {
     if (action == 'show') {
         $('#loading').removeClass('visually-hidden');

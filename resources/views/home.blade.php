@@ -108,23 +108,23 @@
         <div class="container">
             <div class="row row-cols-1 row-cols-md-4 g-3" id="borrowable_item">
                 <!-- <div class="col">
-                                                                                                    <div class="card">
-                                                                                                        <input type="hidden" value="">
-                                                                                                        <img src="https://dummyimage.com/1920x1920/cccccc/000000&text=No+Image" class="card-img-top rounded" alt="">
-                                                                                                        <div class="card-body">
-                                                                                                            <input type="checkbox" value="" id="">動圈式麥克風
-                                                                                                            <p><span class="badge bg-primary">什項用具</span></p>
-                                                                                                            <p class="card-text">
-                                                                                                                財產編號：J2000001<br>
-                                                                                                                規格：Carol E dur-916S 珍珠白
-                                                                                                            </p>
+                                                                                                            <div class="card">
+                                                                                                                <input type="hidden" value="">
+                                                                                                                <img src="https://dummyimage.com/1920x1920/cccccc/000000&text=No+Image" class="card-img-top rounded" alt="">
+                                                                                                                <div class="card-body">
+                                                                                                                    <input type="checkbox" value="" id="">動圈式麥克風
+                                                                                                                    <p><span class="badge bg-primary">什項用具</span></p>
+                                                                                                                    <p class="card-text">
+                                                                                                                        財產編號：J2000001<br>
+                                                                                                                        規格：Carol E dur-916S 珍珠白
+                                                                                                                    </p>
+                                                                                                                </div>
+                                                                                                            </div>
+                                                                                                            <div class="card-footer">
+                                                                                                                <small class="text-muted">存放地點：進德</small>
+                                                                                                            </div>
                                                                                                         </div>
-                                                                                                    </div>
-                                                                                                    <div class="card-footer">
-                                                                                                        <small class="text-muted">存放地點：進德</small>
-                                                                                                    </div>
-                                                                                                </div>
-                                                                                            </div>-->
+                                                                                                    </div>-->
 
 
 
@@ -134,7 +134,8 @@
 
             <div class="d-grid gap-2">
                 <button type="button" id='send_form' class="btn btn-success">
-                    <i class="bi bi-send"></i> 送出借用</button>
+                    <i class="bi bi-send"></i><span class="spinner-grow spinner-grow-sm visually-hidden" id="waiting_spot"
+                        aria-hidden="true"></span> 送出借用</button>
                 <button type="reset" id='' class="btn btn-outline-danger">
                     <i class="bi bi-arrow-clockwise"></i> 取消重填
                 </button>
