@@ -331,10 +331,10 @@ function formValidationCheck() {
 
 function spinnerLoadingAction(action) {
     if (action == 'show') {
+        $('#send_form').text(' 請求處理中...');
         $('#waiting_spot').removeClass('visually-hidden');
         $('.bi-send').addClass('visually-hidden');
         $('#send_form').prop('disabled', true);
-        $('#send_form').text(' 請求處理中...');
     }
     else {
         $('#waiting_spot').addClass('visually-hidden');

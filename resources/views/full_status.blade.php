@@ -149,9 +149,8 @@
                         <hr>
                         <div class="container">
                             <form class='needs-validation' id='modal-form'>
-
-                                <h4 style="font-weight: bold;">條碼識別區</h4>
-                                <div class="row">
+                                <div class="row" id="area-first-check-scan">
+                                    <h4 style="font-weight: bold;">條碼識別區</h4>
                                     <div class="col-md-3" id="area_sa_manuplate" hidden>
                                         <label class="form-label">操作(借用還是歸還)</label>
                                         <select class="form-select form-select mb-3" id="sa_manuplate" required>
@@ -214,6 +213,7 @@
                                 <div id='lending_out' hidden>
                                     <hr>
                                     <h4 style="font-weight: bold;">借出填寫區</h4>
+                                    <h6>(甚麼都沒填會直接將器材退回系統)</h6>
                                     <div class="row">
                                         <div class="col-md-3">
                                             <label class="form-label">借出承辦人</label>
@@ -235,8 +235,7 @@
 
                                         <div class="col-md-2">
                                             <label class="form-label">押金收取</label>
-                                            <select class="form-select form-select mb-3" id="sa_deposit_take" required
-                                                >
+                                            <select class="form-select form-select mb-3" id="sa_deposit_take" required>
                                                 <option selected disabled value="">請選擇</option>
                                                 <option value="1">收了 YES</option>
                                                 <option value="0">沒收 NO</option>
@@ -247,8 +246,7 @@
                                         </div>
                                         <div class="col-md-2">
                                             <label class="form-label">證件收取</label>
-                                            <select class="form-select form-select mb-3" id="sa_id_take" required
-                                                >
+                                            <select class="form-select form-select mb-3" id="sa_id_take" required>
                                                 <option selected disabled value="">請選擇</option>
                                                 <option value="1">收了 YES</option>
                                                 <option value="0">沒收 NO</option>
@@ -257,7 +255,7 @@
                                                 必填
                                             </div>
                                         </div>
-                                        
+
                                         <hr>
                                     </div>
                                 </div>
@@ -269,23 +267,23 @@
                                         <div class="col-md-3">
                                             <label class="form-label">歸還承辦人</label>
                                             <select class="form-select form-select mb-3" id="sa_return_person_name"
-                                                required >
-                                                <option selected  value="">請選擇承辦人</option>
+                                                required>
+                                                <option selected value="">請選擇承辦人</option>
                                                 <option value=""></option>
                                             </select>
-                                            <div class="valid-feedback" id="checksa_return_person_name">
+                                            <div class="valid-feedback" id="check_sa_return_person_name">
 
                                             </div>
                                         </div>
                                         <div class="col-md-3">
                                             <label class="form-label">歸還經辦日期</label>
                                             <input type="date" class="form-control" placeholder=""
-                                                id="sa_returned_date" >
+                                                id="sa_returned_date">
                                         </div>
                                         <div class="col-md-2">
                                             <label class="form-label">押金退還</label>
-                                            <select class="form-select form-select mb-3" id="sa_deposit_returned" required
-                                                >
+                                            <select class="form-select form-select mb-3" id="sa_deposit_returned"
+                                                required>
                                                 <option selected disabled value="">請選擇</option>
                                                 <option value="1">退了 YES</option>
                                                 <option value="0">沒退 NO</option>
@@ -296,8 +294,7 @@
                                         </div>
                                         <div class="col-md-2">
                                             <label class="form-label">證件退還</label>
-                                            <select class="form-select form-select mb-3" id="sa_id_returned" required
-                                                >
+                                            <select class="form-select form-select mb-3" id="sa_id_returned" required>
                                                 <option selected disabled value="">請選擇</option>
                                                 <option value="1">退了 YES</option>
                                                 <option value="0">沒退 NO</option>
@@ -310,7 +307,7 @@
                                     </div>
                                 </div>
 
-                                <div class="row">
+                                <div class="row" id="area-first-check-remark">
                                     <div class="col-md-12">
                                         <label class="form-label">備註</label>
                                         <div class="form-floating">
@@ -322,13 +319,17 @@
                                         </div>
                                     </div>
                                 </div>
-
+                                <div class="row" id='area-double-check-confirm-text' hidden>
+                                    <div class="col-md-12">
+                                        <h3 style="text-align: center"><strong>請確認掃描結果！</strong></h3>
+                                    </div>
+                                </div>
                             </form>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <div class="container">
-                            <div class="row">
+                            <div class="row" id="area-first-check-button">
                                 <div class="col-2 d-grid gap-2s">
                                     <button type="button" class="btn btn-primary" id="start-lending">
                                         <i class="bi bi-pencil"></i> 開始填寫</button>
@@ -347,56 +348,16 @@
                                         <i class="bi bi-x-circle"></i> 關閉(不儲存)</button>
                                 </div>
                             </div>
-                        </div>
-
-
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    <div>
-        <div class="modal fade" id="check_modal" tabindex="-1" aria-labelledby="modal_Label" aria-hidden="true">
-            <div class="modal-dialog modal">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="">你確定嗎？</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div>
-                            <table class="table">
-                                <thead>
-                                    <th scope="col">SSID</th>
-                                    <th scope="col">財產名稱</th>
-                                    <th scope="col">第二名稱</th>
-                                    <th scope="col">財產類別</th>
-                                    <th scope="col">規格</th>
-                                    <th scope="col">備註</th>
-                                    <th scope="col">當前狀態</th>
-                                    <th scope="col">財產圖片</th>
-                                </thead>
-                                <tbody id="borrow_list">
-
-                                </tbody>
-                            </table>
-                        </div>
-                        <hr>
-
-                    </div>
-                    <div class="modal-footer">
-                        <div class="container">
-                            <div class="row">
+                            <div class="row" id="area-double-check" hidden>
                                 <div class="col-2 d-grid gap-2">
-                                    <button type="button" class="btn btn-success" id="save-data" disabled>
-                                        <i class="bi bi-floppy2"></i> 確定</button>
+                                    <button type="button" class="btn btn-success" id="double-check-save">
+                                        <i class="bi bi-check-circle"></i> 我非常確定</button>
                                 </div>
+                                <div class="col-8"></div>
+                                
                                 <div class="col-2 d-grid gap-2">
-                                    <button type="button" class="btn btn-danger" id="modal-close"
-                                        data-bs-dismiss="modal">
-                                        <i class="bi bi-x-circle"></i> 不確定</button>
+                                    <button type="button" class="btn btn-danger" id="double-check-close">
+                                        <i class="bi bi-x-circle"></i> 我不確定</button>
                                 </div>
                             </div>
                         </div>

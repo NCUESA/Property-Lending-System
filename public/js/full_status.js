@@ -91,9 +91,7 @@ $(document).ready(function () {
     });
 
     $('#save-data').on('click', function (e) {
-        const borrowListId = $(this).data('borrowListId');
-
-        // The logic of precheck
+        // Validation check
         let isValid = function () {
             let valid = true; // 預設為通過驗證
 
@@ -103,20 +101,89 @@ $(document).ready(function () {
             } else {
                 $('#check_sa_manuplate').text('').removeClass('invalid-feedback').addClass('valid-feedback');
             }
+
+            if ($('#sa_manuplate').val() == 'borrow') {
+                if (!$('#sa_lending_person_name').val()) {
+                    $('#check_sa_lending_person_name').addClass('invalid-feedback').text('要選');
+                    valid = false;
+                }
+                else {
+                    $('#check_sa_lending_person_name').text('').removeClass('invalid-feedback').addClass('valid-feedback');
+                }
+            }
+            else if ($('#sa_manuplate').val() == 'return') {
+                if (!$('#sa_return_person_name').val()) {
+                    $('#check_sa_return_person_name').addClass('invalid-feedback').text('要選');
+                    valid = false;
+                }
+                else {
+                    $('#check_sa_return_person_name').text('').removeClass('invalid-feedback').addClass('valid-feedback');
+                }
+            }
             return valid;
         };
 
         // 這裡要執行函式，判斷結果
         $('#modal-form').addClass('was-validated');
         if (!isValid()) {
-
             e.preventDefault()
             e.stopPropagation()
             return false;
         }
 
+        // 隱藏相關區塊，並跳出確認視窗
+        manuplateButtonStatusChange('double_check');
+
+        // 提示文字檢查
+        $('#borrow_list tr').each(function () {
+            const changeBadge = $(this).find('td').eq(6); // Badge欄位
+            const borrowStatus = $('#sa_manuplate').val();
+
+            // 清空原內容
 
 
+            // 建立 badge DOM 元素
+            let $badge = $('<span>').addClass('badge');
+            let $icon = $('<i>');
+
+            if (borrowStatus == 'borrow') {
+                if ($(this).hasClass('table-success')) {
+                    changeBadge.empty();
+                    $badge.addClass('bg-success').text(' 即將借出');
+                    $icon.addClass('bi bi-arrow-up-right-circle');
+                }
+                else {
+                    changeBadge.empty();
+                    $badge.addClass('bg-danger').text(' 即將退回系統');
+                    $icon.addClass('bi bi-rewind-circle');
+                }
+            }
+            else if (borrowStatus === 'return') {
+                if ($(this).hasClass('table-success')) {
+                    changeBadge.empty();
+                    $badge.addClass('bg-secondary').text(' 即將歸還');
+                    $icon.addClass('bi bi-arrow-down-left-circle');
+                }
+                else if ($(this).hasClass('table-secondary')) {
+                    return true;
+                }
+                else {
+                    changeBadge.empty();
+                    $badge.addClass('bg-warning text-dark').text(' 尚待歸還');
+                    $icon.addClass('bi bi-exclamation-circle');
+                }
+            }
+
+            // 把 icon 插入到 badge 前面
+            $badge.prepend($icon);
+
+            // 加入到欄位中
+            changeBadge.append($badge);
+        });
+
+    });
+
+    $('#double-check-save').on('click', function () {
         // 找到按鈕所在的 Modal，然後向上或向下找到相關的子區塊
         const modal = $('#modal'); // 找到 modal
 
@@ -125,7 +192,6 @@ $(document).ready(function () {
         let no_borrow = [];
         $('#borrow_list tr').each(function () {
             const firstTdValue = $(this).find('td:first').text().trim();
-
             // 檢查 tr 是否具有 class 'table-success'
             if ($(this).hasClass('table-success')) {
                 borrow.push(firstTdValue); // 有 table-success class
@@ -134,16 +200,6 @@ $(document).ready(function () {
             }
         });
 
-        let borrow_or_return = $('#sa_manuplate').val() == 'borrow' ? '借' : $('#sa_manuplate').val() == 'return' ? '還' : '';
-
-        let confirm_string = '值勤人員請確認\n已' + borrow_or_return + '物品：';
-        borrow.forEach(br_item => {
-            confirm_string += br_item + ' ';
-        });
-        confirm_string += '\n未' + borrow_or_return + '物品：';
-        no_borrow.forEach(br_item => {
-            confirm_string += br_item + ' ';
-        });
 
         $('#borrow_id').prop('disabled', false);
         let pack_data = {
@@ -165,10 +221,10 @@ $(document).ready(function () {
             borrow_items: borrow,
             no_borrow_items: no_borrow
         };
-        console.log(pack_data);
+        //console.log(pack_data);
 
         //$('input, select, textarea').prop('disabled', true);
-        if (confirm(confirm_string) == true) {
+        if (true) {
             // Ajax Send to backend
 
             $.ajax({
@@ -183,6 +239,7 @@ $(document).ready(function () {
                     if (response.success) {
                         sessionStorage.setItem('place', $('input[name="place"]:checked').val());
                         alert('完成');
+                        manuplateButtonStatusChange('hidden');
                         $("#modal").modal("hide");
                         reloadPage();
                     }
@@ -198,7 +255,41 @@ $(document).ready(function () {
         else {
             return;
         }
-        return;
+    });
+
+    $('#double-check-close').on('click', function (param) {
+        // 返回填寫到一半的狀態
+        manuplateButtonStatusChange('callback');
+        $('#borrow_list tr').each(function () {
+            const changeBadge = $(this).find('td').eq(6); // Badge欄位
+            const changeBadgeText = $(this).find('td').eq(6).text().trim(); // Badge欄位
+            const borrowStatus = $('#sa_manuplate').val();
+            // 清空原內容
+            // 建立 badge DOM 元素
+            let $badge = $('<span>').addClass('badge');
+            let $icon = $('<i>');
+
+            if (changeBadgeText == '即將借出') {
+                changeBadge.empty();
+                $badge.addClass('bg-primary').text(' 待借出');
+                $icon.addClass('bi bi-exclamation-circle-fill');
+            }
+            else if (changeBadgeText == '即將退回系統') {
+                changeBadge.empty();
+                $badge.addClass('bg-danger').text(' 退回系統');
+                $icon.addClass('bi bi-backspace');
+            }
+            else if (changeBadgeText == '即將歸還' || changeBadgeText == '尚待歸還') {
+                changeBadge.empty();
+                $badge.addClass('bg-success').text(' 外借中');
+                $icon.addClass('bi bi-box-arrow-right');
+            }
+            // 把 icon 插入到 badge 前面
+            $badge.prepend($icon);
+
+            // 加入到欄位中
+            changeBadge.append($badge);
+        });
     });
 
     $('#modal-close').on('click', function () {
@@ -258,30 +349,30 @@ function bringLendingDataIntoModal(lending_property) {
         constraint_seq.add(item.status);
         // Status為 Borrow之Column 非財產現在借用狀態
         if (item.status == 1) {
-            item.status = '外借中';
+            item.status = '<span class="badge bg-success"><i class="bi bi-box-arrow-right"></i> 外借中</span>';
             unable_borrow = "";
         }
         else if (item.status == 2) {
-            item.status = '待借出';
+            item.status = '<span class="badge bg-primary"><i class="bi bi-exclamation-circle-fill"></i> 待借出</span>';
             unable_borrow = "";
         }
         else if (item.status == 3) { // Status 3 代表已歸還
-            item.status = '已歸還';
+            item.status = '<span class="badge bg-secondary"><i class="bi bi-arrow-return-left"></i> 已歸還</span>';
             unable_borrow = "";
         }
         else { // Status 0 不可以被借
-            item.status = '退回系統';
+            item.status = '<span class="badge bg-danger"><i class="bi bi-backspace"></i> 退回系統</span>';
         }
         let col =
             `<tr class="${unable_borrow}">
-                <td>${item.ssid}</td>
-                <td>${item.name}</td>
-                <td>${item.second_name == null ? '' : item.second_name}</td>
-                <td>${item.class}</td>
-                <td>${item.format}</td>
-                <td>${item.remark == null ? '' : item.remark}</td>
-                <td>${item.status}</td>
-                <td><img src="./storage/propertyImgs/${item.img_url}" style="width: 100px; height: auto;"></td>
+                <td style="width: 10%">${item.ssid}</td>
+                <td style="width: 15%">${item.name}</td>
+                <td style="width: 10%">${item.second_name == null ? '' : item.second_name}</td>
+                <td style="width: 10%">${item.class}</td>
+                <td style="width: 20%">${item.format}</td>
+                <td style="width: 15%">${item.remark == null ? '' : item.remark}</td>
+                <td style="width: 5%">${item.status}</td>
+                <td style="width: 15%"><img src="./storage/propertyImgs/${item.img_url}" style="width: 100px; height: auto;"></td>
             </tr>`;
 
         formattedInfo += col;
@@ -416,12 +507,51 @@ function manuplateButtonStatusChange(mode) {
             $('#lending_out').prop('hidden', true);
             $('#return_in').prop('hidden', true);
             $('#area_sa_id_deposit_box_number').prop('hidden', true);
+            $('#area-first-check-scan').prop('hidden', false);
+            $('#area-first-check-remark').prop('hidden', false);
+            $('#area-first-check-button').prop('hidden', false);
 
+            $('#area-double-check-confirm-text').prop('hidden', true);
+            $('#area-double-check').prop('hidden', true);
             // 掃描、備註、儲存按鈕關閉
             $('#area_sa_id_deposit_box_number').prop('disabled', true);
             $('#scan_list').prop('disabled', true);
             $('#sa_remark').prop('disabled', true);
             $('#save-data').prop('disabled', true);
+            break;
+        case 'double_check':
+            $('#lending_out').prop('hidden', true);
+            $('#return_in').prop('hidden', true);
+            $('#area_sa_id_deposit_box_number').prop('hidden', true);
+            $('#area-first-check-scan').prop('hidden', true);
+            $('#area-first-check-remark').prop('hidden', true);
+            $('#area-first-check-button').prop('hidden', true);
+
+            $('#area-double-check-confirm-text').prop('hidden', false);
+            $('#area-double-check').prop('hidden', false);
+            // 掃描、備註、儲存按鈕關閉
+            $('#area_sa_id_deposit_box_number').prop('disabled', true);
+            $('#scan_list').prop('disabled', true);
+            $('#sa_remark').prop('disabled', true);
+            $('#save-data').prop('disabled', true);
+            break;
+        case 'callback':
+            if($('#sa_manuplate').val() == 'borrow')
+                manuplateButtonStatusChange('borrow');
+            else
+                manuplateButtonStatusChange('return');
+            $('#area_sa_id_deposit_box_number').prop('hidden', false);
+            $('#area-first-check-scan').prop('hidden', false);
+            $('#area-first-check-remark').prop('hidden', false);
+            $('#area-first-check-button').prop('hidden', false);
+
+            $('#area-double-check-confirm-text').prop('hidden', true);
+            $('#area-double-check').prop('hidden', true);
+            // 掃描、備註、儲存按鈕關閉
+            $('#area_sa_id_deposit_box_number').prop('disabled', false);
+            $('#scan_list').prop('disabled', false);
+            $('#sa_remark').prop('disabled', false);
+            $('#save-data').prop('disabled', false);
             break;
         case 'MANUAL_TEST':
             // 全部顯示
@@ -434,6 +564,7 @@ function manuplateButtonStatusChange(mode) {
             $('#sa_remark').prop('disabled', false);
             $('#save-data').prop('disabled', false);
             break;
+
     }
     return mode;
 }
