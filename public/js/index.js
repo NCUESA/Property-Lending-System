@@ -8,7 +8,7 @@ $(document).ready(function () {
 
         $.ajax({
             type: 'POST',
-            url: '/show-borrowable-item',
+            url: '/property/borrowable/show',
             data: {
                 place: selected_place,
                 _token: $('meta[name="csrf-token"]').attr('content')  // CSRF Token
@@ -28,7 +28,7 @@ $(document).ready(function () {
     $('#find').on('change', function () {
         // Adding-Selected-Items       
         let arr = collectBorrowItems();
-        
+
         arr.forEach(num => selectedItems.add(num));
 
         // Filetering-Search
@@ -37,7 +37,7 @@ $(document).ready(function () {
         //console.log(selected_place);
         $.ajax({
             type: 'POST',
-            url: '/show-borrowable-item',
+            url: '/property/borrowable/show',
             data: {
                 place: selected_place,
                 filter: condition,
@@ -64,10 +64,10 @@ $(document).ready(function () {
             event.stopPropagation();
             return;
         }
-
+        spinnerLoadingAction('show');
         // Transfer into Array
         let sending_items = [...selectedItems].flat();
-        
+
         // Send Ajax
         $.ajax({
             type: 'POST',
@@ -88,13 +88,16 @@ $(document).ready(function () {
                 //console.log(response);
                 if (response.success && response.error == '') {
                     alert('借用表單送出成功，請等待值勤人員提供器材');
+                    spinnerLoadingAction('hide');
                     location.reload();
                 }
                 else {
                     alert(response.error);
+                    event.stopPropagation();
                 }
             },
             error: function (error) {
+                alert(error);
                 console.log(error);
                 event.preventDefault();
                 event.stopPropagation();
@@ -199,136 +202,149 @@ function collectBorrowItems() {
 
 function formValidationCheck() {
     let isValid = true;
-    if (!$('input[name="know_filling"]:checked').val()) {
-        $('#check_know_filling').addClass('invalid-feedback');
-        $('#check_know_filling').text('要填');
-        isValid = false;
-    }
-    // Know Filling Value Wrong
-    else if ($('input[name="know_filling"]:checked').val() == 'n') {
-        $('#check_know_filling').addClass('invalid-feedback');
-        $('#check_know_filling').text('還敢亂填啊');
-        isValid = false;
-    }
-    else {
-        $('#check_know_filling').text('');
-        $('#check_know_filling').removeClass('invalid-feedback').addClass('valid-feedback');
+    let firstErrorElement = null; // 存第一個錯誤欄位
+
+    function setError(element, message) {
+        element.addClass('invalid-feedback').text(message);
+        if (!firstErrorElement) firstErrorElement = element; // 記住第一個錯誤的元素
     }
 
-    if (!$('input[name="borrow_place"]:checked').val()) {
-        $('#check_borrow_place').addClass('invalid-feedback');
-        $('#check_borrow_place').text('要填');
-        isValid = false;
-    }
-    else {
-        $('#check_borrow_place').text('');
-        $('#check_borrow_place').removeClass('invalid-feedback').addClass('valid-feedback');
+    function clearError(element) {
+        element.removeClass('invalid-feedback').addClass('valid-feedback').text('');
     }
 
+    // Know Filling
+    const knowFilling = $('input[name="know_filling"]:checked').val();
+    if (!knowFilling) {
+        setError($('#check_know_filling'), '要填');
+        isValid = false;
+    } else if (knowFilling === 'n') {
+        setError($('#check_know_filling'), '還敢亂填啊');
+        isValid = false;
+    } else {
+        clearError($('#check_know_filling'));
+    }
+
+    // Borrow Place
+    const borrowPlace = $('input[name="borrow_place"]:checked').val();
+    if (!borrowPlace) {
+        setError($('#check_borrow_place'), '要填');
+        isValid = false;
+    } else {
+        clearError($('#check_borrow_place'));
+    }
+
+    // Department
     if ($('#department').val().trim() === '') {
-        $('#check_department').addClass('invalid-feedback');
-        $('#check_department').text('要填');
+        setError($('#check_department'), '要填');
         isValid = false;
-    }
-    else {
-        $('#check_department').text('');
-        $('#check_department').removeClass('invalid-feedback').addClass('valid-feedback');
+    } else {
+        clearError($('#check_department'));
     }
 
-
-    if ($('#contact_person').val().trim() == '') {
-        $('#check_contact_person').addClass('invalid-feedback');
-        $('#check_contact_person').text('要填');
+    // Contact Person
+    if ($('#contact_person').val().trim() === '') {
+        setError($('#check_contact_person'), '要填');
         isValid = false;
-    }
-    else {
-        $('#check_contact_person').text('');
-        $('#check_contact_person').removeClass('invalid-feedback').addClass('valid-feedback');
+    } else {
+        clearError($('#check_contact_person'));
     }
 
+    // Phone
     const phoneRegex = /^\d{10}$/;
     if (!phoneRegex.test($('#phone').val().trim())) {
-        $('#check_phone').addClass('invalid-feedback');
-        $('#check_phone').text('要填');
+        setError($('#check_phone'), '要填');
         isValid = false;
-    }
-    else {
-        $('#check_phone').text('');
-        $('#check_phone').removeClass('invalid-feedback').addClass('valid-feedback');
+    } else {
+        clearError($('#check_phone'));
     }
 
-    if ($('#email').val().trim() == '') {
-        $('#check_email').addClass('invalid-feedback');
+    // Email
+    const email = $('#email').val().trim();
+    if (email === '') {
+        setError($('#check_email'), '要填');
         isValid = false;
-        $('#check_email').text('要填');
-    } else if (!/\S+@\S+\.\S+/.test($('#email').val().trim())) {
-        $('#check_email').addClass('invalid-feedback');
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+        setError($('#check_email'), '不要亂填');
         isValid = false;
-        $('#check_email').text('不要亂填');
-    }
-    else {
-        $('#check_email').text('');
-        $('#check_email').removeClass('invalid-feedback').addClass('valid-feedback');
+    } else {
+        clearError($('#check_email'));
     }
 
-    // 獲取當前日期
+    // 日期驗證
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // 設定時間為午夜，確保只比較日期
+    today.setHours(0, 0, 0, 0);
 
-    // 獲取欄位值
     const borrowDateValue = $('#borrow_date').val();
     const returnDateValue = $('#return_date').val();
 
-
-
-    // 將日期字串轉為日期物件
     const borrowDate = borrowDateValue ? new Date(borrowDateValue) : null;
     const returnDate = returnDateValue ? new Date(returnDateValue) : null;
 
-     // 設定時間為午夜，確保只比較日期
-    borrowDate.setHours(0, 0, 0, 0);
-    returnDate.setHours(0, 0, 0, 0);
+    if (borrowDate) borrowDate.setHours(0, 0, 0, 0);
+    if (returnDate) returnDate.setHours(0, 0, 0, 0);
 
-    // 檢查 borrow_date
     if (!borrowDateValue) {
-        $('#check_borrow_date').addClass('invalid-feedback').text('要填');
+        setError($('#check_borrow_date'), '要填');
         isValid = false;
     } else if (borrowDate < today) {
-        $('#check_borrow_date').addClass('invalid-feedback').text('你應該不是時間旅人吧');
+        setError($('#check_borrow_date'), '你應該不是時間旅人吧');
         isValid = false;
     } else if (borrowDate > today) {
-        $('#check_borrow_date').addClass('invalid-feedback').text('不開放預借，借用日期不能大於當前日期');
+        setError($('#check_borrow_date'), '不開放預借，借用日期不能大於當前日期');
         isValid = false;
     } else {
-        $('#check_borrow_date').removeClass('invalid-feedback').addClass('valid-feedback').text('');
+        clearError($('#check_borrow_date'));
     }
 
-    // 檢查 return_date
     if (!returnDateValue) {
-        $('#check_return_date').addClass('invalid-feedback').text('要填');
+        setError($('#check_return_date'), '要填');
+        isValid = false;
+    } else if (returnDate < today) {
+        setError($('#check_return_date'), '你應該不是時間旅人吧');
         isValid = false;
     } else if (returnDate < borrowDate) {
-        $('#check_return_date').addClass('invalid-feedback').text('歸還日期不能小於借用日期');
+        setError($('#check_return_date'), '歸還日期不能小於借用日期');
         isValid = false;
     } else {
-        $('#check_return_date').removeClass('invalid-feedback').addClass('valid-feedback').text('');
+        clearError($('#check_return_date'));
     }
 
-
+    // 借用項目
     let arr = collectBorrowItems();
     arr.forEach(num => selectedItems.add(num));
 
-    if (selectedItems.length <= 0) {
-        //$('#check_borrow_item').addClass('invalid-feedback');
+    if (selectedItems.size <= 0) {
         $('#check_borrow_item').show();
         isValid = false;
-    }
-    else {
+        if (!firstErrorElement) firstErrorElement = $('#check_borrow_item'); // 記住第一個錯誤元素
+    } else {
         $('#check_borrow_item').hide();
-        //$('#check_borrow_item').removeClass('invalid-feedback').addClass('valid-feedback');
+    }
+
+    // 滾動到第一個錯誤元素
+    if (firstErrorElement) {
+        $('html,body').animate({
+            scrollTop: firstErrorElement.offset().top - 100 // 預留一點空間
+        }, 10);
     }
 
     $("#borrow").addClass('was-validated');
 
     return isValid;
+}
+
+function spinnerLoadingAction(action) {
+    if (action == 'show') {
+        $('#send_form').text(' 請求處理中...');
+        $('#waiting_spot').removeClass('visually-hidden');
+        $('.bi-send').addClass('visually-hidden');
+        $('#send_form').prop('disabled', true);
+    }
+    else {
+        $('#waiting_spot').addClass('visually-hidden');
+        $('.bi-send').removeClass('visually-hidden');
+        $('#send_form').prop('disabled', false);
+        $('#send_form').text(' 送出借用');
+    }
 }

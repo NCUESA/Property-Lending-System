@@ -27,7 +27,7 @@ $(document).ready(function () {
         var selectedValue = $('#place').val();
         $.ajax({
             type: 'POST',
-            url: '/get-property-info',
+            url: '/property/info/get',
             data: {
                 selected: selectedValue,
                 _token: $('meta[name="csrf-token"]').attr('content')  // CSRF Token
@@ -50,7 +50,7 @@ $(document).ready(function () {
         var selectedValue = $(this).val();
         $.ajax({
             type: 'POST',
-            url: '/get-property-info',
+            url: '/property/info/get',
             data: {
                 selected: selectedValue,
                 _token: $('meta[name="csrf-token"]').attr('content')  // CSRF Token
@@ -169,7 +169,7 @@ function sendData() {
     // Send the AJAX request
     $.ajax({
         type: 'POST',
-        url: '/update-property-info',
+        url: '/property/info/update',
         data: formData,
         contentType: false,
         processData: false,

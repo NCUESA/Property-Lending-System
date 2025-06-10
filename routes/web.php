@@ -45,13 +45,23 @@ Route::middleware('ipAuth:10')->group(function () {
 });
 
 // JS Action, Seperate by the contorller name
-Route::name('property')->group(function () {
-    Route::post('/get-property-info', [PropertyController::class, 'getPropertyData']);
-    Route::post('/get-property-with-borrow-id', [PropertyController::class, 'getPropertyDataWithBorrowID']);
-    Route::post('/show-borrowable-item', [PropertyController::class, 'getBorrowableData']);
-    Route::post('/show-item-status', [PropertyController::class, 'getPropertyStatusData']);
-    Route::post('/update-property-info', [PropertyController::class, 'updatePropertyData']);
-});
+Route::name('property')
+    ->prefix('property')->group(function () {
+        Route::prefix('info')->group(function () {
+            Route::post('/get', [PropertyController::class, 'getPropertyData']);
+            Route::post('/getWithBorrowID', [PropertyController::class, 'getPropertyDataWithBorrowID']);
+            Route::post('/update', [PropertyController::class, 'updatePropertyData']);
+        });
+        Route::prefix('borrowable')->group(function(){
+            Route::post('/show', [PropertyController::class, 'getBorrowableData']);
+        });
+        Route::prefix('status')->group(function(){
+            Route::post('/show', [PropertyController::class, 'getPropertyStatusData']);
+        });
+        
+        
+        
+    });
 
 // ->prefix('borrow')
 Route::prefix('borrow')->group(function () {
@@ -59,6 +69,7 @@ Route::prefix('borrow')->group(function () {
     Route::prefix('getData')->group(function () {
         Route::post('/', [BorrowController::class, 'getLendingStatusData']);
         Route::post('/condition', [BorrowController::class, 'getLendingStatusDataInCondition']);
+        Route::post('/single', [BorrowController::class, 'getLendingStatusSingleWithID']);
     })->name('getData');
 
     Route::prefix('item')->group(function () {
@@ -71,7 +82,7 @@ Route::name('responsible')->group(function () {
     Route::post('/show-user', [ResponsibleController::class, 'showUserFull']);
     Route::post('/show-user-name', [ResponsibleController::class, 'showUserNameOnly']);
     Route::post('/add-user', [ResponsibleController::class, 'addUser']);
-    Route::post('/delete-user',[ResponsibleController::class, 'deleteUser']);
+    Route::post('/delete-user', [ResponsibleController::class, 'deleteUser']);
 });
 
 Route::prefix('ip')->group(function () {

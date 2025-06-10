@@ -4,9 +4,9 @@
     <h2>器材借用狀況</h2>
     <div class="row">
         <label for="" class="col-sm-1 col-form-label">借用地點</label>
-        <div class="col-sm-5">
-            <div class="btn-group" role="group" aria-label="">
-                <input type="radio" class="btn-check" id="all_place" name="location" autocomplete="off" value="all">
+        <div class="col-sm-3 d-grid gap-2">
+            <div class="btn-group" role="group" aria-label="location">
+                <input type="radio" class="btn-check" id="all_place" name="location" autocomplete="off" value="all" checked>
                 <label class="btn btn-outline-dark" for="all_place" >全部地點</label>
                 <input type="radio" class="btn-check" id="jinde" name="location" autocomplete="off" value="jinde">
                 <label class="btn btn-outline-dark" for="jinde">進德</label>
@@ -19,10 +19,10 @@
             </div>
         </div>
         <label for="" class="col-sm-1 col-form-label">借用狀況</label>
-        <div class="col-sm-5">
-            <div class="btn-group" role="group" aria-label="">
-                <input type="radio" class="btn-check" id="all_equipments" name="lending_status" autocomplete="off" value="all">
-                <label class="btn btn-outline-dark" for="all_equipments" >全部器材</label>
+        <div class="col-sm-3 d-grid gap-2">
+            <div class="btn-group" role="group" aria-label="lending_status">
+                <input type="radio" class="btn-check" id="all_equipments" name="lending_status" autocomplete="off" value="all" checked>
+                <label class="btn btn-outline-dark" for="all_equipments">全部器材</label>
                 <input type="radio" class="btn-check" id="borrowable" name="lending_status" autocomplete="off" value="borrowable">
                 <label class="btn btn-outline-dark" for="borrowable">可借用</label>
                 <input type="radio" class="btn-check" id="lent" name="lending_status" autocomplete="off" value="lent">

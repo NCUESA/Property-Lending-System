@@ -11,17 +11,26 @@
 - 環境部屬：Dev-Xampp v3.3.0; Server-Nginx
 
 ## 版本
+- Ver 1.3.4
+- 最近Commit日期：2025/6/10
+- Commit Name：Borrow Duplicate Fixed
+- 更新內容：
+    1. 修正借用重複借用器材的問題
+    2. 修正逾期歸還的時間界定問題
+    3. 修正借用表單防呆缺漏
+
+## 開發人員資訊
+- Email:  dev@ncuesa.org.tw
+- Dev:    Enderman
+
+# 歷史紀錄
+
 - Ver 1.3.3
 - 最近Commit日期：2025/3/26
 - Commit Name：issue 5 hot fixed.3
 - 更新內容：
     1. 修正借用的東西會變成一坨重複的器材
 
-## 開發人員資訊
-- Email:  studentgovernment-general-it@gm.ncue.edu.tw
-- Dev:    Enderman
-
-# 歷史紀錄
 - Ver 1.3.2
 - 最近Commit日期：2025/3/25
 - Commit Name：issue 5 hot fixed.2
