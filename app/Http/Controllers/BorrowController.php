@@ -24,8 +24,10 @@ class BorrowController extends Controller
             ->get();
 
         foreach ($items_status as $item) {
-            if ($item->status == 1) {
-                return response()->json(['success' => true, 'error' => 'Input Failed, The Item has already lent out']);
+            if ($item->status == 1 || $item->status == 2) {
+                return response()->json([
+                    'error' => 'Invalid Operation'
+                ], 400);
             }
         }
 
@@ -109,7 +111,7 @@ class BorrowController extends Controller
     public function getLendingStatusSingleWithID(Request $request)
     {
         $id = $request->input('id');
-        $info = BorrowList::where('id',$id)->first();
+        $info = BorrowList::where('id', $id)->first();
         return response()->json(['success' => true, 'data' => $info]);
     }
 

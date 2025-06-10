@@ -591,7 +591,9 @@ function genDetailButton(data, statusFiltering = 'no') {
         const statusClasses = ['table-danger', 'table-success', 'table-primary', 'table-secondary'];
         lending_status = statusClasses[lending_status] || '';
 
-        if (lending_status === 'table-success' && expired_return <= today) {
+
+        // 逾期處理
+        if (lending_status === 'table-success' && expired_return < today) {
             lending_status = 'table-warning';
         }
 

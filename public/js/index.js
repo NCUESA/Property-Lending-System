@@ -93,9 +93,11 @@ $(document).ready(function () {
                 }
                 else {
                     alert(response.error);
+                    event.stopPropagation();
                 }
             },
             error: function (error) {
+                alert(error);
                 console.log(error);
                 event.preventDefault();
                 event.stopPropagation();
@@ -297,6 +299,9 @@ function formValidationCheck() {
 
     if (!returnDateValue) {
         setError($('#check_return_date'), '要填');
+        isValid = false;
+    } else if (returnDate < today) {
+        setError($('#check_return_date'), '你應該不是時間旅人吧');
         isValid = false;
     } else if (returnDate < borrowDate) {
         setError($('#check_return_date'), '歸還日期不能小於借用日期');

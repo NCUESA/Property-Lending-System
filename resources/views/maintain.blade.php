@@ -3,19 +3,25 @@
 @section('content')
     <h2>器材清單維護</h2>
     <hr>
-    <h4>地點查詢</h4>
 
-    <select class="col-6 form-control" id='place'>
-        <option disabled selected>請選擇地點...</option>
-        <option value="jinde">進德</option>
-        <option value="baosan">寶山</option>
-        <option value="307">307倉庫</option>
-        <option value="405">405議會辦公室</option>
-        <option value="all">查看全部</option>
-    </select>
-    <hr>
-    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal" data-property=""><i
-            class="bi bi-file-earmark-plus"></i> 新增財產</button>
+    <div class="row">
+        <label for="" class="col-sm-1 col-form-label">地點查詢</label>
+        <div class="col-5">
+            <select class="form-control" id='place'>
+                <option disabled selected>請選擇地點...</option>
+                <option value="jinde">進德</option>
+                <option value="baosan">寶山</option>
+                <option value="307">307倉庫</option>
+                <option value="405">405議會辦公室</option>
+                <option value="all">查看全部</option>
+            </select>
+        </div>
+        <div class="col-sm-6 d-grid gap-2">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal"
+                data-property=""><i class="bi bi-file-earmark-plus"></i> 新增財產</button>
+        </div>
+    </div>
+
     <hr>
     <div>
         <div class="modal fade" id="modal" tabindex="-1" aria-labelledby="modal_Label" aria-hidden="true">
