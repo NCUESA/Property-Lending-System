@@ -1,3 +1,5 @@
+const CONTROL_PANEL_URL = '/status_table/control';
+
 $(document).ready(function () {
 
     // 地點查詢
@@ -603,8 +605,8 @@ function genDetailButton(data, statusFiltering = 'no') {
         }
 
         // Generate modal and button
-        let trig_btn = `<button type="button" class="btn btn-info btn-bring-data" data-bs-toggle="modal" data-bs-target="#modal" data-combine="${item.id}_combine">
-        <i class="bi bi-clipboard-data"></i> 借用資訊</button>`;
+        let trig_btn = `<a href="${CONTROL_PANEL_URL}?id=${item.id}" type="button" class="btn btn-info">
+        <i class="bi bi-clipboard-data"></i> 借用資訊</a>`;
 
         // Generate table row
         let row = `

@@ -28,11 +28,21 @@ Route::middleware('ipAuth:0')->group(function () {
     });
 });
 
-Route::middleware('ipAuth:5')->group(function () {
-    Route::get('/full_status', function () {
-        return view('full_status', ['js_name' => 'full_status']);
+Route::name('status_table')->prefix('status_table')
+    ->group(function (){
+    Route::middleware('ipAuth:5')->group(function () {
+        Route::get('/', function () {
+            return view('status_table.full_status', ['js_name' => 'full_status']);
+        });
+        Route::get('/control', function () {
+            return view('status_table.control', ['js_name' => 'full_status_control']);
+        });
+
     });
 });
+
+
+
 
 Route::middleware('ipAuth:10')->group(function () {
     Route::get('/maintain', function () {
@@ -68,6 +78,7 @@ Route::prefix('borrow')->group(function () {
 
     Route::prefix('getData')->group(function () {
         Route::post('/', [BorrowController::class, 'getLendingStatusData']);
+        Route::get('/{id}',[BorrowController::class, 'getLendingStatusDataSingle']);
         Route::post('/condition', [BorrowController::class, 'getLendingStatusDataInCondition']);
         Route::post('/single', [BorrowController::class, 'getLendingStatusSingleWithID']);
     })->name('getData');

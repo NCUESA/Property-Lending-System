@@ -348,7 +348,7 @@
                                         <i class="bi bi-x-circle"></i> 關閉(不儲存)</button>
                                 </div>
                             </div>
-                            <div class="row" id="area-double-check" hidden>
+                            <div class="row" id="double-check-area">
                                 <div class="col-2 d-grid gap-2">
                                     <button type="button" class="btn btn-success" id="double-check-save">
                                         <i class="bi bi-check-circle"></i> 我非常確定</button>

@@ -107,6 +107,9 @@ class BorrowController extends Controller
 
         return response()->json(['success' => true, 'data' => $borrowers]);
     }
+    public function getLendingStatusDataSingle($id) {
+        return BorrowList::findOrFail($id);
+    }
 
     public function getLendingStatusSingleWithID(Request $request)
     {

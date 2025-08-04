@@ -10,6 +10,7 @@
         integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link href="{{ asset('css/index.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/more_color.css') }}" rel="stylesheet">
     <link rel="shortcut icon" href="{{ asset('/image/favicon.ico') }}">
     <link rel="bookmark" href="{{ asset('/image/favicon.ico') }}">
     <title>器材借用網站 - 國立彰化師範大學學生會</title>
@@ -18,7 +19,7 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <div class="container-fluid">
-            <a class="navbar-brand name-cn" href="./">學生會器材借用系統</a>
+            <a class="navbar-brand name-cn" href="/">學生會器材借用系統</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                 data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
                 aria-label="Toggle navigation">
@@ -27,28 +28,28 @@
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <ul class="navbar-nav nav-tabs me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
-                        <a class="nav-link {{ Request::is('/') ? 'active' : '' }}" href="./">借用表單</a>
+                        <a class="nav-link {{ Request::is('/') ? 'active' : '' }}" href="/">借用表單</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {{ Request::is('status') ? 'active' : '' }}" href="./status">器材借用狀態</a>
+                        <a class="nav-link {{ Request::is('status') ? 'active' : '' }}" href="/status">器材借用狀態</a>
                     </li>
                     @if ($hasAccess)
                         <li class="nav-item">
-                            <a class="nav-link {{ Request::is('full_status') ? 'active' : '' }}"
-                                href="./full_status">器材借用總表</a>
+                            <a class="nav-link {{ Request::is('status_table') ? 'active' : '' }}"
+                                href="/status_table">器材借用總表</a>
                         </li>
                     @endif
                     @if ($hasAdminAccess)
                         <li class="nav-item">
                             <a class="nav-link {{ Request::is('maintain') ? 'active' : '' }}"
-                                href="./maintain">器材清單維護(管理員)</a>
+                                href="/maintain">器材清單維護(管理員)</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link {{ Request::is('responsible') ? 'active' : '' }}"
-                                href="./responsible">人員權限控管(管理員)</a>
+                                href="/responsible">人員權限控管(管理員)</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {{ Request::is('ip') ? 'active' : '' }}" href="./ip">IP通過權限設定(管理員)</a>
+                            <a class="nav-link {{ Request::is('ip') ? 'active' : '' }}" href="/ip">IP通過權限設定(管理員)</a>
                         </li>
                     @endif
 
@@ -96,7 +97,7 @@
             <div class="col-md-4 d-flex align-items-center">
 
                 <a href="https://www.ncuesa.org.tw" class="mb-3 me-2 mb-md-0 text-muted text-decoration-none lh-1">
-                    <img src="./ncuesalogo.png" alt="NCUESA_IMG" class="center"
+                    <img src="/ncuesalogo.png" alt="NCUESA_IMG" class="center"
                         style="width: auto; height: 32px; display: block; margin: 0 auto;">
                 </a>
                 <span class="text-muted">© 2025 NCUE SA.</span>

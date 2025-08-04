@@ -31,9 +31,24 @@ class BorrowList extends Model
         'sa_deposit_returned',
         'sa_remark'
     ];
+    protected $appends = ['status']; // 自動加到 JSON 輸出
 
     public function borrowItems()
     {
         return $this->hasMany(BorrowItem::class, 'borrow_id', 'id');
+    }
+
+    public function getStatusAttribute()
+    {
+        $items = $this->borrowItems;
+
+        $hasBorrowed = $items->contains(fn($i) => $i->status == 1);
+        $hasReturned = $items->every(fn($i) => $i->status == 3);
+        $hasRejected = $items->contains(fn($i) => $i->status == 0);
+
+        if ($hasBorrowed) return 1;      // 外借中
+        if ($hasReturned) return 3;      // 已全部歸還
+        if ($hasRejected) return 0;      // 系統拒絕
+        return 2;                        // 已填單 (但還沒借出)
     }
 }
