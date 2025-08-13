@@ -489,7 +489,7 @@ function showBorrowItems(lending_property) {
         <div class="card h-100 shadow-sm ${gray_outcome}" id="item-${item.ssid}" data-ssid="${item.ssid}" data-status="${item.status}">
           <div class="card-body">
             <div class="d-flex gap-3">
-              <img src="./storage/propertyImgs/${item.img_url}" 
+              <img src="/storage/propertyImgs/${item.img_url}" 
                    style="width: 40%; aspect-ratio: 1 / 1; object-fit: contain;" 
                    class="rounded border"
                    alt="No Image"
