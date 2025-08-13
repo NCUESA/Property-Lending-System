@@ -43,7 +43,7 @@ class BorrowList extends Model
         $items = $this->borrowItems;
 
         $hasBorrowed = $items->contains(fn($i) => $i->status == 1);
-        $hasReturned = $items->every(fn($i) => $i->status == 3);
+        $hasReturned = $items->contains(fn($i) => $i->status == 3);
         $hasRejected = $items->contains(fn($i) => $i->status == 0);
 
         if ($hasBorrowed) return 1;      // 外借中

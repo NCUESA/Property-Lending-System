@@ -48,6 +48,22 @@
     <h2 style="display: inline">操作頁面</h2>
     <h4 style="display: inline"> Control Panel</h4>
     <hr>
+    <div class="modal" tabindex="-1" id="loading-modal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="loading-modal-title"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
+                            aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="loading-progress-bar"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="container-fluid g-3">
         <div>
             <h4 style="font-weight: bold;"><i class="bi bi-credit-card-2-front"></i> 借用資訊</h4>
@@ -99,7 +115,7 @@
 
                             <div class="col-md-6" id="area_sa_id_deposit_box_number">
                                 <label class="form-label">押金證件盒編號</label>
-                                <select class="form-select form-select mb-3" id="sa_id_deposit_box_number" required>
+                                <select class="form-select form-select mb-3" id="sa_id_deposit_box_number">
                                     <option selected disabled value="-1">請選擇</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
@@ -127,7 +143,7 @@
                                     <option value="24">24</option>
 
                                 </select>
-                                <div class="invalid-feedback">
+                                <div class="invalid-feedback" id="check_id_deposit_box_number">
                                     必填
                                 </div>
                             </div>
@@ -141,29 +157,23 @@
                                         <i class="bi bi-pencil"></i> 填寫</button>
                                 </div>
                             </div>
-                            <div class="col-4" id="extend-lending-area">
-                                <label class="form-label">展延借用期限</label>
-                                <div class="d-grid gap-2">
-                                    <button type="button" class="btn btn-warning" id="extend-lending">
-                                        <i class="bi bi-arrow-left-right"></i> 展延</button>
-                                </div>
-                            </div>
-                            <div class="col-4" id="email-sending-area">
-                                <label class="form-label">寄送提醒Email</label>
-                                <div class="d-grid gap-2">
-                                    <button type="button" class="btn btn-light" id="extend-lending">
-                                        <i class="bi bi-envelope-arrow-up"></i> 寄送</button>
-                                </div>
-                            </div>
+                            <!--
+                                                    <div class="col-4" id="extend-lending-area">
+                                                        <label class="form-label">展延借用期限</label>
+                                                        <div class="d-grid gap-2">
+                                                            <button type="button" class="btn btn-warning" id="extend-lending">
+                                                                <i class="bi bi-arrow-left-right"></i> 展延</button>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-4" id="email-sending-area">
+                                                        <label class="form-label">寄送提醒Email</label>
+                                                        <div class="d-grid gap-2">
+                                                            <button type="button" class="btn btn-light" id="extend-lending">
+                                                                <i class="bi bi-envelope-arrow-up"></i> 寄送</button>
+                                                        </div>
+                                                    </div>-->
                         </div>
                         <div class="row" id="double-check-area">
-                            <div class="col-6">
-                                <label class="form-label">儲存填寫內容</label>
-                                <div class="d-grid gap-2">
-                                    <button type="button" class="btn btn-success" id="save-data">
-                                        <i class="bi bi-floppy2"></i> 儲存</button>
-                                </div>
-                            </div>
                             <div class="col-6">
                                 <label class="form-label">返回功能表</label>
                                 <div class="d-grid gap-2">
@@ -171,8 +181,14 @@
                                         <i class="bi bi-arrow-90deg-left"></i> 返回(不儲存)</button>
                                 </div>
                             </div>
+                            <div class="col-6">
+                                <label class="form-label">儲存填寫內容</label>
+                                <div class="d-grid gap-2">
+                                    <button type="button" class="btn btn-success" id="save-data">
+                                        <i class="bi bi-floppy2"></i> 儲存</button>
+                                </div>
+                            </div>
                         </div>
-
 
                         <div id='lending_out'>
                             <hr>
@@ -199,8 +215,8 @@
                                             onclick="setToday('sa_lending_date')" id="lend_out_today_btn">今天</button>
                                     </div>
 
-                                    <div class="invalid-feedback">
-                                        必填
+                                    <div class="invalid-feedback" id="check_sa_lending_date">
+                                        
                                     </div>
                                 </div>
                             </div>
@@ -210,7 +226,7 @@
 
                                     <div class="btn-group" role="group" aria-label="sa_deposit_take_radio">
                                         <input type="radio" class="btn-check" name="sa_deposit_take"
-                                            id="sa_deposit_take_radio1" autocomplete="off" required value="1">
+                                            id="sa_deposit_take_radio1" autocomplete="off" value="1">
                                         <label class="btn btn-outline-success" for="sa_deposit_take_radio1">收了
                                             Take</label>
 
@@ -228,7 +244,7 @@
 
                                     <div class="btn-group" role="group" aria-label="sa_id_take_radio">
                                         <input type="radio" class="btn-check" name="sa_id_take" id="sa_id_take_radio1"
-                                            autocomplete="off" required value="1">
+                                            autocomplete="off" value="1">
                                         <label class="btn btn-outline-success" for="sa_id_take_radio1">收了 Take</label>
 
                                         <input checked="checked" type="radio" class="btn-check" name="sa_id_take"
@@ -269,7 +285,7 @@
                                             onclick="setToday('sa_returned_date')" id="return_in_today_btn">今天</button>
                                     </div>
 
-                                    <div class="invalid-feedback">
+                                    <div class="invalid-feedback" id="check_sa_returned_date">
                                         必填
                                     </div>
                                 </div>
@@ -280,7 +296,7 @@
 
                                     <div class="btn-group" role="group" aria-label="sa_deposit_returned_radio">
                                         <input type="radio" class="btn-check" name="sa_deposit_returned"
-                                            id="sa_deposit_returned_radio1" autocomplete="off" required value="1">
+                                            id="sa_deposit_returned_radio1" autocomplete="off" value="1">
                                         <label class="btn btn-outline-success" for="sa_deposit_returned_radio1">退了
                                             Back</label>
 
@@ -299,7 +315,7 @@
                                     <label class="form-label">證件退還 <i class="bi bi-person-vcard"></i></label>
                                     <div class="btn-group" role="group" aria-label="sa_id_returned_radio">
                                         <input type="radio" class="btn-check" name="sa_id_returned"
-                                            id="sa_id_returned_radio1" autocomplete="off" required value="1">
+                                            id="sa_id_returned_radio1" autocomplete="off" value="1">
                                         <label class="btn btn-outline-success" for="sa_id_returned_radio1">退了 Back</label>
 
                                         <input checked="checked" type="radio" class="btn-check" name="sa_id_returned"
@@ -346,6 +362,9 @@
                             <label class="form-label">掃描條碼ID</label>
                             <input type="input" class="form-control scan_list" placeholder="此處請勿填寫" id="scan_list"
                                 maxlength="8">
+                            <div class="invalid-feedback" id="scan-check">
+
+                            </div>
                         </div>
                     </div>
                     <hr>
@@ -355,6 +374,49 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+    <div class="position-fixed bottom-0 end-0 p-3">
+        <div class="toast bg-danger" role="alert" aria-live="assertive" aria-atomic="true" id="error_message_window">
+            <div class="toast-header">
+                <strong class="me-auto"><i class="bi bi-emoji-dizzy-fill"></i> 錯誤 Error</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body text-white" id='error_message'>
+            </div>
+        </div>
+    </div>
+    <div class="position-fixed bottom-0 end-0 p-3">
+        <div class="toast bg-success" role="alert" aria-live="assertive" aria-atomic="true" id="info_message_window">
+            <div class="toast-header">
+                <strong class="me-auto"><i class="bi bi-emoji-smile-fill"></i> 填寫完畢 Looks Great</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body text-white">
+                確認輸入OK後，再按一次儲存即可
+            </div>
+        </div>
+    </div>
+    <div class="position-fixed bottom-0 end-0 p-3">
+        <div class="toast bg-primary" role="alert" aria-live="assertive" aria-atomic="true" id="wait_message_window">
+            <div class="toast-header">
+                <strong class="me-auto"><i class="bi bi-upload"></i> 處理中 Uploading</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body text-white">
+                請稍後...
+            </div>
+        </div>
+    </div>
+    <div class="position-fixed bottom-0 end-0 p-3">
+        <div class="toast bg-success" role="alert" aria-live="assertive" aria-atomic="true" id="done_message_window">
+            <div class="toast-header">
+                <strong class="me-auto"><i class="bi bi-check-lg"></i> 完成 Finish</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body text-white" id="done_message">
+                 
             </div>
         </div>
     </div>

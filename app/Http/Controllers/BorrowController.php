@@ -107,7 +107,8 @@ class BorrowController extends Controller
 
         return response()->json(['success' => true, 'data' => $borrowers]);
     }
-    public function getLendingStatusDataSingle($id) {
+    public function getLendingStatusDataSingle($id)
+    {
         return BorrowList::findOrFail($id);
     }
 
@@ -192,23 +193,24 @@ class BorrowController extends Controller
 
         if (is_null($borrow_status)) {
             // 當沒有資料時的處理
-            return response()->json(['success' => true, 'message' => '借用人不存在'], 404);
+            return response()->json(['success' => false, 'error' => '借用人不存在'], 404);
         }
 
         // BorrowList Update
-        BorrowList::where('id', $borrow_id)
-            ->update([
-                'sa_lending_person_name' => $data['sa_lending_person_name'],
-                'sa_lending_date' => $data['sa_lending_date'],
-                'sa_id_take' => $data['sa_id_take'],
-                'sa_deposit_take' => $data['sa_deposit_take'],
-                'sa_id_deposit_box_number' => $data['sa_id_deposit_box_number'],
-                'sa_return_person_name' => $data['sa_return_person_name'],
-                'sa_returned_date' => $data['sa_returned_date'],
-                'sa_id_returned' => $data['sa_id_returned'],
-                'sa_deposit_returned' => $data['sa_deposit_returned'],
-                'sa_remark' => $data['sa_remark']
-            ]);
+        // 2025/08/13: 棄用 @ender
+        // BorrowList::where('id', $borrow_id)
+        //     ->update([
+        //         'sa_lending_person_name' => $data['sa_lending_person_name'],
+        //         'sa_lending_date' => $data['sa_lending_date'],
+        //         'sa_id_take' => $data['sa_id_take'],
+        //         'sa_deposit_take' => $data['sa_deposit_take'],
+        //         'sa_id_deposit_box_number' => $data['sa_id_deposit_box_number'],
+        //         'sa_return_person_name' => $data['sa_return_person_name'],
+        //         'sa_returned_date' => $data['sa_returned_date'],
+        //         'sa_id_returned' => $data['sa_id_returned'],
+        //         'sa_deposit_returned' => $data['sa_deposit_returned'],
+        //         'sa_remark' => $data['sa_remark']
+        //     ]);
 
 
 
@@ -216,6 +218,17 @@ class BorrowController extends Controller
         if ($manuplate == 'borrow') {
             $lend_out = 1;
             $back_to_sys = 0;
+
+            // 更新借用人員表
+            BorrowList::where('id', $borrow_id)
+                ->update([
+                    'sa_lending_person_name' => $data['sa_lending_person_name'],
+                    'sa_lending_date' => $data['sa_lending_date'],
+                    'sa_id_take' => $data['sa_id_take'],
+                    'sa_deposit_take' => $data['sa_deposit_take'],
+                    'sa_id_deposit_box_number' => $data['sa_id_deposit_box_number'],
+                    'sa_remark' => $data['sa_remark']
+                ]);
 
             // Borrow_Item Update
             // 檢查 itemList 是否為空
@@ -247,6 +260,16 @@ class BorrowController extends Controller
             $property_returned = 0;
             $returned = 3;
 
+            // 更新歸還人員表
+            BorrowList::where('id', $borrow_id)
+                ->update([
+                    'sa_return_person_name' => $data['sa_return_person_name'],
+                    'sa_returned_date' => $data['sa_returned_date'],
+                    'sa_id_returned' => $data['sa_id_returned'],
+                    'sa_deposit_returned' => $data['sa_deposit_returned'],
+                    'sa_remark' => $data['sa_remark']
+                ]);
+
             // 取得還未被歸還的項目（status 不是 3）
             $pendingItems = BorrowItem::where('borrow_id', $borrow_id)
                 ->whereIn('property_id', $itemList)
@@ -256,7 +279,7 @@ class BorrowController extends Controller
 
             // 如果所有項目都已經被歸還了（都為 3），則返回錯誤
             if (empty($pendingItems)) {
-                return response()->json(['success' => false, 'error' => '所有選取的項目已經被歸還過了！']);
+                return response()->json(['success' => false, 'message' => '所有選取的項目已經被歸還過了！']);
             }
 
             BorrowItem::where('borrow_id', $borrow_id)
@@ -268,8 +291,16 @@ class BorrowController extends Controller
                 ->update(['lending_status' => $property_returned]);
 
             return response()->json(['success' => true, 'message' => '成功歸還部分或全部項目']);
+        } elseif ($manuplate == 'comment') {
+
+            // 更新註解
+            BorrowList::where('id', $borrow_id)
+                ->update([
+                    'sa_remark' => $data['sa_remark']
+                ]);
+            return response()->json(['success' => true, 'message' => '註解更新成功']);
         } else {
-            return response()->json(['success' => true, 'message' => '操作錯誤'], 405);
+            return response()->json(['success' => false, 'message' => '意外未知錯誤'], 405);
         }
     }
 }
