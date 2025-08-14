@@ -76,8 +76,14 @@ class BorrowController extends Controller
 
     public function getLendingStatusData(Request $request)
     {
-
         $location = $request->input('location');
+        $limit = (int) $request->query('limit', 10); // 每頁筆數，預設 10
+        $page = (int) $request->query('page', 1);    // 當前頁碼，預設第 1 頁
+
+        // 計算跳過幾筆
+        $offset = ($page - 1) * $limit;
+
+        // 處理地點篩選
         if ($location == 'jinde') {
             $location = ['進德'];
         } elseif ($location == 'baosan') {
@@ -86,27 +92,39 @@ class BorrowController extends Controller
             $location = ['進德', '寶山'];
         }
 
-        $borrowers = BorrowList::whereIn('borrow_place', $location)
+        // 查詢資料
+        $query = BorrowList::whereIn('borrow_place', $location)
             ->with([
                 'borrowItems' => function ($query) {
-                    $query->select('borrow_id', 'status'); // 只取需要的欄位
+                    $query->select('borrow_id', 'status');
                 }
             ])
-            ->orderBy('id', 'desc')
+            ->orderBy('id', 'desc');
+
+        // 總筆數
+        $total = $query->count();
+
+        // 分頁資料
+        $borrowers = $query
+            ->skip($offset)
+            ->take($limit)
             ->get()
             ->map(function ($borrower) {
-                // 取得所有的 status
                 $statuses = $borrower->borrowItems->pluck('status');
-
-                // 如果有任何一個 status 是 1，則返回 1，否則返回最大 status
                 $borrower->status = $statuses->contains(1) ? 1 : $statuses->max();
-
                 return $borrower;
             });
 
-
-        return response()->json(['success' => true, 'data' => $borrowers]);
+        return response()->json([
+            'success' => true,
+            'data' => $borrowers,
+            'total' => $total,   // 回傳總筆數給前端算總頁數
+            'page' => $page,
+            'limit' => $limit
+        ]);
     }
+
+
     public function getLendingStatusDataSingle($id)
     {
         return BorrowList::findOrFail($id);
