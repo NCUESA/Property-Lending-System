@@ -103,7 +103,7 @@ $(function () {
 
 		if (completed === total_task) {
 			$("#loading-modal-title").text("讀取完畢 Good To Go");
-			setTimeout(() => loadingModal.hide(), 5000);
+			setTimeout(() => loadingModal.hide(), 1000);
 		}
 		else {
 			$("#loading-modal-title").text(msg || "讀取中，請稍後...");

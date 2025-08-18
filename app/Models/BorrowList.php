@@ -50,7 +50,7 @@ class BorrowList extends Model
                 && $i->returned_date
                 && $now->gt(Carbon::parse($i->returned_date)->startOfDay());
         });
-        
+
         if ($hasOverdue) return 4; // overdue
 
         $hasBorrowed = $items->contains(fn($i) => $i->status == 1);
@@ -61,5 +61,11 @@ class BorrowList extends Model
         if ($hasReturned) return 3;      // 已全部歸還
         if ($hasRejected) return 0;      // 系統拒絕
         return 2;                        // 已填單 (但還沒借出)
+    }
+
+    public function scopeWithStatus($query, $status)
+    {
+        // 先抓出資料，再用 Collection 過濾 status
+        return $query->get()->filter(fn($borrow) => $borrow->status == $status);
     }
 }

@@ -28,48 +28,50 @@
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <ul class="navbar-nav nav-tabs me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
-                        <a class="nav-link {{ Request::is('/') ? 'active' : '' }}" href="/">借用表單</a>
+                        <a class="nav-link {{ Request::is('/') ? 'active' : '' }}" href="/"><i
+                                class="bi bi-house"></i> 借用表單</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {{ Request::is('status') ? 'active' : '' }}" href="/status">器材借用狀態</a>
+                        <a class="nav-link {{ Request::is('status') ? 'active' : '' }}" href="/status"><i
+                                class="bi bi-bar-chart-steps"></i> 器材借用狀態</a>
                     </li>
                     @if ($hasAccess)
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::is('status_table') ? 'active' : '' }}"
-                                href="/status_table">器材借用總表</a>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link {{ Request::is('status_table') ? 'active' : '' }} dropdown-toggle"
+                                href="" id="navbarDropdown" role="button" data-bs-toggle="dropdown"
+                                aria-expanded="false">
+                                <i class="bi bi-card-list"></i> 器材借用總表
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                <li><a class="dropdown-item" href="/status_table?page=1&location=all">全部</a></li>
+                                <li><a class="dropdown-item" href="/status_table?page=1&location=jinde">進德</a></li>
+                                <li><a class="dropdown-item" href="/status_table?page=1&location=baosan">寶山</a></li>
+                            </ul>
                         </li>
                     @endif
                     @if ($hasAdminAccess)
                         <li class="nav-item">
-                            <a class="nav-link {{ Request::is('maintain') ? 'active' : '' }}"
-                                href="/maintain">器材清單維護(管理員)</a>
+                            <a class="nav-link {{ Request::is('maintain') ? 'active' : '' }}" href="/maintain"><i
+                                    class="bi bi-tools"></i> 器材清單維護</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::is('responsible') ? 'active' : '' }}"
-                                href="/responsible">人員權限控管(管理員)</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ Request::is('ip') ? 'active' : '' }}" href="/ip">IP通過權限設定(管理員)</a>
+
+                        <li class="nav-item dropdown">
+                            <a class="nav-link {{ Request::is('responsible') ? 'active' : '' }} {{ Request::is('ip') ? 'active' : '' }} dropdown-toggle"
+                                href="" id="navbarDropdown" role="button" data-bs-toggle="dropdown"
+                                aria-expanded="false">
+                                <i class="bi bi-gear"></i> 權限設定
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                <li><a class="dropdown-item" href="/responsible"><i class="bi bi-people-fill"></i>
+                                        人員權限控管</a></li>
+                                <li><a class="dropdown-item" href="/ip"><i class="bi bi-router"></i>
+                                        IP通過權限設定</a></li>
+                            </ul>
                         </li>
                     @endif
 
-
-
                     <!--
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
-                            data-bs-toggle="dropdown" aria-expanded="false">
-                            Dropdown
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                            <li><a class="dropdown-item" href="#">Action</a></li>
-                            <li><a class="dropdown-item" href="#">Another action</a></li>
-                            <li>
-                                <hr class="dropdown-divider">
-                            </li>
-                            <li><a class="dropdown-item" href="#">Something else here</a></li>
-                        </ul>
-                    </li>
+                    
                     <li class="nav-item">
                         <a class="nav-link disabled">Disabled</a>
                     </li>
@@ -127,10 +129,10 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"
         integrity="sha384-7+zCNj/IqJ95wo16oMtfsKbZ9ccEh31eOz1HGyDuCQ6wgnyJNSYdrPa03rtR1zdB" crossorigin="anonymous">
-        </script>
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"
         integrity="sha384-QJHtvGhmr9XOIpI6YVutG+2QOK9T+ZnN4kzFN1RtK3zEFEIsxhlmWl5/YESvpZ13" crossorigin="anonymous">
-        </script>
+    </script>
     <script src="{{ asset('js/' . $js_name . '.js') }}"></script>
 </body>
 

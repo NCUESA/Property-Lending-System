@@ -76,53 +76,63 @@ class BorrowController extends Controller
 
     public function getLendingStatusData(Request $request)
     {
-        $location = $request->input('location');
         $limit = (int) $request->query('limit', 10); // 每頁筆數，預設 10
         $page = (int) $request->query('page', 1);    // 當前頁碼，預設第 1 頁
-
-        // 計算跳過幾筆
         $offset = ($page - 1) * $limit;
 
-        // 處理地點篩選
+        // 拿取條件
+        $location       = $request->input('location');
+        $contact        = $request->input('contact');
+        $property       = $request->input('property');
+        $lendout_date   = $request->input('lendout_date');
+        $return_date    = $request->input('return_date');
+        $department     = $request->input('department');
+        $prepare_return = $request->input('prepare_return');
+        $status         = $request->input('status');
+        // 基本查詢
+        $query = BorrowList::query();
+
+        // 地點篩選
         if ($location == 'jinde') {
-            $location = ['進德'];
+            $query->where('borrow_place', '進德');
         } elseif ($location == 'baosan') {
-            $location = ['寶山'];
+            $query->where('borrow_place', '寶山');
         } else {
-            $location = ['進德', '寶山'];
+            $query->whereIn('borrow_place', ['進德', '寶山']);
         }
 
-        // 查詢資料
-        $query = BorrowList::whereIn('borrow_place', $location)
-            ->with([
-                'borrowItems' => function ($query) {
-                    $query->select('borrow_id', 'status');
-                }
-            ])
-            ->orderBy('id', 'desc');
+        // 條件搜尋
+        $query->when($property, function ($query, $property) {
+            return $query->join('borrow_item', 'borrow_list.id', '=', 'borrow_item.borrow_id')
+                ->join('property', 'borrow_item.property_id', '=', 'property.ssid')
+                ->where('property.ssid', $property);
+        });
 
-        // 總筆數
-        $total = $query->count();
+        $query->when($contact, fn($q, $contact) => $q->where('borrow_person_name', $contact));
+        $query->when($lendout_date, fn($q, $lendout_date) => $q->where('borrow_date', $lendout_date));
+        $query->when($return_date, fn($q, $return_date) => $q->where('returned_date', $return_date));
+        $query->when($department, fn($q, $department) => $q->where('borrow_department', $department));
+        $query->when($prepare_return, fn($q, $prepare_return) => $q->where('sa_returned_date', $prepare_return));
 
-        // 分頁資料
-        $borrowers = $query
-            ->skip($offset)
-            ->take($limit)
-            ->get()
-            ->map(function ($borrower) {
-                $statuses = $borrower->borrowItems->pluck('status');
-                $borrower->status = $statuses->contains(1) ? 1 : $statuses->max();
-                return $borrower;
-            });
+
+        $allBorrowers = $query->orderBy('id', 'desc')->get();
+        if ($status !== null) {
+            $allBorrowers = $allBorrowers->filter(fn($borrow) => $borrow->status == $status);
+        }
+        $total = $allBorrowers->count();
+
+        // 查詢分頁資料
+        $borrowers = $allBorrowers->slice($offset, $limit);
 
         return response()->json([
             'success' => true,
-            'data' => $borrowers,
-            'total' => $total,   // 回傳總筆數給前端算總頁數
-            'page' => $page,
-            'limit' => $limit
+            'data'    => $borrowers,
+            'total'   => $total,
+            'page'    => $page,
+            'limit'   => $limit,
         ]);
     }
+
 
 
     public function getLendingStatusDataSingle($id)

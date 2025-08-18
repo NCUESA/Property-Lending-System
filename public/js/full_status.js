@@ -29,10 +29,11 @@ let G_records = new Map();
 $(document).ready(function () {
     reloadPage();
 
-    
+
     // 地點查詢
-    $('input[name="place"]').on('change', () => {
+    $('input[name="place"]').on('change', function () {
         const newLocation = $(this).val();
+        console.log(newLocation);
         const currentPage = 1; // 選 radio 時從第一頁開始
         updateURL(currentPage, newLocation);
         reloadPage(page = 1, limit = LIMIT_DATA_NUMBER);
@@ -40,38 +41,79 @@ $(document).ready(function () {
 
 
     // 搜尋
+    // 2025/08/14:
+    // 目前搜尋沒有辦法做Pagination
+    // 原因是因為reloadPage跟Pagination是Call不同的API
+    // 兩者API在後端完全不一樣
+    // 如果需要調整則需要大修後端
+    // 但筆者現在懶得用
+    // @ender
+    // 改造搜尋提交
     $('#search').submit(function (e) {
         e.preventDefault();
-        spinnerLoadingAction('show');
-        $.ajax({
-            type: 'POST',
-            url: '/borrow/getData/condition',
-            data: {
-                contact: $('#search_contact').val(),
-                property: $('#search_property').val(),
-                lendout_date: $('#search_lendout').val(),
-                return_date: $('#search_return').val(),
-                department: $('#search_department').val(),
-                prepare_return: $('#search_prepare_return').val(),
-                _token: $('meta[name="csrf-token"]').attr('content')  // CSRF Token
-            },
-            success: function (response) {
-                console.log(response);
-                if (response.success) {
-                    genDetailButton(response.data);
-                    spinnerLoadingAction('hide');
-                }
-            },
-            error: function (error) {
-                console.log(error);
-            }
-        });
+
+        const params = new URLSearchParams(window.location.search);
+        params.set('page', 1); // 搜尋結果從第 1 頁開始
+
+        // 把搜尋欄位塞進 URL
+        params.set('contact', $('#search_contact').val());
+        params.set('property', $('#search_property').val());
+        params.set('lendout_date', $('#search_lendout').val());
+        params.set('return_date', $('#search_return').val());
+        params.set('department', $('#search_department').val());
+        params.set('prepare_return', $('#search_prepare_return').val());
+
+        const url = new URL(window.location);
+        url.search = params.toString();
+        window.history.replaceState({}, '', url);
+
+        reloadPage(1, LIMIT_DATA_NUMBER);
     });
+
+    $('input[name="classStatusRadio"]').on('change', function () {
+        const params = new URLSearchParams(window.location.search);
+        params.set('page', 1); // 搜尋結果從第 1 頁開始
+
+        const codeConverter = {
+            "waiting": BorrowRecord.STATUS_VALUE.WAIT_FOR_LEND,
+            "lend_out": BorrowRecord.STATUS_VALUE.LENDING_OUT,
+            "out_of_time": BorrowRecord.STATUS_VALUE.OVERDUE,
+            "returned": BorrowRecord.STATUS_VALUE.RETURNED,
+            "banned": BorrowRecord.STATUS_VALUE.BACK_TO_SYS
+        }
+        let status = codeConverter[$('input[name="classStatusRadio"]:checked').val()];
+        console.log(status);
+        params.set('status', status);
+
+        const url = new URL(window.location);
+        url.search = params.toString();
+        window.history.replaceState({}, '', url);
+
+        reloadPage(1, LIMIT_DATA_NUMBER);
+    });
+
 
     // 搜尋重設
     $('#reset_search_query').click(() => {
-        reloadPage(page = 1, limit = LIMIT_DATA_NUMBER);
+        // 取消 radio 勾選
+        $('input[name="classStatusRadio"]:checked').prop('checked', false);
+
+        // 更新 URL，刪掉 status 參數
+        const url = new URL(window.location);
+        url.searchParams.delete('contact');
+        url.searchParams.delete('property');
+        url.searchParams.delete('lendout_date');
+        url.searchParams.delete('return_date');
+        url.searchParams.delete('department');
+        url.searchParams.delete('prepare_return');
+        url.searchParams.delete('status');
+        url.searchParams.set('page', 1); // 預設回第一頁
+        window.history.replaceState({}, '', url);
+
+        // 重新載入資料
+        reloadPage(1, LIMIT_DATA_NUMBER);
     });
+
 
 
 });
@@ -117,28 +159,32 @@ function genDetailButton(data) {
         G_records[item.id] = new BorrowRecord(item);
 
         const filters = {
-            [BorrowRecord.STATUS_VALUE.RETURNED]: 'table-secondary',
-            [BorrowRecord.STATUS_VALUE.LENDING_OUT]: 'table-success',
-            [BorrowRecord.STATUS_VALUE.OVERDUE]: 'table-warning',
-            [BorrowRecord.STATUS_VALUE.WAIT_FOR_LEND]: 'table-primary',
-            [BorrowRecord.STATUS_VALUE.BACK_TO_SYS]: 'table-danger',
+            [BorrowRecord.STATUS_VALUE.RETURNED]        : 'alert-secondary',
+            [BorrowRecord.STATUS_VALUE.LENDING_OUT]     : 'alert-success',
+            [BorrowRecord.STATUS_VALUE.OVERDUE]         : 'alert-warning',
+            [BorrowRecord.STATUS_VALUE.WAIT_FOR_LEND]   : 'alert-primary',
+            [BorrowRecord.STATUS_VALUE.BACK_TO_SYS]     : 'alert-danger',
         };
 
         // Generate modal and button
-        let trig_btn = `<a href="${CONTROL_PANEL_URL}?id=${item.id}" type="button" class="btn btn-info">
-        <i class="bi bi-clipboard-data"></i> 借用資訊</a>`;
+        let trig_btn = `<a href="${CONTROL_PANEL_URL}?id=${item.id}" class="text-dark">
+        <i class="bi bi-three-dots"></i></a>`;
 
         // Generate table row
         let row = `
-            <tr class="${filters[item.status]}">
-                <td>${item.filling_time}</td>
-                <td>${item.borrow_date}~${item.returned_date}</td>
-                <td>${item.borrow_department}</td>
-                <td>${item.borrow_person_name}</td>
-                <td><i class="bi bi-telephone"></i> ${item.phone}</td>
-                <td><i class="bi bi-envelope"></i> ${item.email}</td>
-                <td>${trig_btn}</td>
-            </tr>
+            <div class="card mb-2 ${filters[item.status]} text-dark">
+                <div class="card-body py-2">
+                    <div class="row align-items-center">
+                        <div class="col-md-2">${item.filling_time}</div>
+                        <div class="col-md-2">${item.borrow_date} ~ ${item.returned_date}</div>
+                        <div class="col-md-2">${item.borrow_department}</div>
+                        <div class="col-md-1">${item.borrow_person_name}</div>
+                        <div class="col-md-2">${item.phone}</div>
+                        <div class="col-md-2">${item.email}</div>
+                        <div class="col-md-1">${trig_btn}</div>
+                    </div>
+                </div>
+            </div>
         `;
 
         // Append the row to the table body
@@ -151,6 +197,15 @@ function reloadPage(page = getPageFromWebURL(), limit = LIMIT_DATA_NUMBER) {
     let place = getLocationFromWebURL();
     let $location_selector = $('input[name="place"]');
 
+    const params = new URLSearchParams(window.location.search);
+    let contact = params.get('contact') || '';
+    let property = params.get('property') || '';
+    let lendout_date = params.get('lendout_date') || '';
+    let return_date = params.get('return_date') || '';
+    let department = params.get('department') || '';
+    let prepare_return = params.get('prepare_return') || '';
+    let status = params.get('status') || '';
+
     // 勾選 radio
     $location_selector.prop('checked', false);
     $location_selector.filter(`[value="${place}"]`).prop('checked', true);
@@ -160,13 +215,19 @@ function reloadPage(page = getPageFromWebURL(), limit = LIMIT_DATA_NUMBER) {
 
 
     $('#borrow_list').empty();
-    $('#lending_table').attr('hidden', false);
     spinnerLoadingAction('show');
     $.ajax({
         type: 'GET',
         url: `/borrow/getData?page=${page}&limit=${limit}`,
         data: {
             location: place,
+            contact,
+            property,
+            lendout_date,
+            return_date,
+            department,
+            prepare_return,
+            status
         },
         success: function (response) {
             if (response.success) {
@@ -186,7 +247,7 @@ function getPageFromWebURL() {
 
 function getLocationFromWebURL() {
     const params = new URLSearchParams(window.location.search);
-    return params.get('location') || ''; // 預設空字串
+    return params.get('location') || 'all'; // 預設空字串
 }
 
 function updateURL(page, location) {
@@ -199,6 +260,13 @@ function updateURL(page, location) {
 function generatePagination(currentPage, limit, total, location) {
     const totalPages = Math.ceil(total / limit);
     let paginationHTML = '';
+
+    let lower = total === 0 ? 0 : (currentPage - 1) * limit + 1;
+    let upper = total === 0 ? 0 : Math.min(currentPage * limit, total);
+
+    let record_text = `目前 ${lower}~${upper} 筆 , 總共 ${total} 筆 , ${total === 0 ? 0 : currentPage}/${totalPages}頁`;
+    $('#totalRecords').text(record_text);
+
 
     // Previous 按鈕
     paginationHTML += `

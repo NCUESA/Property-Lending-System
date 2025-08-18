@@ -16,13 +16,15 @@
             <div class="col-4 d-grid gap-2">
                 <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#searchInfo"
                     aria-expanded="false" aria-controls="searchInfo">
-                    <i class="bi bi-search"></i>
+                    <i class="bi bi-funnel"></i>
                     進階查詢
                 </button>
             </div>
 
             <div class="col-4 d-grid gap-2">
                 <div class="btn-group" role="group" aria-label="">
+                    <input type="radio" class="btn-check" id="all" name="place" autocomplete="off" value="all">
+                    <label class="btn btn-outline-dark" for="all">全部</label>
                     <input type="radio" class="btn-check" id="jinde" name="place" autocomplete="off" value="jinde">
                     <label class="btn btn-outline-dark" for="jinde">進德</label>
                     <input type="radio" class="btn-check" id="baosan" name="place" autocomplete="off" value="baosan">
@@ -78,33 +80,30 @@
                 <div class="col-sm-2">
                     <input type="date" class="form-control" id="search_prepare_return" value="">
                 </div>
-                {{-- <label for="" class="col-sm-1 col-form-label" hidden>篩選借用狀態</label>
-                <div class="col-sm-5 d-grid gap-2" hidden>
-                    <div class="btn-group" role="group" aria-label="" hidden>
-                        <input type="radio" class="btn-check" id="all" name="btnradio" autocomplete="off"
-                            value="">
-                        <label class="btn btn-outline-info" for="all"><i class="bi bi-three-dots"></i> 全部</label>
-                        <input type="radio" class="btn-check" id="waiting" name="btnradio" autocomplete="off"
-                            value="waiting">
+                <label for="" class="col-sm-1 col-form-label">篩選借用狀態</label>
+                <div class="col-sm-5 d-grid gap-2">
+                    <div class="btn-group" role="group" aria-label="">
+                        <input type="radio" class="btn-check" id="waiting" name="classStatusRadio"
+                            autocomplete="off" value="waiting">
                         <label class="btn btn-outline-primary" for="waiting"><i class="bi bi-hourglass"></i> 待借</label>
-                        <input type="radio" class="btn-check" id="lend_out" name="btnradio" autocomplete="off"
-                            value="lend_out">
+                        <input type="radio" class="btn-check" id="lend_out" name="classStatusRadio"
+                            autocomplete="off" value="lend_out">
                         <label class="btn btn-outline-success" for="lend_out"><i class="bi bi-box-arrow-right"></i>
                             外借</label>
-                        <input type="radio" class="btn-check" id="out_of_time" name="btnradio" autocomplete="off"
-                            value="out_of_time">
+                        <input type="radio" class="btn-check" id="out_of_time" name="classStatusRadio"
+                            autocomplete="off" value="out_of_time">
                         <label class="btn btn-outline-warning" for="out_of_time"><i class="bi bi-calendar2-x"></i>
                             逾期</label>
-                        <input type="radio" class="btn-check" id="returned" name="btnradio" autocomplete="off"
-                            value="returned">
+                        <input type="radio" class="btn-check" id="returned" name="classStatusRadio"
+                            autocomplete="off" value="returned">
                         <label class="btn btn-outline-secondary" for="returned"><i class="bi bi-arrow-return-left"></i>
                             已還</label>
-                        <input type="radio" class="btn-check" id="banned" name="btnradio" autocomplete="off"
-                            value="banned">
+                        <input type="radio" class="btn-check" id="banned" name="classStatusRadio"
+                            autocomplete="off" value="banned">
                         <label class="btn btn-outline-danger" for="banned"><i class="bi bi-slash-circle"></i>
-                            借用遭拒</label>
+                            退還</label>
                     </div>
-                </div> --}}
+                </div>
 
 
                 <div class="col-sm-3 d-grid gap-2">
@@ -125,28 +124,28 @@
             <span class="visually-hidden">Loading...</span>
         </div>
     </div>
-    <table class="table shadow p-3 mb-5 bg-body rounded" id='lending_table'>
-
-        <thead>
-            <tr>
-                <th scope="col" style="width: 20%">填單時間</th>
-                <th scope="col" style="width: 20%">借用期間</th>
-                <th scope="col" style="width: 10%">借用單位</th>
-                <th scope="col" style="width: 10%">聯絡人</th>
-                <th scope="col" style="width: 10%">聯絡電話</th>
-                <th scope="col" style="width: 20%">Email</th>
-                <th scope="col" style="width: 10%">詳細資訊</th>
-            </tr>
-        </thead>
-
-        <tbody id='lending_status'>
-
-        </tbody>
-    </table>
-
-    <nav aria-label="Page navigation example">
-        <ul class="pagination justify-content-center" id="pagination">
+    
+    <div class="shadow p-3 mb-5 bg-body rounded">
+        <div class="card mb-2 text-dark">
+            <div class="card-body py-2">
+                <div class="row align-items-center">
+                    <div class="col-md-2"><strong>填單時間</strong></div>
+                    <div class="col-md-2"><strong>借用期間</strong></div>
+                    <div class="col-md-2"><strong>借用單位</strong></div>
+                    <div class="col-md-1"><strong>聯絡人</strong></div>
+                    <div class="col-md-2"><i class="bi bi-telephone"></i> <strong>聯絡電話</strong></div>
+                    <div class="col-md-2"><i class="bi bi-envelope"></i> <strong>Email</strong></div>
+                    <div class="col-md-1"><strong>詳細資訊</strong></div>
+                </div>
+            </div>
+        </div>
+        <div id="lending_status">
             
-        </ul>
+        </div>
+    </div>
+
+    <nav aria-label="Page navigation example" class="d-flex justify-content-between align-items-center">
+        <span id="totalRecords">總共有 4 筆</span>
+        <ul class="pagination mb-0" id="pagination"></ul>
     </nav>
 @endsection
