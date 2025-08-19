@@ -6,22 +6,43 @@
 
     <form>
         <div class="row g-3 align-items-center">
-            <div class="col-4 d-grid gap-2">
-                <button class="btn btn-success" type="button" data-bs-toggle="collapse" data-bs-target="#lendingInfo"
-                    aria-expanded="false" aria-controls="lendingInfo">
-                    <i class="bi bi-info-circle"></i>
-                    注意事項
-                </button>
-            </div>
-            <div class="col-4 d-grid gap-2">
-                <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#searchInfo"
-                    aria-expanded="false" aria-controls="searchInfo">
-                    <i class="bi bi-funnel"></i>
-                    進階查詢
-                </button>
+            <div class="col-5 d-grid gap-2">
+                <div class="input-group">
+                    <button class="btn btn-success" type="button" data-bs-toggle="collapse" data-bs-target="#lendingInfo"
+                        aria-expanded="false" aria-controls="lendingInfo">
+                        <i class="bi bi-info-circle"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                        aria-expanded="false" id="filter_text"><i class="bi bi-funnel"></i></button>
+                    <button class="btn btn-outline-danger" type="button" id="reset_search_query"><i
+                            class="bi bi-eraser"></i></button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="changeSearchParam('contact')"
+                                id='search_contact'><i class="bi bi-person-rolodex"></i> 借用聯絡人</a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="changeSearchParam('property')"
+                                id='search_property'><i class="bi bi-tools"></i> 借用器材</a></li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="changeSearchParam('department')"
+                                id='search_department'><i class="bi bi-building-add"></i> 借用單位</a></li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li><a class="dropdown-item" href="javascript:void(0)"
+                                onclick="changeSearchParam('lendout_date')"id='search_lendout_date'><i
+                                    class="bi bi-file-earmark-arrow-up"></i> 借出日期</a>
+                        </li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="changeSearchParam('return_date')"
+                                id='search_return_date'><i class="bi bi-file-earmark-arrow-down"></i> 歸還日期</a>
+                        </li>
+                        <li><a class="dropdown-item" href="javascript:void(0)" onclick="changeSearchParam('prepare_return')"
+                                id='search_prepare_return'><i class="bi bi-calendar-date"></i> 預計歸還日期</a>
+                        </li>
+                    </ul>
+                    <input type="text" class="form-control" placeholder="搜尋關鍵字" id="search_value">
+                    <button class="btn btn-secondary" type="button" id="search"><i class="bi bi-search"></i></button>
+                </div>
             </div>
 
-            <div class="col-4 d-grid gap-2">
+            <div class="col-3 d-grid gap-2">
                 <div class="btn-group" role="group" aria-label="">
                     <input type="radio" class="btn-check" id="all" name="place" autocomplete="off" value="all">
                     <label class="btn btn-outline-dark" for="all">全部</label>
@@ -31,9 +52,34 @@
                     <label class="btn btn-outline-dark" for="baosan">寶山</label>
                 </div>
             </div>
+            <div class="col-4 d-grid gap-2">
+                {{-- <label for="" class="col-sm-1 col-form-label">篩選借用狀態</label> --}}
+                <div class="btn-group" role="group" aria-label="">
+                    <input type="radio" class="btn-check" id="waiting" name="classStatusRadio" autocomplete="off"
+                        value="waiting">
+                    <label class="btn btn-outline-primary" for="waiting"><i class="bi bi-hourglass"></i> 待借</label>
+                    <input type="radio" class="btn-check" id="lend_out" name="classStatusRadio" autocomplete="off"
+                        value="lend_out">
+                    <label class="btn btn-outline-success" for="lend_out"><i class="bi bi-box-arrow-right"></i>
+                        外借</label>
+                    <input type="radio" class="btn-check" id="out_of_time" name="classStatusRadio" autocomplete="off"
+                        value="out_of_time">
+                    <label class="btn btn-outline-warning" for="out_of_time"><i class="bi bi-calendar2-x"></i>
+                        逾期</label>
+                    <input type="radio" class="btn-check" id="returned" name="classStatusRadio" autocomplete="off"
+                        value="returned">
+                    <label class="btn btn-outline-secondary" for="returned"><i class="bi bi-arrow-return-left"></i>
+                        已還</label>
+                    <input type="radio" class="btn-check" id="banned" name="classStatusRadio" autocomplete="off"
+                        value="banned">
+                    <label class="btn btn-outline-danger" for="banned"><i class="bi bi-slash-circle"></i>
+                        退還</label>
+                </div>
+            </div>
         </div>
     </form>
 
+    {{-- 使用說明 --}}
     <div class="collapse" id="lendingInfo">
         <div class="alert alert-success" role="alert">
             <h4 class="alert-heading">注意事項</h4>
@@ -48,8 +94,8 @@
             </ol>
         </div>
     </div>
-    <div class="collapse" id="searchInfo">
-        <h4>進階查詢</h4>
+
+    {{-- <div class="collapse" id="searchInfo">
         <form id="search">
             <div class="row g-3 align-items-center">
                 <label for="search_contact" class="col-sm-1 col-form-label">借用聯絡人</label>
@@ -80,30 +126,7 @@
                 <div class="col-sm-2">
                     <input type="date" class="form-control" id="search_prepare_return" value="">
                 </div>
-                <label for="" class="col-sm-1 col-form-label">篩選借用狀態</label>
-                <div class="col-sm-5 d-grid gap-2">
-                    <div class="btn-group" role="group" aria-label="">
-                        <input type="radio" class="btn-check" id="waiting" name="classStatusRadio"
-                            autocomplete="off" value="waiting">
-                        <label class="btn btn-outline-primary" for="waiting"><i class="bi bi-hourglass"></i> 待借</label>
-                        <input type="radio" class="btn-check" id="lend_out" name="classStatusRadio"
-                            autocomplete="off" value="lend_out">
-                        <label class="btn btn-outline-success" for="lend_out"><i class="bi bi-box-arrow-right"></i>
-                            外借</label>
-                        <input type="radio" class="btn-check" id="out_of_time" name="classStatusRadio"
-                            autocomplete="off" value="out_of_time">
-                        <label class="btn btn-outline-warning" for="out_of_time"><i class="bi bi-calendar2-x"></i>
-                            逾期</label>
-                        <input type="radio" class="btn-check" id="returned" name="classStatusRadio"
-                            autocomplete="off" value="returned">
-                        <label class="btn btn-outline-secondary" for="returned"><i class="bi bi-arrow-return-left"></i>
-                            已還</label>
-                        <input type="radio" class="btn-check" id="banned" name="classStatusRadio"
-                            autocomplete="off" value="banned">
-                        <label class="btn btn-outline-danger" for="banned"><i class="bi bi-slash-circle"></i>
-                            退還</label>
-                    </div>
-                </div>
+
 
 
                 <div class="col-sm-3 d-grid gap-2">
@@ -116,15 +139,17 @@
                 </div>
             </div>
         </form>
-    </div>
+    </div> --}}
     <hr>
 
+    {{-- 讀取進度條 --}}
     <div class="d-flex justify-content-center visually-hidden" id="loading">
         <div class="spinner-border" role="status">
             <span class="visually-hidden">Loading...</span>
         </div>
     </div>
-    
+
+    {{-- 借用資訊生成欄位 --}}
     <div class="shadow p-3 mb-5 bg-body rounded">
         <div class="card mb-2 text-dark">
             <div class="card-body py-2">
@@ -140,12 +165,12 @@
             </div>
         </div>
         <div id="lending_status">
-            
+
         </div>
     </div>
 
     <nav aria-label="Page navigation example" class="d-flex justify-content-between align-items-center">
-        <span id="totalRecords">總共有 4 筆</span>
+        <span id="totalRecords"></span>
         <ul class="pagination mb-0" id="pagination"></ul>
     </nav>
 @endsection

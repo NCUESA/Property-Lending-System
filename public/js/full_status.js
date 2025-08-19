@@ -29,7 +29,6 @@ let G_records = new Map();
 $(document).ready(function () {
     reloadPage();
 
-
     // 地點查詢
     $('input[name="place"]').on('change', function () {
         const newLocation = $(this).val();
@@ -39,36 +38,39 @@ $(document).ready(function () {
         reloadPage(page = 1, limit = LIMIT_DATA_NUMBER);
     });
 
-
-    // 搜尋
-    // 2025/08/14:
-    // 目前搜尋沒有辦法做Pagination
-    // 原因是因為reloadPage跟Pagination是Call不同的API
-    // 兩者API在後端完全不一樣
-    // 如果需要調整則需要大修後端
-    // 但筆者現在懶得用
-    // @ender
-    // 改造搜尋提交
-    $('#search').submit(function (e) {
+    $('#search').on('click', (function (e) {
         e.preventDefault();
+
+        const allFilter = [
+            'contact',
+            'property',
+            'department',
+            'lendout_date',
+            'return_date',
+            'prepare_return'
+        ];
 
         const params = new URLSearchParams(window.location.search);
         params.set('page', 1); // 搜尋結果從第 1 頁開始
-
+        allFilter.forEach(function (filter) {
+            if ($('#search_' + filter).hasClass('active')) {
+                params.set(filter, $('#search_value').val());
+            }
+        });
         // 把搜尋欄位塞進 URL
-        params.set('contact', $('#search_contact').val());
-        params.set('property', $('#search_property').val());
-        params.set('lendout_date', $('#search_lendout').val());
-        params.set('return_date', $('#search_return').val());
-        params.set('department', $('#search_department').val());
-        params.set('prepare_return', $('#search_prepare_return').val());
+        // params.set('contact', $('#search_value').val());
+        // params.set('property', $('#search_property').val());
+        // params.set('lendout_date', $('#search_lendout').val());
+        // params.set('return_date', $('#search_return').val());
+        // params.set('department', $('#search_department').val());
+        // params.set('prepare_return', $('#search_prepare_return').val());
 
         const url = new URL(window.location);
         url.search = params.toString();
         window.history.replaceState({}, '', url);
 
         reloadPage(1, LIMIT_DATA_NUMBER);
-    });
+    }));
 
     $('input[name="classStatusRadio"]').on('change', function () {
         const params = new URLSearchParams(window.location.search);
@@ -82,7 +84,7 @@ $(document).ready(function () {
             "banned": BorrowRecord.STATUS_VALUE.BACK_TO_SYS
         }
         let status = codeConverter[$('input[name="classStatusRadio"]:checked').val()];
-        console.log(status);
+
         params.set('status', status);
 
         const url = new URL(window.location);
@@ -97,6 +99,19 @@ $(document).ready(function () {
     $('#reset_search_query').click(() => {
         // 取消 radio 勾選
         $('input[name="classStatusRadio"]:checked').prop('checked', false);
+        const allFilter = [
+            '#search_contact',
+            '#search_property',
+            '#search_department',
+            '#search_lendout_date',
+            '#search_return_date',
+            '#search_prepare_return'
+        ];
+        allFilter.forEach(function (attribute) {
+            $(attribute).removeClass('active');
+        });
+        const filterIcon = `<i class="bi bi-funnel"></i> `;
+        $('#filter_text').html(filterIcon);
 
         // 更新 URL，刪掉 status 參數
         const url = new URL(window.location);
@@ -113,10 +128,51 @@ $(document).ready(function () {
         // 重新載入資料
         reloadPage(1, LIMIT_DATA_NUMBER);
     });
-
-
-
 });
+
+function changeSearchParam(param) {
+    const allFilter = [
+        '#search_contact',
+        '#search_property',
+        '#search_department',
+        '#search_lendout_date',
+        '#search_return_date',
+        '#search_prepare_return'
+    ];
+    const filterIcon = `<i class="bi bi-funnel"></i> `;
+    const toChinese = {
+        'contact': '聯絡人',
+        'property': '借用器材',
+        'department': '借用單位',
+        'lendout_date': '借出日期',
+        'return_date': '歸還日期',
+        'prepare_return': '預計歸還'
+    }
+
+    const url = new URL(window.location);
+    url.searchParams.delete('contact');
+    url.searchParams.delete('property');
+    url.searchParams.delete('lendout_date');
+    url.searchParams.delete('return_date');
+    url.searchParams.delete('department');
+    url.searchParams.delete('prepare_return');
+    window.history.replaceState({}, '', url);
+
+    allFilter.forEach(function (attribute) {
+        $(attribute).removeClass('active');
+    });
+
+    let $active = $('#search_' + param);
+    $active.addClass('active');
+
+    if (param == 'lendout_date' || param == 'return_date' || param == 'prepare_return') {
+        $('#search_value').prop('type', 'date');
+    }
+    else {
+        $('#search_value').prop('type', 'text');
+    }
+    $('#filter_text').html(filterIcon + toChinese[param]);
+}
 
 function adjustLimitNumber() {
     const width = window.innerWidth;
@@ -155,15 +211,30 @@ function getPropertyWithID(id, callback) {
 function genDetailButton(data) {
     $('#lending_status').empty();
     G_records.clear();
+    console.log(data);
+    if (data.length === 0) {
+        let row = `
+            <div class="card mb-2 alert-secondary text-dark">
+                <div class="card-body py-2">
+                    <div class="row align-items-center">
+                        <div class="col-md-12" style="text-align: center"><i class="bi bi-emoji-tear"></i> Oops... 查不到資料，嘗試換個條件吧</div>
+                    </div>
+                </div>
+            </div>
+        `;
+        // Append the row to the table body
+        $('#lending_status').append(row);
+        return;
+    }
     $.each(data, function (index, item) {
         G_records[item.id] = new BorrowRecord(item);
 
         const filters = {
-            [BorrowRecord.STATUS_VALUE.RETURNED]        : 'alert-secondary',
-            [BorrowRecord.STATUS_VALUE.LENDING_OUT]     : 'alert-success',
-            [BorrowRecord.STATUS_VALUE.OVERDUE]         : 'alert-warning',
-            [BorrowRecord.STATUS_VALUE.WAIT_FOR_LEND]   : 'alert-primary',
-            [BorrowRecord.STATUS_VALUE.BACK_TO_SYS]     : 'alert-danger',
+            [BorrowRecord.STATUS_VALUE.RETURNED]: 'alert-secondary',
+            [BorrowRecord.STATUS_VALUE.LENDING_OUT]: 'alert-success',
+            [BorrowRecord.STATUS_VALUE.OVERDUE]: 'alert-warning',
+            [BorrowRecord.STATUS_VALUE.WAIT_FOR_LEND]: 'alert-primary',
+            [BorrowRecord.STATUS_VALUE.BACK_TO_SYS]: 'alert-danger',
         };
 
         // Generate modal and button
@@ -308,7 +379,7 @@ function generatePagination(currentPage, limit, total, location) {
 
     // Next 按鈕
     paginationHTML += `
-        <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+        <li class="page-item ${total === 0 ? 'disabled' : currentPage === totalPages ? 'disabled' : ''}">
             <a class="page-link" href="" onclick="reloadPage(${currentPage + 1}, ${limit})"> 下一頁 </a>
         </li>
     `;
