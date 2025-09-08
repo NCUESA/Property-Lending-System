@@ -103,7 +103,7 @@ $(function () {
 
 		if (completed === total_task) {
 			$("#loading-modal-title").text("讀取完畢 Good To Go");
-			setTimeout(() => loadingModal.hide(), 5000);
+			setTimeout(() => loadingModal.hide(), 1000);
 		}
 		else {
 			$("#loading-modal-title").text(msg || "讀取中，請稍後...");
@@ -465,7 +465,7 @@ function showBorrowItems(lending_property) {
 	$.each(lending_property, function (index, item) {
 		constraint_seq.add(item.status);
 		G_itemList.set(item.ssid, new LendItem(item.ssid, item.status));	// 將借用物品加入全域變數陣列中
-		let gray_outcome = '';
+		let gray_outcome = false;
 
 		let statusBadge = '';
 		if (item.status == LendItem.STATUS_VALUE.LENDING_OUT) {
@@ -476,11 +476,18 @@ function showBorrowItems(lending_property) {
 		}
 		else if (item.status == LendItem.STATUS_VALUE.RETURNED) {
 			statusBadge = '<span class="badge bg-secondary"><i class="bi bi-arrow-return-left"></i> 已歸還</span>';
-			gray_outcome = 'alert-secondary';
+			gray_outcome = true;
 		}
 		else if (item.status == LendItem.STATUS_VALUE.BACK_TO_SYS) {
 			statusBadge = '<span class="badge bg-danger"><i class="bi bi-backspace"></i> 取消借出</span>';
-			gray_outcome = 'alert-secondary';
+			gray_outcome = true;
+		}
+
+		if(gray_outcome == true){
+			gray_outcome = true;
+		}
+		else{
+			gray_outcome = '';
 		}
 
 		// Card 版

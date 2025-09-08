@@ -77,7 +77,7 @@ Route::name('property')
 Route::prefix('borrow')->group(function () {
 
     Route::prefix('getData')->group(function () {
-        Route::post('/', [BorrowController::class, 'getLendingStatusData']);
+        Route::get('/', [BorrowController::class, 'getLendingStatusData']);
         Route::get('/{id}',[BorrowController::class, 'getLendingStatusDataSingle']);
         Route::post('/condition', [BorrowController::class, 'getLendingStatusDataInCondition']);
         Route::post('/single', [BorrowController::class, 'getLendingStatusSingleWithID']);

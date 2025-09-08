@@ -187,6 +187,10 @@ function genPropertyTable(data) {
     });
 }
 
+function setToday(inputId) {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById(inputId).value = today;
+}
 
 function collectBorrowItems() {
     var checkItems = [];
