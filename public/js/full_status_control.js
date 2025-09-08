@@ -141,14 +141,14 @@ $(function () {
 	$('#scan_list').on('input', function () {
 		const inputVal = $(this).val();
 		const item = G_itemList.get(inputVal);	// G_itemList is Map
-		if (!item) {
-			$('#scan_list').removeClass('is-valid').addClass('is-invalid');
-			$('#scan-check').removeClass('valid-feedback').addClass('invalid-feedback');
-			$('#scan-check').text('清單無此物品');
-			$('#scan_list').val('');
-		}
-		else if (inputVal.length >= 8) {
-			if (item.status === 0) // 0: 退回系統
+		if (inputVal.length >= 8) {
+			if (!item) {
+				$('#scan_list').removeClass('is-valid').addClass('is-invalid');
+				$('#scan-check').removeClass('valid-feedback').addClass('invalid-feedback');
+				$('#scan-check').text('清單無此物品');
+				$('#scan_list').val('');
+			}
+			else if (item.status === 0) // 0: 退回系統
 			{
 				$('#scan_list').removeClass('is-valid').addClass('is-invalid');
 				$('#scan-check').removeClass('valid-feedback').addClass('invalid-feedback');
@@ -452,10 +452,10 @@ function showBorrowItems(lending_property) {
 	let formattedInfo = '';
 
 	const orderMap = {
-		[LendItem.STATUS_VALUE.LENDING_OUT] : 0 ,
-		[LendItem.STATUS_VALUE.WAIT_FOR_LEND] : 1 ,
-		[LendItem.STATUS_VALUE.RETURNED] : 2 ,
-		[LendItem.STATUS_VALUE.BACK_TO_SYS] : 3
+		[LendItem.STATUS_VALUE.LENDING_OUT]: 0,
+		[LendItem.STATUS_VALUE.WAIT_FOR_LEND]: 1,
+		[LendItem.STATUS_VALUE.RETURNED]: 2,
+		[LendItem.STATUS_VALUE.BACK_TO_SYS]: 3
 	};	//歷史共業
 	lending_property.sort((a, b) => {
 		return orderMap[a.status] - orderMap[b.status];
@@ -483,10 +483,10 @@ function showBorrowItems(lending_property) {
 			gray_outcome = true;
 		}
 
-		if(gray_outcome == true){
+		if (gray_outcome == true) {
 			gray_outcome = true;
 		}
-		else{
+		else {
 			gray_outcome = '';
 		}
 
