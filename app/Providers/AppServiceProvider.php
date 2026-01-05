@@ -23,7 +23,7 @@ class AppServiceProvider extends ServiceProvider
     {
         //
         View::composer('*', function ($view) {
-          $clientIp= $request->ip();
+          $clientIp = request()->ip();
           
             $isAllowed = AuthIP::select('auth_level')
                 ->where('ip', $clientIp)
