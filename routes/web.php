@@ -8,10 +8,6 @@ use App\Http\Controllers\IPController;
 use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\ResponsibleController;
 
-/*Route::get('/', function () {
-    return view('welcome');
-});*/
-
 /**
  * The View of all frontend pages
  * only for the control system and present page.

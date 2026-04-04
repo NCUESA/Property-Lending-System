@@ -1,0 +1,4 @@
+2026/03/31 09:00:43 [error] 229#229: *1556 property could not be resolved (3: Host not found), client: 172.18.0.1, server: property.localhost, request: "GET / HTTP/1.1", host: "property.localhost"
+2026/03/31 09:00:47 [error] 229#229: *1556 property could not be resolved (3: Host not found), client: 172.18.0.1, server: property.localhost, request: "GET /favicon.ico HTTP/1.1", host: "property.localhost", referrer: "http://property.localhost/"
+2026/03/31 09:01:07 [error] 230#230: *1557 property could not be resolved (2: Server failure), client: 172.18.0.1, server: property.localhost, request: "GET / HTTP/1.1", host: "property.localhost"
+2026/04/02 14:45:57 [warn] 201#201: *6 an upstream response is buffered to a temporary file /var/cache/nginx/proxy_temp/1/00/0000000001 while reading upstream, client: 172.18.0.1, server: property.localhost, request: "GET / HTTP/1.1", upstream: "http://172.18.0.4:80/", host: "property.localhost"

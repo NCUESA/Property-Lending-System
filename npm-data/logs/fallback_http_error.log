@@ -1,0 +1,2 @@
+2026/03/31 08:55:11 [error] 201#201: *29 "/var/www/html/dashboard/index.html" is not found (2: No such file or directory), client: 172.18.0.1, server: localhost-nginx-proxy-manager, request: "GET /dashboard/ HTTP/1.1", host: "property.localhost"
+2026/03/31 08:58:31 [error] 215#215: *1522 open() "/var/www/html/admin" failed (2: No such file or directory), client: 172.18.0.1, server: localhost-nginx-proxy-manager, request: "GET /admin HTTP/1.1", host: "property.localhost"

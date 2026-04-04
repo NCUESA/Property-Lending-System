@@ -1,0 +1,34 @@
+@import url(https://fonts.googleapis.com/earlyaccess/cwtexfangsong.css);
+
+@font-face {
+    font-family: 'Code128';
+    src: url('../fonts/code128.ttf') format('truetype');
+}
+
+
+
+.name-cn {
+    font-family: "cwTeXFangSong", serif;
+    /* 100cqw means 100% of the container width */
+    /* Divide 100 by the number of characters you have */
+    /* Example: 3 characters = 33.3cqw */
+    font-size: 1.5cqw;
+    line-height: 1;
+}
+
+.name-en {
+    font-family: 'Raleway', sans-serif;
+}
+
+.logo-title{
+    text-align: center;
+    font-family: "cwTeXFangSong", serif;
+    font-size: 3vw;
+}
+@media (max-width: 768px) { /* 小於 768px，例如手機 */
+    .logo-title{
+        font-size: 5vw; /* 手機上字體稍微放大 */
+    }
+}
+
+

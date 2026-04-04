@@ -1,0 +1,54 @@
+.barcode {
+    font-family: 'Code128';
+    font-size: 50px;
+}
+
+input.valid {
+    border: 2px solid green;
+}
+
+input.invalid {
+    border: 2px solid red;
+}
+
+
+
+.center {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 50%;
+}
+
+/* CSS */
+.image-container {
+    position: relative;
+    display: inline-block;
+}
+
+.property-image {
+    max-width: 50px;
+    height: auto;
+    transition: transform 0.3s ease;
+}
+
+.property-image:hover {
+    transform: scale(1.2);
+    /* 縮小的圖片比例 */
+    cursor: pointer;
+}
+
+.image-container:hover::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    /* 放大比例 */
+    height: 100%;
+    /* 放大比例 */
+    background-size: contain;
+    background-repeat: no-repeat;
+    z-index: 10;
+    transition: 0.3s ease;
+}

@@ -1,0 +1,5 @@
+[31/Mar/2026:08:55:11 +0000] 404 - GET http property.localhost "/dashboard/" [Client 172.18.0.1] [Length 183] [Gzip 3.21] "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36" "-"
+[31/Mar/2026:08:55:11 +0000] 400 - GET http property.localhost "/favicon.ico" [Client 127.0.0.1] [Length 230] [Gzip -] "-" "-"
+[31/Mar/2026:08:55:15 +0000] 200 - GET http property.localhost "/" [Client 172.18.0.1] [Length 568] [Gzip 1.86] "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36" "-"
+[31/Mar/2026:08:58:26 +0000] 200 - GET http property.localhost "/" [Client 172.18.0.1] [Length 568] [Gzip 1.86] "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36" "-"
+[31/Mar/2026:08:58:31 +0000] 404 - GET http property.localhost "/admin" [Client 172.18.0.1] [Length 183] [Gzip 3.21] "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36" "-"
