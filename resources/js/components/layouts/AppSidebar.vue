@@ -15,7 +15,10 @@
 // Using props to get data from Laravel Blade
 const props = defineProps({
   currentPath: String,
-  isAdmin: Boolean,
+  userLevel: {
+    type: String,
+    default: "guest",
+  },
 });
 
 // Define your menu items here
@@ -25,13 +28,18 @@ const menuItems = [
   { name: "借用狀態", path: "/status", icon: "bi-bar-chart-steps" },
 ];
 
-const adminMenuItems = [
-  { name: "借用總表", path: "/status_table", icon: "bi-tools" },
+const adminMenuItems = [{ name: "借用總表", path: "/status_table", icon: "bi-tools" }];
+
+const superAdminMenuItems = [
   { name: "人員控管", path: "/responsible", icon: "bi-people" },
   { name: "IP通過設定", path: "/ip", icon: "bi-router" },
 ];
 
-if (props.isAdmin) {
+if (props.userLevel === "admin" || props.userLevel === "normal") {
   menuItems.push(...adminMenuItems);
+}
+
+if (props.userLevel === "admin") {
+  menuItems.push(...superAdminMenuItems);
 }
 </script>

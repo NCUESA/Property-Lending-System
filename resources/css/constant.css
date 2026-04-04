@@ -11,8 +11,6 @@ input.invalid {
     border: 2px solid red;
 }
 
-
-
 .center {
     display: block;
     margin-left: auto;
@@ -51,4 +49,9 @@ input.invalid {
     background-repeat: no-repeat;
     z-index: 10;
     transition: 0.3s ease;
+}
+
+.bi-github:hover {
+    opacity: 0.7;
+    transition: 0.3s;
 }

@@ -15,9 +15,7 @@ console.log('Sidebar container found:', sidebarContainer);
 if (sidebarContainer) {
     const app = createApp(AppSidebar, {
         currentPath: sidebarContainer.dataset.path,
-        clientIp: sidebarContainer.dataset.ip,
-        roleName: sidebarContainer.dataset.role,
-        isAdmin: sidebarContainer.dataset.isAdmin === 'true'
+        userLevel: sidebarContainer.dataset.userLevel
     });
     
     app.mount('#sidebar-app');

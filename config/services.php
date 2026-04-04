@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'synology' => [
+        'host' => env('SYNOLOGY_HOST'),
+        'client_id' => env('SYNOLOGY_CLIENT_ID'),
+        'client_secret' => env('SYNOLOGY_CLIENT_SECRET'),
+        'redirect' => env('SYNOLOGY_REDIRECT_URI'),
+    ],
+
 ];
