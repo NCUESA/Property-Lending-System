@@ -34,6 +34,7 @@ enum BorrowItemStatus: string
             1 => self::Lent,
             0 => self::Cancelled,
             3 => self::Returned,
+            default => throw new \ValueError("Unknown legacy borrow item status: {$value}"),
         };
     }
 }

@@ -11,7 +11,7 @@ return new class extends Migration
     {
         Schema::create('borrow_requests', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('location_id')->constrained()->restrictOnDelete()->comment('取用地點');
+            $table->foreignId('location_id')->comment('取用地點')->constrained()->restrictOnDelete();
 
             // 借用人（訪客填寫）
             $table->string('borrower_department', 100);

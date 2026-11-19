@@ -14,8 +14,9 @@ return new class extends Migration
             $table->foreignId('borrow_request_id')->constrained()->cascadeOnDelete();
             $table->foreignId('property_id')->constrained()->restrictOnDelete();
             $table->string('status', 20)->default('pending');
-            $table->foreignId('returned_by')->nullable()->constrained('users')->restrictOnDelete()
-                ->comment('部分歸還時每件可能由不同人經手');
+            $table->foreignId('returned_by')->nullable()
+                ->comment('部分歸還時每件可能由不同人經手')
+                ->constrained('users')->restrictOnDelete();
             $table->timestamp('returned_at')->nullable();
             $table->timestamps();
 

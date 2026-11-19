@@ -14,8 +14,8 @@ return new class extends Migration
             $table->string('name', 50);
             $table->boolean('is_pickup_point')->default(false)->comment('借用人可選的取用地點');
             $table->foreignId('pickup_location_id')->nullable()
-                ->constrained('locations')->nullOnDelete()
-                ->comment('存放於此的器材從哪個取用地點借出；取用地點本身為 null');
+                ->comment('存放於此的器材從哪個取用地點借出；取用地點本身為 null')
+                ->constrained('locations')->nullOnDelete();
             $table->unsignedSmallInteger('sort_order')->default(0);
             $table->timestamps();
         });
