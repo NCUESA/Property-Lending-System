@@ -16,6 +16,7 @@ class SettingSeeder extends Seeder
             'borrow.max_days' => 7,
             'borrow.deposit_amount' => 100,
             'borrow.default_open' => true,
+            'borrow.allow_advance' => false,
             'borrow.notices' => [
                 '根據器材借用法規借用時間最長一個禮拜（借用起始日自借用當日開始計算）。目前不開放預借。',
                 '寒暑假借用時間請留意學生會公告。',

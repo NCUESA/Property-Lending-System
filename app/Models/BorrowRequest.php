@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\CarbonImmutable;
 use Database\Factories\BorrowRequestFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -9,7 +10,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Support\Carbon;
 
 /**
  * 借用單。只存發生過的事實，狀態請看 overview（VIEW borrow_request_overviews）。
@@ -21,23 +21,23 @@ use Illuminate\Support\Carbon;
  * @property string $borrower_name
  * @property string $phone
  * @property string $email
- * @property Carbon $borrow_date
- * @property Carbon $due_date
+ * @property CarbonImmutable $borrow_date
+ * @property CarbonImmutable $due_date
  * @property bool $agreed_terms
  * @property int|null $lent_by
- * @property Carbon|null $lent_at
+ * @property CarbonImmutable|null $lent_at
  * @property bool $id_card_taken
  * @property bool $deposit_taken
  * @property int|null $deposit_amount
  * @property int|null $deposit_box_no
  * @property int|null $returned_by
- * @property Carbon|null $returned_at
+ * @property CarbonImmutable|null $returned_at
  * @property bool $id_card_returned
  * @property bool $deposit_returned
  * @property string|null $remark
  * @property string|null $legacy_lender_name
  * @property string|null $legacy_returner_name
- * @property Carbon $created_at
+ * @property CarbonImmutable $created_at
  */
 #[Fillable([
     'location_id', 'user_id', 'borrower_department', 'borrower_name', 'phone', 'email',

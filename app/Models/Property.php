@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\BorrowItemStatus;
+use Carbon\CarbonImmutable;
 use Database\Factories\PropertyFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -12,7 +13,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Query\Builder as QueryBuilder;
-use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -27,7 +27,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $custodian
  * @property int $location_id
  * @property int|null $property_pool_id
- * @property Carbon|null $acquired_on
+ * @property CarbonImmutable|null $acquired_on
  * @property bool $is_school_owned
  * @property int $auth_level
  * @property string|null $image_path

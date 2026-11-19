@@ -35,4 +35,19 @@ return [
         ],
     ],
 
+    /*
+     * NCUESA SSO（Keycloak，OpenID Connect）。金鑰放在 .env。
+     * 端點：{base_url}/realms/{realm}/protocol/openid-connect/{auth|token|userinfo|logout}
+     */
+    'ncuesa_sso' => [
+        'base_url' => env('NCUESA_SSO_URL'),          // 例：https://portal.ncuesa.org.tw
+        'realm' => env('NCUESA_SSO_REALM', 'NCUESA'), // 有分大小寫
+        'client_id' => env('NCUESA_SSO_CLIENT_ID'),
+        'client_secret' => env('NCUESA_SSO_CLIENT_SECRET'),
+        'redirect' => env('NCUESA_SSO_REDIRECT_URI', '/auth/sso/callback'),
+        'scopes' => array_values(array_filter(explode(' ', (string) (env('NCUESA_SSO_SCOPES') ?: 'openid profile email')))),
+        // 學號放在哪個 claim；Keycloak 預設沒有學號，留空就不帶入
+        'student_id_claim' => env('NCUESA_SSO_STUDENT_ID_CLAIM'),
+    ],
+
 ];

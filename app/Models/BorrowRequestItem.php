@@ -3,13 +3,13 @@
 namespace App\Models;
 
 use App\Enums\BorrowItemStatus;
+use Carbon\CarbonImmutable;
 use Database\Factories\BorrowRequestItemFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Carbon;
 
 /**
  * 借用明細：指定器材（property_id）或 bulk 品項池（property_pool_id + quantity）擇一。
@@ -22,7 +22,7 @@ use Illuminate\Support\Carbon;
  * @property int $returned_quantity
  * @property BorrowItemStatus $status
  * @property int|null $returned_by
- * @property Carbon|null $returned_at
+ * @property CarbonImmutable|null $returned_at
  */
 #[Fillable([
     'borrow_request_id', 'property_id', 'property_pool_id', 'quantity', 'returned_quantity',

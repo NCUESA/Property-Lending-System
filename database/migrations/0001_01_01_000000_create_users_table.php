@@ -19,7 +19,6 @@ return new class extends Migration
             $table->string('email')->nullable()->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('sso_id')->nullable()->unique()->comment('SSO 提供者的使用者識別碼');
-            $table->string('password')->nullable()->comment('SSO 登入者為 null');
             $table->string('role', 20)->default('borrower')->comment('SSO 首次登入自動建為 borrower');
             $table->boolean('is_active')->default(true)->comment('停用而非刪除，保留經手紀錄');
             $table->rememberToken();
@@ -27,12 +26,6 @@ return new class extends Migration
         });
 
         DB::statement("ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('borrower', 'staff', 'admin'))");
-
-        Schema::create('password_reset_tokens', function (Blueprint $table) {
-            $table->string('email')->primary();
-            $table->string('token');
-            $table->timestamp('created_at')->nullable();
-        });
 
         Schema::create('sessions', function (Blueprint $table) {
             $table->string('id')->primary();
@@ -50,7 +43,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('users');
-        Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
     }
 };

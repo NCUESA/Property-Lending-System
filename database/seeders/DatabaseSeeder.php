@@ -35,7 +35,7 @@ class DatabaseSeeder extends Seeder
     private function seedDemo(): void
     {
         $admin = User::factory()->admin()->create(['student_id' => 'admin', 'name' => '測試管理員', 'email' => 'admin@example.com']);
-        User::factory()->create(['student_id' => 'staff', 'name' => '測試值班', 'email' => 'staff@example.com', 'role' => 'staff']);
+        User::factory()->staff()->create(['student_id' => 'staff', 'name' => '測試值班', 'email' => 'staff@example.com']);
         $member = User::factory()->create(['student_id' => 'S1234567', 'name' => '測試社團幹部', 'email' => 'member@example.com']);
 
         $av = PropertyCategory::create(['code' => '200', 'name' => '音響設備']);

@@ -33,7 +33,7 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            'serve' => false, // 不需要用簽章 URL 讀寫私有檔案；器材圖片放在 public 磁碟
             'throw' => false,
             'report' => false,
         ],

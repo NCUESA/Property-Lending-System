@@ -2,18 +2,18 @@
 
 namespace App\Models;
 
+use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
 
 /**
  * 開放／暫停借用期間。期間不可重疊（資料庫 EXCLUDE constraint）。
  *
  * @property int $id
  * @property string $name
- * @property Carbon $starts_on
- * @property Carbon $ends_on
+ * @property CarbonImmutable $starts_on
+ * @property CarbonImmutable $ends_on
  * @property bool $is_open
  * @property string|null $note
  */

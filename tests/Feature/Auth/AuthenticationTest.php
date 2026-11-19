@@ -1,56 +1,32 @@
 <?php
 
 use App\Models\User;
-use Illuminate\Support\Facades\RateLimiter;
 
-test('login screen can be rendered', function () {
-    $response = $this->get(route('login'));
+test('登入頁只提供 SSO', function () {
+    config(['services.ncuesa_sso.base_url' => 'https://sso.example.test', 'services.ncuesa_sso.client_id' => 'abc']);
 
-    $response->assertOk();
+    $this->get(route('login'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->component('auth/Login')->where('ssoConfigured', true));
 });
 
-test('users can authenticate using the login screen', function () {
-    $user = User::factory()->create();
-
-    $response = $this->post(route('login.store'), [
-        'email' => $user->email,
-        'password' => 'password',
-    ]);
-
-    $this->assertAuthenticated();
-    $response->assertRedirect(route('dashboard', absolute: false));
+test('沒有密碼登入端點', function () {
+    $this->post('/login', ['student_id' => 'x', 'password' => 'y'])->assertMethodNotAllowed();
+    $this->get('/forgot-password')->assertNotFound();
 });
 
-test('users can not authenticate with invalid password', function () {
-    $user = User::factory()->create();
+test('已登入的人不會再看到登入頁', function () {
+    $this->actingAs(User::factory()->create())
+        ->get(route('login'))
+        ->assertRedirect();
+});
 
-    $this->post(route('login.store'), [
-        'email' => $user->email,
-        'password' => 'wrong-password',
-    ]);
+test('沒有設定 SSO 時，登出直接回首頁', function () {
+    config(['services.ncuesa_sso.base_url' => null]);
+
+    $this->actingAs(User::factory()->create())
+        ->post(route('logout'))
+        ->assertRedirect(route('home'));
 
     $this->assertGuest();
-});
-
-test('users can logout', function () {
-    $user = User::factory()->create();
-
-    $response = $this->actingAs($user)->post(route('logout'));
-
-    $response->assertRedirect(route('home'));
-
-    $this->assertGuest();
-});
-
-test('users are rate limited', function () {
-    $user = User::factory()->create();
-
-    RateLimiter::increment(md5('login'.implode('|', [$user->email, '127.0.0.1'])), amount: 5);
-
-    $response = $this->post(route('login.store'), [
-        'email' => $user->email,
-        'password' => 'wrong-password',
-    ]);
-
-    $response->assertTooManyRequests();
 });

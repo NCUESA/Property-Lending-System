@@ -1,0 +1,114 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Actions\Borrow\CancelBorrowRequest;
+use App\Actions\Borrow\LendOutItems;
+use App\Actions\Borrow\ReturnItems;
+use App\Enums\BorrowRequestStatus;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\LendBorrowRequestRequest;
+use App\Http\Requests\Admin\ReturnBorrowRequestRequest;
+use App\Http\Requests\Admin\UpdateBorrowRequestRequest;
+use App\Models\BorrowRequest;
+use App\Models\BorrowRequestOverview;
+use App\Models\Location;
+use App\Models\Setting;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Inertia\Inertia;
+use Inertia\Response;
+
+/**
+ * 值班人員的借用單管理：列表、明細、出借、歸還、退回、修改備註。
+ */
+class BorrowRequestController extends Controller
+{
+    public function index(Request $request): Response
+    {
+        $filters = $request->validate([
+            'status' => ['nullable', 'array'],
+            'status.*' => [Rule::enum(BorrowRequestStatus::class)],
+            'location_id' => ['nullable', 'integer'],
+            'q' => ['nullable', 'string', 'max:50'],
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date'],
+        ]);
+
+        $borrows = BorrowRequestOverview::query()
+            ->when($filters['status'] ?? null, fn (Builder $q, array $status) => $q->whereIn('status', $status))
+            ->when($filters['location_id'] ?? null, fn (Builder $q, int $id) => $q->where('location_id', $id))
+            ->when($filters['from'] ?? null, fn (Builder $q, string $d) => $q->whereDate('borrow_date', '>=', $d))
+            ->when($filters['to'] ?? null, fn (Builder $q, string $d) => $q->whereDate('borrow_date', '<=', $d))
+            ->when($filters['q'] ?? null, fn (Builder $q, string $term) => $q->where(fn (Builder $w) => $w
+                ->where('borrower_name', 'ilike', "%{$term}%")
+                ->orWhere('borrower_department', 'ilike', "%{$term}%")
+                ->orWhere('phone', 'like', "%{$term}%")
+                ->orWhereHas('items.property', fn (Builder $p) => $p->where('ssid', 'ilike', "%{$term}%"))
+                ->when(ctype_digit($term), fn (Builder $w) => $w->orWhere('id', (int) $term))))
+            ->with('location:id,name')
+            ->orderByDesc('id')
+            ->paginate(20)
+            ->withQueryString();
+
+        return Inertia::render('Admin/Borrows/Index', [
+            'filters' => $filters,
+            'borrows' => $borrows,
+            'statuses' => collect(BorrowRequestStatus::cases())->map(fn ($s) => ['value' => $s->value, 'label' => $s->label()]),
+            'locations' => Location::pickupPoints()->get(['id', 'name']),
+        ]);
+    }
+
+    public function show(BorrowRequest $borrow): Response
+    {
+        $overview = BorrowRequestOverview::query()
+            ->with([
+                'location:id,name',
+                'items.property:id,ssid,name,second_name,location_id',
+                'items.property.location:id,name',
+                'items.pool:id,name',
+                'items.returner:id,name',
+                'lender:id,name',
+                'returner:id,name',
+                'borrower:id,name,student_id',
+            ])
+            ->findOrFail($borrow->id);
+
+        return Inertia::render('Admin/Borrows/Show', [
+            'borrow' => $overview,
+            'defaultDepositAmount' => (int) Setting::get('borrow.deposit_amount', 100),
+        ]);
+    }
+
+    public function update(UpdateBorrowRequestRequest $request, BorrowRequest $borrow): RedirectResponse
+    {
+        $borrow->update($request->validated());
+
+        return back()->with('success', '已更新借用單。');
+    }
+
+    public function lend(LendBorrowRequestRequest $request, BorrowRequest $borrow, LendOutItems $lend): RedirectResponse
+    {
+        $lend->handle($borrow, $request->user(), $request->validated());
+
+        return back()->with('success', '已完成出借。');
+    }
+
+    public function return(ReturnBorrowRequestRequest $request, BorrowRequest $borrow, ReturnItems $return): RedirectResponse
+    {
+        $return->handle($borrow, $request->user(), $request->validated());
+
+        return back()->with('success', '已登記歸還。');
+    }
+
+    public function cancel(Request $request, BorrowRequest $borrow, CancelBorrowRequest $cancel): RedirectResponse
+    {
+        $data = $request->validate(['reason' => ['nullable', 'string', 'max:500']]);
+
+        $cancel->handle($borrow, $request->user(), $data['reason'] ?? null);
+
+        return back()->with('success', '已退回借用單。');
+    }
+}
