@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -13,13 +14,19 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
+            $table->string('student_id', 20)->nullable()->unique();
             $table->string('name');
-            $table->string('email')->unique();
+            $table->string('email')->nullable()->unique();
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
+            $table->string('sso_id')->nullable()->unique()->comment('SSO 提供者的使用者識別碼');
+            $table->string('password')->nullable()->comment('SSO 登入者為 null');
+            $table->string('role', 20)->default('staff');
+            $table->boolean('is_active')->default(true)->comment('停用而非刪除，保留經手紀錄');
             $table->rememberToken();
             $table->timestamps();
         });
+
+        DB::statement("ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('staff', 'admin'))");
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();
