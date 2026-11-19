@@ -2,7 +2,6 @@
 
 namespace Database\Factories;
 
-use App\Enums\BorrowRequestStatus;
 use App\Models\BorrowRequest;
 use App\Models\Location;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -25,7 +24,6 @@ class BorrowRequestFactory extends Factory
             'borrow_date' => $borrowDate,
             'due_date' => $borrowDate->copy()->addDays(fake()->numberBetween(0, 6)),
             'agreed_terms' => true,
-            'status' => BorrowRequestStatus::Pending,
         ];
     }
 }

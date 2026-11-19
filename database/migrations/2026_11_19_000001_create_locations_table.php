@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -12,6 +13,7 @@ return new class extends Migration
             $table->id();
             $table->string('code', 20)->unique();
             $table->string('name', 50);
+            $table->char('ssid_prefix', 1)->unique()->comment('財產編號第 1 碼');
             $table->boolean('is_pickup_point')->default(false)->comment('借用人可選的取用地點');
             $table->foreignId('pickup_location_id')->nullable()
                 ->comment('存放於此的器材從哪個取用地點借出；取用地點本身為 null')
@@ -19,6 +21,8 @@ return new class extends Migration
             $table->unsignedSmallInteger('sort_order')->default(0);
             $table->timestamps();
         });
+
+        DB::statement("ALTER TABLE locations ADD CONSTRAINT locations_ssid_prefix_check CHECK (ssid_prefix ~ '^[0-9A-Z]$')");
     }
 
     public function down(): void

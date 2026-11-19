@@ -20,13 +20,13 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('sso_id')->nullable()->unique()->comment('SSO 提供者的使用者識別碼');
             $table->string('password')->nullable()->comment('SSO 登入者為 null');
-            $table->string('role', 20)->default('staff');
+            $table->string('role', 20)->default('borrower')->comment('SSO 首次登入自動建為 borrower');
             $table->boolean('is_active')->default(true)->comment('停用而非刪除，保留經手紀錄');
             $table->rememberToken();
             $table->timestamps();
         });
 
-        DB::statement("ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('staff', 'admin'))");
+        DB::statement("ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('borrower', 'staff', 'admin'))");
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();

@@ -14,11 +14,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $id
  * @property string $code
  * @property string $name
+ * @property string $ssid_prefix
  * @property bool $is_pickup_point
  * @property int|null $pickup_location_id
  * @property int $sort_order
  */
-#[Fillable(['code', 'name', 'is_pickup_point', 'pickup_location_id', 'sort_order'])]
+#[Fillable(['code', 'name', 'ssid_prefix', 'is_pickup_point', 'pickup_location_id', 'sort_order'])]
 class Location extends Model
 {
     /** @use HasFactory<LocationFactory> */
@@ -51,6 +52,12 @@ class Location extends Model
     public function properties(): HasMany
     {
         return $this->hasMany(Property::class);
+    }
+
+    /** @return HasMany<PropertyPool, $this> */
+    public function pools(): HasMany
+    {
+        return $this->hasMany(PropertyPool::class);
     }
 
     /** @param Builder<Location> $query */

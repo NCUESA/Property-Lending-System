@@ -7,6 +7,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -53,5 +54,30 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->role === Role::Admin;
+    }
+
+    public function isStaffOrAbove(): bool
+    {
+        return $this->role->isStaffOrAbove();
+    }
+
+    /**
+     * 直接加入的群組。
+     *
+     * @return BelongsToMany<UserGroup, $this>
+     */
+    public function groups(): BelongsToMany
+    {
+        return $this->belongsToMany(UserGroup::class, 'user_group_members')->withTimestamps();
+    }
+
+    /**
+     * 實際所屬的所有群組（含透過子群組繼承的上層群組）。
+     *
+     * @return BelongsToMany<UserGroup, $this>
+     */
+    public function effectiveGroups(): BelongsToMany
+    {
+        return $this->belongsToMany(UserGroup::class, 'user_effective_groups');
     }
 }

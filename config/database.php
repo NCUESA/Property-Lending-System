@@ -96,6 +96,7 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'search_path' => 'public',
+            'timezone' => 'Asia/Taipei', // 讓 CURRENT_DATE / now() 以台北時間計算
             'sslmode' => env('DB_SSLMODE', 'prefer'),
         ],
 

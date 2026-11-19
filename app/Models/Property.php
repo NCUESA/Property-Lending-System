@@ -11,13 +11,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
  * @property string $ssid
+ * @property int $property_subcategory_id
  * @property int|null $sequence_no
- * @property string $category
  * @property string $name
  * @property string|null $second_name
  * @property string|null $spec
@@ -25,16 +26,18 @@ use Illuminate\Support\Carbon;
  * @property string|null $department
  * @property string|null $custodian
  * @property int $location_id
+ * @property int|null $property_pool_id
  * @property Carbon|null $acquired_on
  * @property bool $is_school_owned
+ * @property int $auth_level
  * @property string|null $image_path
  * @property bool $is_lendable
  * @property string|null $remark
  */
 #[Fillable([
-    'ssid', 'sequence_no', 'category', 'name', 'second_name', 'spec', 'price',
-    'department', 'custodian', 'location_id', 'acquired_on', 'is_school_owned',
-    'image_path', 'is_lendable', 'remark',
+    'ssid', 'property_subcategory_id', 'sequence_no', 'name', 'second_name', 'spec', 'price',
+    'department', 'custodian', 'location_id', 'property_pool_id', 'acquired_on',
+    'is_school_owned', 'auth_level', 'image_path', 'is_lendable', 'remark',
 ])]
 class Property extends Model
 {
@@ -49,13 +52,26 @@ class Property extends Model
             'is_lendable' => 'boolean',
             'price' => 'integer',
             'sequence_no' => 'integer',
+            'auth_level' => 'integer',
         ];
+    }
+
+    /** @return BelongsTo<PropertySubcategory, $this> */
+    public function subcategory(): BelongsTo
+    {
+        return $this->belongsTo(PropertySubcategory::class, 'property_subcategory_id');
     }
 
     /** @return BelongsTo<Location, $this> */
     public function location(): BelongsTo
     {
         return $this->belongsTo(Location::class);
+    }
+
+    /** @return BelongsTo<PropertyPool, $this> */
+    public function pool(): BelongsTo
+    {
+        return $this->belongsTo(PropertyPool::class, 'property_pool_id');
     }
 
     /** @return HasMany<BorrowRequestItem, $this> */
@@ -75,6 +91,21 @@ class Property extends Model
             ->whereIn('status', BorrowItemStatus::ACTIVE);
     }
 
+    public function isBulk(): bool
+    {
+        return $this->property_pool_id !== null;
+    }
+
+    /**
+     * 需要逐件挑選的器材（不屬於 bulk 品項池）。
+     *
+     * @param  Builder<Property>  $query
+     */
+    public function scopeSerial(Builder $query): void
+    {
+        $query->whereNull('properties.property_pool_id');
+    }
+
     /**
      * 可借：開放借用，且沒有進行中的借用。
      *
@@ -82,7 +113,7 @@ class Property extends Model
      */
     public function scopeAvailable(Builder $query): void
     {
-        $query->where('is_lendable', true)->whereDoesntHave('activeBorrowItem');
+        $query->where('properties.is_lendable', true)->whereDoesntHave('activeBorrowItem');
     }
 
     /**
@@ -92,6 +123,30 @@ class Property extends Model
      */
     public function scopePickupableFrom(Builder $query, Location $pickup): void
     {
-        $query->whereIn('location_id', $pickup->servedLocationIds());
+        $query->whereIn('properties.location_id', $pickup->servedLocationIds());
+    }
+
+    /**
+     * 此使用者有權借用的器材：auth_level = 0，或使用者所屬群組（含上層群組）
+     * 授權了這件器材、它的次要類別或主要類別。$user 為 null 代表未登入的訪客。
+     *
+     * @param  Builder<Property>  $query
+     */
+    public function scopeBorrowableBy(Builder $query, ?User $user): void
+    {
+        $query->where(function (Builder $q) use ($user) {
+            $q->where('properties.auth_level', 0);
+
+            if ($user !== null) {
+                $q->orWhereExists(fn (QueryBuilder $sub) => UserGroupGrant::queryForUser($sub, $user)
+                    ->where(fn (QueryBuilder $w) => $w
+                        ->whereColumn('g.property_id', 'properties.id')
+                        ->orWhereColumn('g.property_subcategory_id', 'properties.property_subcategory_id')
+                        ->orWhereIn('g.property_category_id', fn (QueryBuilder $c) => $c
+                            ->select('property_category_id')
+                            ->from('property_subcategories')
+                            ->whereColumn('property_subcategories.id', 'properties.property_subcategory_id'))));
+            }
+        });
     }
 }

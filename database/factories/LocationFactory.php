@@ -15,6 +15,8 @@ class LocationFactory extends Factory
         return [
             'code' => fake()->unique()->lexify('loc-????'),
             'name' => fake()->unique()->city(),
+            // 避開 LocationSeeder 的 J、B、3、4
+            'ssid_prefix' => fake()->unique()->randomElement(array_diff([...range('A', 'Z'), ...range('0', '9')], ['J', 'B', '3', '4'])),
             'is_pickup_point' => true,
             'pickup_location_id' => null,
             'sort_order' => 0,
