@@ -11,11 +11,11 @@ import type { NavItem } from '@/types';
 
 const sidebarNavItems: NavItem[] = [
     {
-        title: 'Profile',
+        title: '個人資料',
         href: editProfile(),
     },
     {
-        title: 'Appearance',
+        title: '外觀',
         href: editAppearance(),
     },
 ];
@@ -25,10 +25,7 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
 
 <template>
     <div class="px-4 py-6">
-        <Heading
-            title="Settings"
-            description="Manage your profile and account settings"
-        />
+        <Heading title="個人設定" description="個人資料與顯示外觀" />
 
         <div class="flex flex-col lg:flex-row lg:space-x-12">
             <aside class="w-full max-w-xl lg:w-48">

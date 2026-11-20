@@ -1,6 +1,18 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
-import { BookOpen, FolderGit2, LayoutGrid } from '@lucide/vue';
+import { Link, usePage } from '@inertiajs/vue3';
+import {
+    Boxes,
+    CalendarRange,
+    ClipboardList,
+    FileText,
+    Package,
+    Search,
+    Settings2,
+    Tags,
+    Users,
+    UsersRound,
+} from '@lucide/vue';
+import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
@@ -15,27 +27,50 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { home } from '@/routes';
+import { index as borrowsIndex } from '@/routes/admin/borrows';
+import { index as categoriesIndex } from '@/routes/admin/categories';
+import { index as groupsIndex } from '@/routes/admin/groups';
+import { index as periodsIndex } from '@/routes/admin/periods';
+import { index as poolsIndex } from '@/routes/admin/pools';
+import { index as propertiesIndex } from '@/routes/admin/properties';
+import { edit as settingsEdit } from '@/routes/admin/settings';
+import { index as usersIndex } from '@/routes/admin/users';
+import { create as borrowCreate } from '@/routes/borrow';
+import { status as propertyStatus } from '@/routes/properties';
 import type { NavItem } from '@/types';
 
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: home(),
-        icon: LayoutGrid,
-    },
-];
+const can = computed(() => usePage().props.auth.can);
+
+const borrowNav = computed<NavItem[]>(() =>
+    can.value.staff
+        ? [{ title: '借用單', href: borrowsIndex(), icon: ClipboardList }]
+        : [],
+);
+
+const propertyNav = computed<NavItem[]>(() =>
+    can.value.admin
+        ? [
+              { title: '器材', href: propertiesIndex(), icon: Package },
+              { title: 'Bulk 品項', href: poolsIndex(), icon: Boxes },
+              { title: '編碼規則', href: categoriesIndex(), icon: Tags },
+          ]
+        : [],
+);
+
+const adminNav = computed<NavItem[]>(() =>
+    can.value.admin
+        ? [
+              { title: '人員', href: usersIndex(), icon: Users },
+              { title: '群組與授權', href: groupsIndex(), icon: UsersRound },
+              { title: '借用期間', href: periodsIndex(), icon: CalendarRange },
+              { title: '系統設定', href: settingsEdit(), icon: Settings2 },
+          ]
+        : [],
+);
 
 const footerNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/vue-starter-kit',
-        icon: FolderGit2,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#vue',
-        icon: BookOpen,
-    },
+    { title: '借用申請頁', href: borrowCreate(), icon: FileText },
+    { title: '器材狀態', href: propertyStatus(), icon: Search },
 ];
 </script>
 
@@ -54,7 +89,9 @@ const footerNavItems: NavItem[] = [
         </SidebarHeader>
 
         <SidebarContent>
-            <NavMain :items="mainNavItems" />
+            <NavMain label="借用" :items="borrowNav" />
+            <NavMain label="器材" :items="propertyNav" />
+            <NavMain label="管理" :items="adminNav" />
         </SidebarContent>
 
         <SidebarFooter>

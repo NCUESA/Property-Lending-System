@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\PropertyPoolRequest;
 use App\Models\Location;
 use App\Models\PropertyPool;
+use App\Support\Toast;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\ValidationException;
@@ -31,14 +32,18 @@ class PropertyPoolController extends Controller
     {
         PropertyPool::create($request->validated());
 
-        return back()->with('success', '已新增品項。');
+        Toast::success('已新增品項。');
+
+        return back();
     }
 
     public function update(PropertyPoolRequest $request, PropertyPool $pool): RedirectResponse
     {
         $pool->update($request->validated());
 
-        return back()->with('success', '已更新品項。');
+        Toast::success('已更新品項。');
+
+        return back();
     }
 
     public function destroy(PropertyPool $pool): RedirectResponse
@@ -49,6 +54,8 @@ class PropertyPoolController extends Controller
 
         $pool->delete(); // 池內器材的 property_pool_id 會變成 null，回到逐件借用
 
-        return back()->with('success', '已刪除品項，池內器材改為逐件借用。');
+        Toast::success('已刪除品項，池內器材改為逐件借用。');
+
+        return back();
     }
 }

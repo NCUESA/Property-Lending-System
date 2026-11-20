@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\PropertySubcategoryRequest;
 use App\Models\PropertyCategory;
 use App\Models\PropertySubcategory;
+use App\Support\Toast;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\ValidationException;
 
@@ -15,7 +16,9 @@ class PropertySubcategoryController extends Controller
     {
         $category->subcategories()->create($request->validated());
 
-        return back()->with('success', '已新增次要類別。');
+        Toast::success('已新增次要類別。');
+
+        return back();
     }
 
     public function update(PropertySubcategoryRequest $request, PropertySubcategory $subcategory): RedirectResponse
@@ -26,7 +29,9 @@ class PropertySubcategoryController extends Controller
 
         $subcategory->update($request->validated());
 
-        return back()->with('success', '已更新次要類別。');
+        Toast::success('已更新次要類別。');
+
+        return back();
     }
 
     public function destroy(PropertySubcategory $subcategory): RedirectResponse
@@ -37,6 +42,8 @@ class PropertySubcategoryController extends Controller
 
         $subcategory->delete();
 
-        return back()->with('success', '已刪除次要類別。');
+        Toast::success('已刪除次要類別。');
+
+        return back();
     }
 }

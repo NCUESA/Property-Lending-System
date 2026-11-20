@@ -8,6 +8,7 @@ use App\Models\Location;
 use App\Models\Property;
 use App\Models\PropertyCategory;
 use App\Models\PropertyPool;
+use App\Support\Toast;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -64,7 +65,9 @@ class PropertyController extends Controller
         $property->image_path = $this->storeImage($request->file('image'));
         $property->save();
 
-        return to_route('admin.properties.index')->with('success', "已新增 {$property->ssid} {$property->name}。");
+        Toast::success("已新增 {$property->ssid} {$property->name}。");
+
+        return to_route('admin.properties.index');
     }
 
     public function edit(Property $property): Response
@@ -89,7 +92,9 @@ class PropertyController extends Controller
 
         $property->save();
 
-        return to_route('admin.properties.index')->with('success', "已更新 {$property->ssid}。");
+        Toast::success("已更新 {$property->ssid}。");
+
+        return to_route('admin.properties.index');
     }
 
     public function destroy(Property $property): RedirectResponse
@@ -103,7 +108,9 @@ class PropertyController extends Controller
         $property->delete();
         $this->deleteImage($property->image_path);
 
-        return to_route('admin.properties.index')->with('success', "已刪除 {$property->ssid}。");
+        Toast::success("已刪除 {$property->ssid}。");
+
+        return to_route('admin.properties.index');
     }
 
     /**

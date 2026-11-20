@@ -7,6 +7,7 @@ use App\Auth\NcuesaSsoUser;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\Toast;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -56,13 +57,17 @@ class SsoController extends Controller
     public function callback(Request $request): RedirectResponse
     {
         if ($request->has('error')) {
-            return to_route('login')->with('error', 'SSO 登入已取消');
+            Toast::error('SSO 登入已取消');
+
+            return to_route('login');
         }
 
         try {
             $ssoUser = Socialite::driver('ncuesa')->user();
         } catch (InvalidStateException) {
-            return to_route('login')->with('error', '登入逾時，請重新登入');
+            Toast::error('登入逾時，請重新登入');
+
+            return to_route('login');
         }
 
         $user = $this->resolveUser(
@@ -73,7 +78,9 @@ class SsoController extends Controller
         );
 
         if (! $user->is_active) {
-            return to_route('login')->with('error', '此帳號已停用，請聯絡學生會');
+            Toast::error('此帳號已停用，請聯絡學生會');
+
+            return to_route('login');
         }
 
         Auth::login($user, remember: true);

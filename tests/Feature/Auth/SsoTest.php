@@ -92,7 +92,7 @@ it('停用的帳號不能登入', function () {
 
     $this->get(route('auth.sso.callback'))
         ->assertRedirect(route('login'))
-        ->assertSessionHas('error', '此帳號已停用，請聯絡學生會');
+        ->assertInertiaFlash('toast.message', '此帳號已停用，請聯絡學生會');
     $this->assertGuest();
 });
 
@@ -101,11 +101,11 @@ it('state 過期時回登入頁並提示，而不是 500', function () {
 
     $this->get(route('auth.sso.callback'))
         ->assertRedirect(route('login'))
-        ->assertSessionHas('error');
+        ->assertInertiaFlash('toast.type', 'error');
 });
 
 it('使用者在 SSO 取消授權', function () {
     $this->get(route('auth.sso.callback', ['error' => 'access_denied']))
         ->assertRedirect(route('login'))
-        ->assertSessionHas('error', 'SSO 登入已取消');
+        ->assertInertiaFlash('toast.message', 'SSO 登入已取消');
 });

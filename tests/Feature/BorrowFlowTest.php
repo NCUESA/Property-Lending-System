@@ -42,8 +42,8 @@ describe('申請', function () {
         $properties = Property::factory()->count(2)->create(['location_id' => $this->jinde->id]);
 
         $this->post(route('borrow.store'), borrowPayload(['property_ids' => $properties->pluck('id')->all()]))
-            ->assertRedirect(route('borrow.create'))
-            ->assertSessionHas('success');
+            ->assertRedirect(route('borrow.create', ['location' => 'jinde']))
+            ->assertInertiaFlash('toast.type', 'success');
 
         $borrow = BorrowRequest::sole();
         expect($borrow->items)->toHaveCount(2)
@@ -364,5 +364,15 @@ describe('公開器材狀態', function () {
 
         $this->get(route('properties.status', ['availability' => 'borrowed']))
             ->assertInertia(fn (Assert $page) => $page->has('properties.data', 1)->where('properties.data.0.id', $lent->id));
+    });
+});
+
+describe('序列化', function () {
+    it('日期欄位以 Y-m-d 傳給前端，不受時區轉換影響', function () {
+        $borrow = BorrowRequest::factory()->create(['borrow_date' => '2026-11-20', 'due_date' => '2026-11-22']);
+
+        expect($borrow->fresh()->toArray())
+            ->borrow_date->toBe('2026-11-20')
+            ->due_date->toBe('2026-11-22');
     });
 });

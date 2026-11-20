@@ -17,7 +17,10 @@ defineProps<{
 }>();
 
 const page = usePage();
-const error = computed(() => page.props.flash.error);
+// SSO 失敗時後端以 Inertia flash 帶回錯誤訊息
+const error = computed(() =>
+    page.flash.toast?.type === 'error' ? page.flash.toast.message : null,
+);
 </script>
 
 <template>
@@ -29,12 +32,20 @@ const error = computed(() => page.props.flash.error);
         </Alert>
 
         <!-- SSO 會導向外部網域，必須是整頁跳轉，不能用 Inertia Link -->
-        <Button v-if="ssoConfigured" as="a" :href="redirect().url" class="w-full" data-test="sso-login-button">
+        <Button
+            v-if="ssoConfigured"
+            as="a"
+            :href="redirect().url"
+            class="w-full"
+            data-test="sso-login-button"
+        >
             使用 NCUESA SSO 登入
         </Button>
 
         <Alert v-else variant="destructive">
-            <AlertDescription>SSO 尚未設定，請聯絡系統管理員。</AlertDescription>
+            <AlertDescription
+                >SSO 尚未設定，請聯絡系統管理員。</AlertDescription
+            >
         </Alert>
     </div>
 </template>

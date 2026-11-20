@@ -6,6 +6,7 @@ use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UserRequest;
 use App\Models\User;
+use App\Support\Toast;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -50,13 +51,17 @@ class UserController extends Controller
     {
         User::create($request->validated());
 
-        return back()->with('success', '已新增帳號。');
+        Toast::success('已新增帳號。');
+
+        return back();
     }
 
     public function update(UserRequest $request, User $user): RedirectResponse
     {
         $user->update($request->validated());
 
-        return back()->with('success', '已更新帳號。');
+        Toast::success('已更新帳號。');
+
+        return back();
     }
 }

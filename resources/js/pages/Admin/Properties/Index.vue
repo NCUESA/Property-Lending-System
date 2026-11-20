@@ -1,11 +1,223 @@
 <script setup lang="ts">
-// TODO(第三步)：佔位頁面。未宣告的 props 會落在 $attrs，先印出來方便檢查後端資料。
-defineOptions({ inheritAttrs: false });
+import { Head, Link } from '@inertiajs/vue3';
+import { ImageOff, Lock, Plus, Search } from '@lucide/vue';
+import Heading from '@/components/Heading.vue';
+import PaginationLinks from '@/components/PaginationLinks.vue';
+import StatusBadge from '@/components/StatusBadge.vue';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import { useQueryFilters } from '@/composables/useQueryFilters';
+import { create, edit, index } from '@/routes/admin/properties';
+import type {
+    Category,
+    LocationRef,
+    Paginator,
+    PoolRef,
+    Property,
+} from '@/types';
+
+defineOptions({
+    layout: { breadcrumbs: [{ title: '器材', href: index() }] },
+});
+
+const props = defineProps<{
+    filters: {
+        q?: string;
+        location_id?: number;
+        category_id?: number;
+        pool_id?: number;
+    };
+    properties: Paginator<Property>;
+    locations: LocationRef[];
+    categories: Category[];
+    pools: PoolRef[];
+}>();
+
+const { filters } = useQueryFilters(index.url(), {
+    q: props.filters.q ?? '',
+    location_id: props.filters.location_id
+        ? String(props.filters.location_id)
+        : '',
+    category_id: props.filters.category_id
+        ? String(props.filters.category_id)
+        : '',
+    pool_id: props.filters.pool_id ? String(props.filters.pool_id) : '',
+});
+
+const selectClass =
+    'h-9 rounded-md border border-input bg-transparent px-3 text-sm';
 </script>
 
 <template>
-    <main class="p-6">
-        <h1 class="mb-4 text-xl font-semibold">Admin/Properties/Index</h1>
-        <pre class="overflow-x-auto rounded bg-muted p-4 text-xs">{{ $attrs }}</pre>
-    </main>
+    <Head title="器材" />
+
+    <div class="space-y-4 p-4 md:p-6">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+            <Heading title="器材" description="財產資料、照片與借用權限" />
+            <Button as-child>
+                <Link :href="create()"
+                    ><Plus class="mr-1 size-4" />新增器材</Link
+                >
+            </Button>
+        </div>
+
+        <div class="flex flex-col gap-3 md:flex-row">
+            <div class="relative flex-1">
+                <Search
+                    class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+                />
+                <Input
+                    v-model="filters.q"
+                    placeholder="財產編號、名稱、保管人"
+                    class="pl-9"
+                />
+            </div>
+            <select
+                v-model="filters.location_id"
+                :class="selectClass"
+                aria-label="地點"
+            >
+                <option value="">全部地點</option>
+                <option
+                    v-for="l in locations"
+                    :key="l.id"
+                    :value="String(l.id)"
+                >
+                    {{ l.name }}
+                </option>
+            </select>
+            <select
+                v-model="filters.category_id"
+                :class="selectClass"
+                aria-label="主要類別"
+            >
+                <option value="">全部類別</option>
+                <option
+                    v-for="c in categories"
+                    :key="c.id"
+                    :value="String(c.id)"
+                >
+                    {{ c.code }} {{ c.name }}
+                </option>
+            </select>
+            <select
+                v-model="filters.pool_id"
+                :class="selectClass"
+                aria-label="品項池"
+            >
+                <option value="">全部（含 bulk）</option>
+                <option v-for="p in pools" :key="p.id" :value="String(p.id)">
+                    {{ p.name }}（{{ p.location?.name }}）
+                </option>
+            </select>
+        </div>
+
+        <div class="overflow-x-auto rounded-lg border">
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead class="w-12"></TableHead>
+                        <TableHead>財產編號</TableHead>
+                        <TableHead>名稱</TableHead>
+                        <TableHead>類別</TableHead>
+                        <TableHead>存放地點</TableHead>
+                        <TableHead>借用</TableHead>
+                        <TableHead>狀態</TableHead>
+                        <TableHead class="w-16"></TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    <TableRow
+                        v-for="p in properties.data"
+                        :key="p.id"
+                        :class="!p.is_lendable ? 'opacity-60' : ''"
+                    >
+                        <TableCell>
+                            <div
+                                class="flex size-9 items-center justify-center overflow-hidden rounded bg-muted"
+                            >
+                                <img
+                                    v-if="p.image_path"
+                                    :src="`/storage/${p.image_path}`"
+                                    :alt="p.name"
+                                    class="size-full object-cover"
+                                    loading="lazy"
+                                />
+                                <ImageOff
+                                    v-else
+                                    class="size-4 text-muted-foreground"
+                                />
+                            </div>
+                        </TableCell>
+                        <TableCell class="font-mono text-xs">{{
+                            p.ssid
+                        }}</TableCell>
+                        <TableCell>
+                            <div class="font-medium">{{ p.name }}</div>
+                            <div class="text-xs text-muted-foreground">
+                                {{
+                                    [p.second_name, p.spec]
+                                        .filter(Boolean)
+                                        .join(' · ')
+                                }}
+                            </div>
+                        </TableCell>
+                        <TableCell class="text-sm"
+                            >{{ p.subcategory?.category.name }} /
+                            {{ p.subcategory?.name }}</TableCell
+                        >
+                        <TableCell>{{ p.location?.name }}</TableCell>
+                        <TableCell class="space-x-1">
+                            <Badge v-if="!p.is_lendable" variant="outline"
+                                >不開放</Badge
+                            >
+                            <Badge v-if="p.pool" variant="secondary"
+                                >Bulk：{{ p.pool.name }}</Badge
+                            >
+                            <Badge
+                                v-if="p.auth_level > 0 && !p.pool"
+                                variant="outline"
+                                class="gap-1"
+                                ><Lock class="size-3" />等級
+                                {{ p.auth_level }}</Badge
+                            >
+                        </TableCell>
+                        <TableCell>
+                            <StatusBadge
+                                v-if="p.active_borrow_item"
+                                kind="item"
+                                :status="p.active_borrow_item.status"
+                            />
+                            <span v-else class="text-xs text-muted-foreground"
+                                >在庫</span
+                            >
+                        </TableCell>
+                        <TableCell>
+                            <Button variant="ghost" size="sm" as-child>
+                                <Link :href="edit(p.id)">編輯</Link>
+                            </Button>
+                        </TableCell>
+                    </TableRow>
+                    <TableRow v-if="!properties.data.length">
+                        <TableCell
+                            colspan="8"
+                            class="py-10 text-center text-muted-foreground"
+                            >沒有符合條件的器材</TableCell
+                        >
+                    </TableRow>
+                </TableBody>
+            </Table>
+        </div>
+
+        <PaginationLinks :paginator="properties" />
+    </div>
 </template>

@@ -14,6 +14,7 @@ use App\Models\BorrowRequest;
 use App\Models\BorrowRequestOverview;
 use App\Models\Location;
 use App\Models\Setting;
+use App\Support\Toast;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -86,21 +87,27 @@ class BorrowRequestController extends Controller
     {
         $borrow->update($request->validated());
 
-        return back()->with('success', '已更新借用單。');
+        Toast::success('已更新借用單。');
+
+        return back();
     }
 
     public function lend(LendBorrowRequestRequest $request, BorrowRequest $borrow, LendOutItems $lend): RedirectResponse
     {
         $lend->handle($borrow, $request->user(), $request->validated());
 
-        return back()->with('success', '已完成出借。');
+        Toast::success('已完成出借。');
+
+        return back();
     }
 
     public function return(ReturnBorrowRequestRequest $request, BorrowRequest $borrow, ReturnItems $return): RedirectResponse
     {
         $return->handle($borrow, $request->user(), $request->validated());
 
-        return back()->with('success', '已登記歸還。');
+        Toast::success('已登記歸還。');
+
+        return back();
     }
 
     public function cancel(Request $request, BorrowRequest $borrow, CancelBorrowRequest $cancel): RedirectResponse
@@ -109,6 +116,8 @@ class BorrowRequestController extends Controller
 
         $cancel->handle($borrow, $request->user(), $data['reason'] ?? null);
 
-        return back()->with('success', '已退回借用單。');
+        Toast::success('已退回借用單。');
+
+        return back();
     }
 }

@@ -20,8 +20,3 @@ export type Auth = {
         admin: boolean;
     };
 };
-
-export type Flash = {
-    success: string | null;
-    error: string | null;
-};

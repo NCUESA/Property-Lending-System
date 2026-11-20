@@ -1,5 +1,6 @@
 import type { Directive } from 'vue';
-import type { Auth, Flash } from '@/types/auth';
+import type { Auth } from '@/types/auth';
+import type { FlashToast } from '@/types/ui';
 
 // Extend ImportMeta interface for Vite...
 declare module 'vite/client' {
@@ -19,9 +20,11 @@ declare module '@inertiajs/core' {
         sharedPageProps: {
             name: string;
             auth: Auth;
-            flash: Flash;
             sidebarOpen: boolean;
             [key: string]: unknown;
+        };
+        flashDataType: {
+            toast?: FlashToast;
         };
     }
 }

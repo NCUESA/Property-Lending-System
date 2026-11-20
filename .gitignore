@@ -43,3 +43,7 @@ yarn-error.log
 /boost.json
 /opencode.json
 /opencode.jsonc
+
+# 舊系統資料匯出（含個資，不進版控）
+/sqlexample
+/*.sql

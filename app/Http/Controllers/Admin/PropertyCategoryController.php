@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\PropertyCategoryRequest;
 use App\Models\PropertyCategory;
+use App\Support\Toast;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -29,7 +30,9 @@ class PropertyCategoryController extends Controller
     {
         PropertyCategory::create($request->validated());
 
-        return back()->with('success', '已新增主要類別。');
+        Toast::success('已新增主要類別。');
+
+        return back();
     }
 
     public function update(PropertyCategoryRequest $request, PropertyCategory $category): RedirectResponse
@@ -40,7 +43,9 @@ class PropertyCategoryController extends Controller
 
         $category->update($request->validated());
 
-        return back()->with('success', '已更新主要類別。');
+        Toast::success('已更新主要類別。');
+
+        return back();
     }
 
     public function destroy(PropertyCategory $category): RedirectResponse
@@ -51,6 +56,8 @@ class PropertyCategoryController extends Controller
 
         $category->delete();
 
-        return back()->with('success', '已刪除主要類別。');
+        Toast::success('已刪除主要類別。');
+
+        return back();
     }
 }

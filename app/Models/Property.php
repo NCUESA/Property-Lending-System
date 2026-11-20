@@ -47,7 +47,7 @@ class Property extends Model
     protected function casts(): array
     {
         return [
-            'acquired_on' => 'date',
+            'acquired_on' => 'date:Y-m-d',
             'is_school_owned' => 'boolean',
             'is_lendable' => 'boolean',
             'price' => 'integer',

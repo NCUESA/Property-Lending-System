@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SettingsRequest;
 use App\Models\Setting;
+use App\Support\Toast;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -38,6 +39,8 @@ class SettingController extends Controller
             }
         });
 
-        return back()->with('success', '已更新設定。');
+        Toast::success('已更新設定。');
+
+        return back();
     }
 }

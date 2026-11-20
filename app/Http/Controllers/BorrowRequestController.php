@@ -9,6 +9,7 @@ use App\Models\Location;
 use App\Models\Property;
 use App\Models\PropertyPool;
 use App\Models\Setting;
+use App\Support\Toast;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -76,6 +77,8 @@ class BorrowRequestController extends Controller
     {
         $borrow = $submit->handle($request->validated(), $request->user());
 
-        return to_route('borrow.create')->with('success', "已送出借用申請（單號 #{$borrow->id}），請到現場辦理借用。");
+        Toast::success("已送出借用申請（單號 #{$borrow->id}），請到現場辦理借用。");
+
+        return to_route('borrow.create', ['location' => $borrow->location->code]);
     }
 }

@@ -68,7 +68,7 @@ describe('器材維護', function () {
 
         $this->post(route('admin.properties.store'), propertyPayload(['image' => UploadedFile::fake()->image('mic.jpg')]))
             ->assertRedirect(route('admin.properties.index'))
-            ->assertSessionHas('success');
+            ->assertInertiaFlash('toast.type', 'success');
 
         $property = Property::sole();
         Storage::disk('public')->assertExists($property->image_path);

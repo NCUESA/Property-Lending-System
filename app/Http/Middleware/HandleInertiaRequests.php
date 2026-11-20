@@ -46,10 +46,6 @@ class HandleInertiaRequests extends Middleware
                     'admin' => Gate::allows('admin'),
                 ],
             ],
-            'flash' => fn () => [
-                'success' => $request->session()->get('success'),
-                'error' => $request->session()->get('error'),
-            ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }

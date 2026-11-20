@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\BorrowPeriodRequest;
 use App\Models\BorrowPeriod;
 use App\Support\DatabaseError;
+use App\Support\Toast;
 use Closure;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
@@ -26,21 +27,27 @@ class BorrowPeriodController extends Controller
     {
         $this->guardOverlap(fn () => BorrowPeriod::create($request->validated()));
 
-        return back()->with('success', '已新增期間。');
+        Toast::success('已新增期間。');
+
+        return back();
     }
 
     public function update(BorrowPeriodRequest $request, BorrowPeriod $period): RedirectResponse
     {
         $this->guardOverlap(fn () => $period->update($request->validated()));
 
-        return back()->with('success', '已更新期間。');
+        Toast::success('已更新期間。');
+
+        return back();
     }
 
     public function destroy(BorrowPeriod $period): RedirectResponse
     {
         $period->delete();
 
-        return back()->with('success', '已刪除期間。');
+        Toast::success('已刪除期間。');
+
+        return back();
     }
 
     private function guardOverlap(Closure $write): void

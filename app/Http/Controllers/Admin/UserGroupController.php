@@ -10,6 +10,7 @@ use App\Models\PropertyPool;
 use App\Models\User;
 use App\Models\UserGroup;
 use App\Support\DatabaseError;
+use App\Support\Toast;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -34,7 +35,9 @@ class UserGroupController extends Controller
     {
         $group = UserGroup::create($request->safe()->only(['name', 'description']));
 
-        return to_route('admin.groups.edit', $group)->with('success', '已建立群組，請設定成員與授權。');
+        Toast::success('已建立群組，請設定成員與授權。');
+
+        return to_route('admin.groups.edit', $group);
     }
 
     public function edit(UserGroup $group): Response
@@ -92,14 +95,18 @@ class UserGroupController extends Controller
             throw $e;
         }
 
-        return back()->with('success', '已更新群組。');
+        Toast::success('已更新群組。');
+
+        return back();
     }
 
     public function destroy(UserGroup $group): RedirectResponse
     {
         $group->delete();
 
-        return to_route('admin.groups.index')->with('success', "已刪除群組「{$group->name}」。");
+        Toast::success("已刪除群組「{$group->name}」。");
+
+        return to_route('admin.groups.index');
     }
 
     /**

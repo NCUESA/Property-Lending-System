@@ -54,8 +54,8 @@ class BorrowRequest extends Model
     protected function casts(): array
     {
         return [
-            'borrow_date' => 'date',
-            'due_date' => 'date',
+            'borrow_date' => 'date:Y-m-d',
+            'due_date' => 'date:Y-m-d',
             'agreed_terms' => 'boolean',
             'lent_at' => 'datetime',
             'returned_at' => 'datetime',
