@@ -169,6 +169,59 @@ describe('編碼規則清冊', function () {
         $this->post(route('admin.categories.subcategories.store', $other), ['code' => '0', 'name' => '不同主類可以'])
             ->assertSessionHasNoErrors();
     });
+
+    it('清冊預設每頁 10 個主要類別', function () {
+        PropertyCategory::factory()->count(12)->create();
+
+        $this->get(route('admin.categories.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Admin/Categories/Index')
+                ->where('categories.per_page', 10)
+                ->has('categories.data', 10)
+                ->where('categories.total', 13) // beforeEach 的 200 也算
+                ->where('perPageOptions', [10, 30, 50, 100]));
+    });
+
+    it('搜尋同時比對類別編號、類別名稱與次類名稱', function () {
+        // beforeEach：200 音響設備 / 次類 0 麥克風
+        $this->get(route('admin.categories.index', ['q' => '麥克風']))
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('categories.data', 1)
+                ->where('categories.data.0.code', '200'));
+
+        $this->get(route('admin.categories.index', ['q' => '音響']))
+            ->assertInertia(fn (Assert $page) => $page->has('categories.data', 1));
+
+        $this->get(route('admin.categories.index', ['q' => '200']))
+            ->assertInertia(fn (Assert $page) => $page->has('categories.data', 1));
+
+        $this->get(route('admin.categories.index', ['q' => '不存在的東西']))
+            ->assertInertia(fn (Assert $page) => $page->has('categories.data', 0));
+    });
+
+    it('大類別按區間篩選，並帶出各區間的類別數', function () {
+        PropertyCategory::factory()->create(['code' => '004']); // 001-050
+        PropertyCategory::factory()->create(['code' => '103']); // 100-199
+
+        $this->get(route('admin.categories.index', ['group' => '001-050']))
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('categories.data', 1)
+                ->where('categories.data.0.code', '004')
+                ->where('groups.0.key', '001-050')
+                ->where('groups.0.count', 1)
+                ->where('groups.3.key', '200-299')
+                ->where('groups.3.count', 1));
+
+        $this->get(route('admin.categories.index', ['group' => '100-199']))
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('categories.data', 1)
+                ->where('categories.data.0.code', '103'));
+    });
+
+    it('大類別只接受已定義的區間', function () {
+        $this->get(route('admin.categories.index', ['group' => '900-999']))
+            ->assertSessionHasErrors('group');
+    });
 });
 
 describe('人員與群組', function () {

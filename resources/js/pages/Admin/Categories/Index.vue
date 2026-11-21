@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
-import { Plus, Trash2 } from '@lucide/vue';
-import { ref } from 'vue';
+import { Plus, Search, Trash2 } from '@lucide/vue';
+import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import CodeNameDialog from '@/components/CodeNameDialog.vue';
 import Heading from '@/components/Heading.vue';
 import InlineTextCell from '@/components/InlineTextCell.vue';
+import PaginationLinks from '@/components/PaginationLinks.vue';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
     Table,
     TableBody,
@@ -21,15 +23,39 @@ import {
     destroy as destroySub,
     update as updateSub,
 } from '@/routes/admin/subcategories';
-import type { Category, Subcategory } from '@/types';
+import { useQueryFilters } from '@/composables/useQueryFilters';
+import type { Category, Paginator, Subcategory } from '@/types';
+
+type Group = { key: string; name: string; count: number };
 
 defineOptions({
     layout: { breadcrumbs: [{ title: '編碼規則', href: index() }] },
 });
 
-defineProps<{
-    categories: Category[];
+const props = defineProps<{
+    filters: { q?: string; group?: string; per_page?: number };
+    categories: Paginator<Category>;
+    groups: Group[];
+    perPageOptions?: number[];
 }>();
+
+const { filters } = useQueryFilters(index.url(), {
+    q: props.filters.q ?? '',
+    group: props.filters.group ?? '',
+    per_page: String(props.categories.per_page),
+});
+
+/** 選項以後端的 PER_PAGE_OPTIONS 為準；萬一沒帶到，至少列出目前生效的值。 */
+const perPageChoices = computed(() =>
+    props.perPageOptions?.length
+        ? props.perPageOptions
+        : [props.categories.per_page],
+);
+
+/** 大類別按鈕是單選切換：再按一次目前選中的就回到全部。 */
+function toggleGroup(key: string) {
+    filters.group = filters.group === key ? '' : key;
+}
 
 /** 儲存失敗時遞增，讓所有格子把顯示值還原成伺服器的值。 */
 const resetKey = ref(0);
@@ -86,11 +112,50 @@ function remove(url: string, label: string) {
             </CodeNameDialog>
         </div>
 
+        <div class="flex flex-col gap-3">
+            <div class="relative">
+                <Search
+                    class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+                />
+                <Input
+                    v-model="filters.q"
+                    placeholder="搜尋編號、類別名稱或次類名稱"
+                    class="pl-9"
+                />
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+                <Button
+                    :variant="filters.group === '' ? 'default' : 'outline'"
+                    size="sm"
+                    @click="filters.group = ''"
+                >
+                    全部
+                </Button>
+                <Button
+                    v-for="g in groups"
+                    :key="g.key"
+                    :variant="filters.group === g.key ? 'default' : 'outline'"
+                    size="sm"
+                    @click="toggleGroup(g.key)"
+                >
+                    {{ g.key }} {{ g.name }}
+                    <span class="ml-1 tabular-nums opacity-70"
+                        >({{ g.count }})</span
+                    >
+                </Button>
+            </div>
+        </div>
+
         <p
-            v-if="!categories.length"
+            v-if="!categories.data.length"
             class="py-10 text-center text-muted-foreground"
         >
-            還沒有任何類別
+            {{
+                filters.q || filters.group
+                    ? '沒有符合條件的類別'
+                    : '還沒有任何類別'
+            }}
         </p>
 
         <div v-else class="overflow-x-auto rounded-md border">
@@ -107,7 +172,10 @@ function remove(url: string, label: string) {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    <template v-for="category in categories" :key="category.id">
+                    <template
+                        v-for="category in categories.data"
+                        :key="category.id"
+                    >
                         <TableRow
                             v-for="(sub, i) in rowsOf(category)"
                             :key="sub?.id ?? `empty-${category.id}`"
@@ -260,6 +328,29 @@ function remove(url: string, label: string) {
                     </template>
                 </TableBody>
             </Table>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <label
+                class="flex items-center gap-2 text-sm text-muted-foreground"
+            >
+                每頁顯示
+                <select
+                    v-model="filters.per_page"
+                    class="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+                    aria-label="每頁顯示筆數"
+                >
+                    <option
+                        v-for="n in perPageChoices"
+                        :key="n"
+                        :value="String(n)"
+                    >
+                        {{ n }}
+                    </option>
+                </select>
+                個主要類別
+            </label>
+            <PaginationLinks :paginator="categories" class="flex-1" />
         </div>
     </div>
 </template>

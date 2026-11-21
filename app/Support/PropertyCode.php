@@ -17,6 +17,35 @@ final class PropertyCode
 
     public const MAX_SERIAL = 999;
 
+    /**
+     * 大類別：主要類別編號的區間分組，出自 coderule.csv 的「大類別」欄。
+     *
+     * 注意這份清單沒有存進資料庫（property_categories 只有 code 與 name），
+     * 要增減區間就改這裡。若之後需要讓管理者自行維護，得另外開一張表。
+     *
+     * @var list<array{key: string, name: string, from: int, to: int}>
+     */
+    public const GROUPS = [
+        ['key' => '001-050', 'name' => '雜項用具', 'from' => 1, 'to' => 50],
+        ['key' => '051-099', 'name' => '電器類', 'from' => 51, 'to' => 99],
+        ['key' => '100-199', 'name' => '電腦設備', 'from' => 100, 'to' => 199],
+        ['key' => '200-299', 'name' => '音響、直播設備', 'from' => 200, 'to' => 299],
+    ];
+
+    /**
+     * @return array{key: string, name: string, from: int, to: int}|null
+     */
+    public static function group(?string $key): ?array
+    {
+        foreach (self::GROUPS as $group) {
+            if ($group['key'] === $key) {
+                return $group;
+            }
+        }
+
+        return null;
+    }
+
     public static function prefix(Location $location, PropertySubcategory $subcategory): string
     {
         return $location->ssid_prefix.$subcategory->fullCode();
