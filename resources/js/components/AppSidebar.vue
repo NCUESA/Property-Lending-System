@@ -14,7 +14,6 @@ import {
 } from '@lucide/vue';
 import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
-import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
 import {
@@ -68,8 +67,8 @@ const adminNav = computed<NavItem[]>(() =>
         : [],
 );
 
-const footerNavItems: NavItem[] = [
-    { title: '借用申請頁', href: borrowCreate(), icon: FileText },
+const frontendNav: NavItem[] = [
+    { title: '借用申請', href: borrowCreate(), icon: FileText },
     { title: '器材狀態', href: propertyStatus(), icon: Search },
 ];
 </script>
@@ -92,10 +91,10 @@ const footerNavItems: NavItem[] = [
             <NavMain label="借用" :items="borrowNav" />
             <NavMain label="器材" :items="propertyNav" />
             <NavMain label="管理" :items="adminNav" />
+            <NavMain label="前台" :items="frontendNav" />
         </SidebarContent>
 
         <SidebarFooter>
-            <NavFooter :items="footerNavItems" />
             <NavUser />
         </SidebarFooter>
     </Sidebar>

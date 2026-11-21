@@ -73,10 +73,29 @@ class NcuesaSsoProvider extends AbstractProvider
 
         return (new NcuesaSsoUser)->setRaw($user)->map([
             'id' => $user['sub'] ?? null,
-            'name' => $user['name'] ?? $user['preferred_username'] ?? null,
+            'name' => $this->displayName($user),
             'email' => $user['email'] ?? null,
             'nickname' => $studentIdClaim ? ($user[$studentIdClaim] ?? null) : null,
         ]);
+    }
+
+    /**
+     * Keycloak 的 name claim 是「given_name family_name」（名在前），中文姓名要倒過來，
+     * 所以改用 family_name + given_name 自行組合，中間不加空白。
+     * 兩個 claim 都拿不到時才退回 name / preferred_username。
+     *
+     * @param  array<string, mixed>  $user
+     */
+    private function displayName(array $user): ?string
+    {
+        $family = trim((string) ($user['family_name'] ?? ''));
+        $given = trim((string) ($user['given_name'] ?? ''));
+
+        if ($family !== '' || $given !== '') {
+            return $family.$given;
+        }
+
+        return $user['name'] ?? $user['preferred_username'] ?? null;
     }
 
     /**

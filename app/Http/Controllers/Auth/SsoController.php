@@ -110,8 +110,11 @@ class SsoController extends Controller
             ]);
         }
 
+        // 姓名一律以 SSO 為準（後台沒有編輯姓名的功能），這樣舊帳號存錯順序的姓名
+        // 會在下次登入自動更正。email / 學號則只補空值，不蓋掉既有資料。
         $user->forceFill([
             'sso_id' => $ssoId,
+            'name' => $name ?? $user->name,
             'email' => $user->email ?? $email,
             'student_id' => $user->student_id ?? $studentId,
         ])->save();

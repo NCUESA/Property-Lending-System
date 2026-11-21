@@ -16,7 +16,8 @@ class HandleAppearance
      */
     public function handle(Request $request, Closure $next): Response
     {
-        View::share('appearance', $request->cookie('appearance') ?? 'system');
+        // 沒有 cookie 就預設淺色（前端預設值在 useAppearance.ts 的 DEFAULT_APPEARANCE）
+        View::share('appearance', $request->cookie('appearance') ?? 'light');
 
         return $next($request);
     }

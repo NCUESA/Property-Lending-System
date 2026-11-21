@@ -4,6 +4,12 @@ import type { Appearance, ResolvedAppearance } from '@/types';
 
 export type { Appearance, ResolvedAppearance };
 
+/**
+ * 使用者沒有選過主題時的預設值。要改成跟隨系統就換成 'system'
+ * （同時要改 HandleAppearance middleware 與 app.blade.php 的預設值，避免 SSR 閃爍）。
+ */
+const DEFAULT_APPEARANCE: Appearance = 'light';
+
 export type UseAppearanceReturn = {
     appearance: Ref<Appearance>;
     resolvedAppearance: ComputedRef<ResolvedAppearance>;
@@ -67,7 +73,8 @@ const prefersDark = (): boolean => {
 const handleSystemThemeChange = () => {
     const currentAppearance = getStoredAppearance();
 
-    updateTheme(currentAppearance || 'system');
+    // 沒有存過偏好就維持淺色，不跟著系統切換
+    updateTheme(currentAppearance || DEFAULT_APPEARANCE);
 };
 
 export function initializeTheme(): void {
@@ -75,15 +82,15 @@ export function initializeTheme(): void {
         return;
     }
 
-    // Initialize theme from saved preference or default to system...
+    // Initialize theme from saved preference or default to light...
     const savedAppearance = getStoredAppearance();
-    updateTheme(savedAppearance || 'system');
+    updateTheme(savedAppearance || DEFAULT_APPEARANCE);
 
     // Set up system theme change listener...
     mediaQuery()?.addEventListener('change', handleSystemThemeChange);
 }
 
-const appearance = ref<Appearance>('system');
+const appearance = ref<Appearance>(DEFAULT_APPEARANCE);
 
 export function useAppearance(): UseAppearanceReturn {
     onMounted(() => {
