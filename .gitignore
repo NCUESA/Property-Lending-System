@@ -48,3 +48,6 @@ yarn-error.log
 /sqlexample
 /*.sql
 /*.dump
+
+# Windows 從網路複製檔案時產生的來源標記（會跟在原檔名後面，上面的規則擋不到）
+*:Zone.Identifier
