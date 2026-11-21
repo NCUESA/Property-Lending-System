@@ -319,7 +319,7 @@ const submitUpdate = () =>
                     <TableBody>
                         <TableRow v-for="item in items" :key="item.id">
                             <TableCell class="font-mono text-xs">{{
-                                item.property?.ssid ?? 'Bulk'
+                                item.property?.ssid ?? '大量借用'
                             }}</TableCell>
                             <TableCell>
                                 {{ itemLabel(item) }}
@@ -375,7 +375,7 @@ const submitUpdate = () =>
                             "
                         />
                         <span class="font-mono text-xs text-muted-foreground">{{
-                            item.property?.ssid ?? 'Bulk'
+                            item.property?.ssid ?? '大量借用'
                         }}</span>
                         <span class="flex-1">{{ itemLabel(item) }}</span>
                         <template v-if="item.property_pool_id">
@@ -513,7 +513,7 @@ const submitUpdate = () =>
                             "
                         />
                         <span class="font-mono text-xs text-muted-foreground">{{
-                            item.property?.ssid ?? 'Bulk'
+                            item.property?.ssid ?? '大量借用'
                         }}</span>
                         <span class="flex-1">{{ itemLabel(item) }}</span>
                         <template v-if="item.property_pool_id">

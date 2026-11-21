@@ -336,7 +336,7 @@ function remove() {
                             <Switch v-model="form.is_lendable" />
                         </label>
                         <div class="grid gap-2">
-                            <Label for="property_pool_id">Bulk 品項</Label>
+                            <Label for="property_pool_id">大量借用品項</Label>
                             <select
                                 id="property_pool_id"
                                 v-model="form.property_pool_id"
@@ -352,7 +352,7 @@ function remove() {
                                 </option>
                             </select>
                             <p class="text-xs text-muted-foreground">
-                                屬於 bulk 品項時，借用人只選數量、不挑編號
+                                屬於大量借用品項時，借用人只選數量、不挑編號
                             </p>
                             <InputError
                                 :message="form.errors.property_pool_id"

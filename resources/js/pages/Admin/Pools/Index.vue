@@ -42,7 +42,7 @@ type Pool = {
 };
 
 defineOptions({
-    layout: { breadcrumbs: [{ title: 'Bulk 品項', href: index() }] },
+    layout: { breadcrumbs: [{ title: '大量借用品項', href: index() }] },
 });
 
 const props = defineProps<{
@@ -90,12 +90,12 @@ function remove(pool: Pool) {
 </script>
 
 <template>
-    <Head title="Bulk 品項" />
+    <Head title="大量借用品項" />
 
     <div class="space-y-4 p-4 md:p-6">
         <div class="flex flex-wrap items-start justify-between gap-3">
             <Heading
-                title="Bulk 品項"
+                title="大量借用品項"
                 description="椅子、桌子這類不需挑號碼的器材：借用人只選數量。器材本身在「器材」頁指定所屬品項。"
             />
             <Button @click="openDialog(null)"
@@ -177,7 +177,7 @@ function remove(pool: Pool) {
                         <TableCell
                             colspan="5"
                             class="py-10 text-center text-muted-foreground"
-                            >還沒有 bulk 品項</TableCell
+                            >還沒有大量借用品項</TableCell
                         >
                     </TableRow>
                 </TableBody>

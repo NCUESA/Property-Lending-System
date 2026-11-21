@@ -114,7 +114,7 @@ const selectClass =
                 :class="selectClass"
                 aria-label="品項池"
             >
-                <option value="">全部（含 bulk）</option>
+                <option value="">全部（含大量借用品項）</option>
                 <option v-for="p in pools" :key="p.id" :value="String(p.id)">
                     {{ p.name }}（{{ p.location?.name }}）
                 </option>
@@ -181,7 +181,7 @@ const selectClass =
                                 >不開放</Badge
                             >
                             <Badge v-if="p.pool" variant="secondary"
-                                >Bulk：{{ p.pool.name }}</Badge
+                                >大量借用：{{ p.pool.name }}</Badge
                             >
                             <Badge
                                 v-if="p.auth_level > 0 && !p.pool"

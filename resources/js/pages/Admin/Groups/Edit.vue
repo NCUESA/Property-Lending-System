@@ -227,7 +227,7 @@ function remove() {
                     <TabsList>
                         <TabsTrigger value="categories">類別</TabsTrigger>
                         <TabsTrigger value="properties">單一器材</TabsTrigger>
-                        <TabsTrigger value="pools">Bulk 品項</TabsTrigger>
+                        <TabsTrigger value="pools">大量借用品項</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="categories" class="space-y-3 pt-3">
@@ -318,7 +318,7 @@ function remove() {
                             v-model="form.grants.pool_ids"
                             :options="poolOptions"
                             placeholder="搜尋品項"
-                            empty-text="沒有 bulk 品項"
+                            empty-text="沒有大量借用品項"
                         />
                     </TabsContent>
                 </Tabs>

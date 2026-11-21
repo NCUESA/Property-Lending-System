@@ -50,7 +50,7 @@ const propertyNav = computed<NavItem[]>(() =>
     can.value.admin
         ? [
               { title: '器材', href: propertiesIndex(), icon: Package },
-              { title: 'Bulk 品項', href: poolsIndex(), icon: Boxes },
+              { title: '大量借用品項', href: poolsIndex(), icon: Boxes },
               { title: '編碼規則', href: categoriesIndex(), icon: Tags },
           ]
         : [],
