@@ -120,6 +120,31 @@ describe('器材維護', function () {
                 ->has('properties.data', 1)
                 ->where('properties.data.0.name', '投影機'));
     });
+
+    it('列表預設每頁 10 筆', function () {
+        Property::factory()->count(12)->create(['property_subcategory_id' => $this->sub->id]);
+
+        $this->get(route('admin.properties.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('properties.per_page', 10)
+                ->has('properties.data', 10)
+                ->where('properties.total', 12)
+                ->where('perPageOptions', [10, 30, 50, 100]));
+    });
+
+    it('可以自己選每頁筆數', function () {
+        Property::factory()->count(12)->create(['property_subcategory_id' => $this->sub->id]);
+
+        $this->get(route('admin.properties.index', ['per_page' => 50]))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('properties.per_page', 50)
+                ->has('properties.data', 12));
+    });
+
+    it('每頁筆數只接受給定的選項', function () {
+        $this->get(route('admin.properties.index', ['per_page' => 25]))
+            ->assertSessionHasErrors('per_page');
+    });
 });
 
 describe('編碼規則清冊', function () {

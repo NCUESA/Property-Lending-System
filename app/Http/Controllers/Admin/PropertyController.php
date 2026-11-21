@@ -15,12 +15,16 @@ use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class PropertyController extends Controller
 {
+    /** 每頁筆數的可選值，第一個是預設值。前端的下拉選單也用這份清單。 */
+    public const PER_PAGE_OPTIONS = [10, 30, 50, 100];
+
     public function index(Request $request): Response
     {
         $filters = $request->validate([
@@ -28,6 +32,7 @@ class PropertyController extends Controller
             'location_id' => ['nullable', 'integer'],
             'category_id' => ['nullable', 'integer'],
             'pool_id' => ['nullable', 'integer'],
+            'per_page' => ['nullable', 'integer', Rule::in(self::PER_PAGE_OPTIONS)],
         ]);
 
         $properties = Property::query()
@@ -41,12 +46,13 @@ class PropertyController extends Controller
             ->when($filters['pool_id'] ?? null, fn (Builder $q, int $id) => $q->where('property_pool_id', $id))
             ->with(['subcategory.category:id,code,name', 'location:id,name', 'pool:id,name', 'activeBorrowItem:id,property_id,status,borrow_request_id'])
             ->orderBy('ssid')
-            ->paginate(30)
+            ->paginate($filters['per_page'] ?? self::PER_PAGE_OPTIONS[0])
             ->withQueryString();
 
         return Inertia::render('Admin/Properties/Index', [
             'filters' => $filters,
             'properties' => $properties,
+            'perPageOptions' => self::PER_PAGE_OPTIONS,
             ...$this->formOptions(),
         ]);
     }

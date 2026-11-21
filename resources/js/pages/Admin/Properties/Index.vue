@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import { ImageOff, Lock, Plus, Search } from '@lucide/vue';
+import { computed } from 'vue';
 import Heading from '@/components/Heading.vue';
 import PaginationLinks from '@/components/PaginationLinks.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
@@ -35,12 +36,25 @@ const props = defineProps<{
         location_id?: number;
         category_id?: number;
         pool_id?: number;
+        per_page?: number;
     };
     properties: Paginator<Property>;
     locations: LocationRef[];
     categories: Category[];
     pools: PoolRef[];
+    perPageOptions?: number[];
 }>();
+
+/**
+ * 選項以後端的 PER_PAGE_OPTIONS 為準，不在前端重複定義一份。
+ * 但 props 萬一沒帶（例如 HMR 換掉元件、頁面 props 還是舊的），至少要列出目前生效的值，
+ * 否則 v-for 跑空陣列會渲染出一個沒有任何選項的空白選單。
+ */
+const perPageChoices = computed(() =>
+    props.perPageOptions?.length
+        ? props.perPageOptions
+        : [props.properties.per_page],
+);
 
 const { filters } = useQueryFilters(index.url(), {
     q: props.filters.q ?? '',
@@ -51,6 +65,8 @@ const { filters } = useQueryFilters(index.url(), {
         ? String(props.filters.category_id)
         : '',
     pool_id: props.filters.pool_id ? String(props.filters.pool_id) : '',
+    // 留空代表用後端預設值；顯示時以 paginator 實際的 per_page 為準
+    per_page: String(props.properties.per_page),
 });
 
 const selectClass =
@@ -218,6 +234,27 @@ const selectClass =
             </Table>
         </div>
 
-        <PaginationLinks :paginator="properties" />
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <label
+                class="flex items-center gap-2 text-sm text-muted-foreground"
+            >
+                每頁顯示
+                <select
+                    v-model="filters.per_page"
+                    :class="selectClass"
+                    aria-label="每頁顯示筆數"
+                >
+                    <option
+                        v-for="n in perPageChoices"
+                        :key="n"
+                        :value="String(n)"
+                    >
+                        {{ n }}
+                    </option>
+                </select>
+                筆
+            </label>
+            <PaginationLinks :paginator="properties" class="flex-1" />
+        </div>
     </div>
 </template>
