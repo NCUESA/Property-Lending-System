@@ -38,6 +38,9 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
             ->shallow();
 
         Route::resource('pools', PropertyPoolController::class)->only(['index', 'store', 'update', 'destroy']);
+        // 從品項這一端挑選池內器材（器材頁是逐件指定，這裡是整池一次挑）
+        Route::get('pools/{pool}/properties', [PropertyPoolController::class, 'properties'])->name('pools.properties.index');
+        Route::put('pools/{pool}/properties', [PropertyPoolController::class, 'syncProperties'])->name('pools.properties.update');
 
         Route::resource('users', UserController::class)->only(['index', 'store', 'update']);
         Route::resource('groups', UserGroupController::class)->except(['create', 'show']);

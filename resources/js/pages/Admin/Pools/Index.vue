@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { Lock, Pencil, Plus, Trash2 } from '@lucide/vue';
+import { ListChecks, Lock, Pencil, Plus, Trash2 } from '@lucide/vue';
 import { ref } from 'vue';
 import { toast } from 'vue-sonner';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
+import PoolPropertyPicker from '@/components/PoolPropertyPicker.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -69,13 +70,38 @@ function openDialog(pool: Pool | null) {
     open.value = true;
 }
 
+const pickerOpen = ref(false);
+const pickerPool = ref<Pool | null>(null);
+
+function openPicker(pool: Pool) {
+    pickerPool.value = pool;
+    pickerOpen.value = true;
+}
+
 function submit() {
-    const options = {
-        preserveScroll: true,
-        onSuccess: () => (open.value = false),
-    };
-    if (editing.value) form.put(update.url(editing.value.id), options);
-    else form.post(store.url(), options);
+    const isNew = editing.value === null;
+
+    form.submit(
+        isNew ? 'post' : 'put',
+        isNew ? store.url() : update.url(editing.value!.id),
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                open.value = false;
+
+                // 新增完直接接著挑器材：剛建立的品項會出現在重新載入後的 props 裡
+                if (!isNew) return;
+
+                const created = props.pools.find(
+                    (p) =>
+                        p.name === form.name &&
+                        String(p.location_id) === String(form.location_id),
+                );
+
+                if (created) openPicker(created);
+            },
+        },
+    );
 }
 
 function remove(pool: Pool) {
@@ -96,7 +122,7 @@ function remove(pool: Pool) {
         <div class="flex flex-wrap items-start justify-between gap-3">
             <Heading
                 title="大量借用品項"
-                description="椅子、桌子這類不需挑號碼的器材：借用人只選數量。器材本身在「器材」頁指定所屬品項。"
+                description="不需要特別指定編號的器材種類"
             />
             <Button @click="openDialog(null)"
                 ><Plus class="mr-1 size-4" />新增品項</Button
@@ -160,6 +186,14 @@ function remove(pool: Pool) {
                             <Button
                                 size="icon"
                                 variant="ghost"
+                                aria-label="挑選池內器材"
+                                title="挑選池內器材"
+                                @click="openPicker(pool)"
+                                ><ListChecks class="size-4"
+                            /></Button>
+                            <Button
+                                size="icon"
+                                variant="ghost"
                                 aria-label="編輯"
                                 @click="openDialog(pool)"
                                 ><Pencil class="size-4"
@@ -184,6 +218,8 @@ function remove(pool: Pool) {
             </Table>
         </div>
     </div>
+
+    <PoolPropertyPicker v-model:open="pickerOpen" :pool="pickerPool" />
 
     <Dialog v-model:open="open">
         <DialogContent class="sm:max-w-md">

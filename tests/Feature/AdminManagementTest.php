@@ -1,10 +1,12 @@
 <?php
 
+use App\Enums\BorrowItemStatus;
 use App\Models\BorrowPeriod;
 use App\Models\BorrowRequestItem;
 use App\Models\Location;
 use App\Models\Property;
 use App\Models\PropertyCategory;
+use App\Models\PropertyPool;
 use App\Models\PropertySubcategory;
 use App\Models\Setting;
 use App\Models\User;
@@ -200,6 +202,79 @@ describe('人員與群組', function () {
 
         $this->put(route('admin.groups.update', $group), ['name' => $group->name, 'subgroup_ids' => [$group->id]])
             ->assertSessionHasErrors(['subgroup_ids.0' => '群組不能包含自己。']);
+    });
+});
+
+describe('大量借用品項：挑選池內器材', function () {
+    beforeEach(function () {
+        // 進德可借出進德與 307 倉庫的器材；寶山只借寶山
+        $this->pool = PropertyPool::factory()->create(['location_id' => $this->jinde->id, 'name' => '折疊椅']);
+        $this->store307 = Location::where('code', '307')->firstOrFail();
+        $this->baosan = Location::where('code', 'baosan')->firstOrFail();
+
+        $this->atJinde = Property::factory()->create(['location_id' => $this->jinde->id, 'property_subcategory_id' => $this->sub->id]);
+        $this->at307 = Property::factory()->create(['location_id' => $this->store307->id, 'property_subcategory_id' => $this->sub->id]);
+        $this->atBaosan = Property::factory()->create(['location_id' => $this->baosan->id, 'property_subcategory_id' => $this->sub->id]);
+    });
+
+    it('候選清單只含該取用地點服務範圍內的器材', function () {
+        $ids = collect($this->getJson(route('admin.pools.properties.index', $this->pool))
+            ->assertOk()
+            ->json('properties'))
+            ->pluck('id');
+
+        expect($ids)->toContain($this->atJinde->id, $this->at307->id)
+            ->and($ids)->not->toContain($this->atBaosan->id);
+    });
+
+    it('可以一次把器材挑進品項，未勾選的移出', function () {
+        $this->put(route('admin.pools.properties.update', $this->pool), [
+            'property_ids' => [$this->atJinde->id, $this->at307->id],
+        ])->assertSessionHasNoErrors();
+
+        expect($this->atJinde->refresh()->property_pool_id)->toBe($this->pool->id)
+            ->and($this->at307->refresh()->property_pool_id)->toBe($this->pool->id);
+
+        // 再送一次只留一件，另一件要被移出
+        $this->put(route('admin.pools.properties.update', $this->pool), [
+            'property_ids' => [$this->atJinde->id],
+        ])->assertSessionHasNoErrors();
+
+        expect($this->atJinde->refresh()->property_pool_id)->toBe($this->pool->id)
+            ->and($this->at307->refresh()->property_pool_id)->toBeNull();
+    });
+
+    it('拒絕不在出借範圍內的器材', function () {
+        $this->put(route('admin.pools.properties.update', $this->pool), [
+            'property_ids' => [$this->atBaosan->id],
+        ])->assertSessionHasErrors('property_ids');
+
+        expect($this->atBaosan->refresh()->property_pool_id)->toBeNull();
+    });
+
+    it('拒絕搶走已屬於其他品項的器材', function () {
+        $other = PropertyPool::factory()->create(['location_id' => $this->jinde->id, 'name' => '長桌']);
+        $this->atJinde->update(['property_pool_id' => $other->id]);
+
+        $this->put(route('admin.pools.properties.update', $this->pool), [
+            'property_ids' => [$this->atJinde->id],
+        ])->assertSessionHasErrors('property_ids');
+
+        expect($this->atJinde->refresh()->property_pool_id)->toBe($other->id);
+    });
+
+    it('不能把池縮到少於借出中未歸還的數量', function () {
+        $this->put(route('admin.pools.properties.update', $this->pool), [
+            'property_ids' => [$this->atJinde->id, $this->at307->id],
+        ])->assertSessionHasNoErrors();
+
+        BorrowRequestItem::factory()->fromPool($this->pool, 2)->create(['status' => BorrowItemStatus::Lent]);
+
+        $this->put(route('admin.pools.properties.update', $this->pool), [
+            'property_ids' => [$this->atJinde->id],
+        ])->assertSessionHasErrors('property_ids');
+
+        expect($this->at307->refresh()->property_pool_id)->toBe($this->pool->id);
     });
 });
 
