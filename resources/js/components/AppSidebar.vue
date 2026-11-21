@@ -32,11 +32,13 @@ import { index as groupsIndex } from '@/routes/admin/groups';
 import { index as periodsIndex } from '@/routes/admin/periods';
 import { index as poolsIndex } from '@/routes/admin/pools';
 import { index as propertiesIndex } from '@/routes/admin/properties';
-import { edit as settingsEdit } from '@/routes/admin/settings';
+import { edit as settingsSection } from '@/routes/admin/settings/section';
 import { index as usersIndex } from '@/routes/admin/users';
 import { create as borrowCreate } from '@/routes/borrow';
 import { status as propertyStatus } from '@/routes/properties';
 import type { NavItem } from '@/types';
+
+type SettingsSection = { slug: string; title: string; description: string };
 
 const can = computed(() => usePage().props.auth.can);
 
@@ -62,9 +64,20 @@ const adminNav = computed<NavItem[]>(() =>
               { title: '人員', href: usersIndex(), icon: Users },
               { title: '群組與授權', href: groupsIndex(), icon: UsersRound },
               { title: '借用期間', href: periodsIndex(), icon: CalendarRange },
-              { title: '系統設定', href: settingsEdit(), icon: Settings2 },
           ]
         : [],
+);
+
+/**
+ * 系統設定的各個分頁。清單來自後端的 SettingController::SECTIONS（共享 prop），
+ * 所以在那裡新增一頁設定，這裡就會自己多一個連結。
+ */
+const systemNav = computed<NavItem[]>(() =>
+    (usePage().props.settingsSections as SettingsSection[]).map((s) => ({
+        title: s.title,
+        href: settingsSection(s.slug),
+        icon: Settings2,
+    })),
 );
 
 const frontendNav: NavItem[] = [
@@ -91,6 +104,7 @@ const frontendNav: NavItem[] = [
             <NavMain label="借用" :items="borrowNav" />
             <NavMain label="器材" :items="propertyNav" />
             <NavMain label="管理" :items="adminNav" />
+            <NavMain label="系統" :items="systemNav" />
             <NavMain label="前台" :items="frontendNav" />
         </SidebarContent>
 

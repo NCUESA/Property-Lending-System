@@ -42,10 +42,10 @@ it('訪客進後台會被導向登入頁', function () {
     $this->post(route('admin.users.store'))->assertRedirect(route('login'));
 });
 
-it('依角色限制後台', function (string $role, string $route, int $status) {
+it('依角色限制後台', function (string $role, string $route, int $status, mixed $params = []) {
     $user = User::factory()->create(['role' => $role]);
 
-    $this->actingAs($user)->get(route($route))->assertStatus($status);
+    $this->actingAs($user)->get(route($route, $params))->assertStatus($status);
 })->with([
     ['borrower', 'admin.borrows.index', 403],
     ['staff', 'admin.borrows.index', 200],
@@ -57,7 +57,12 @@ it('依角色限制後台', function (string $role, string $route, int $status) 
     ['admin', 'admin.categories.index', 200],
     ['admin', 'admin.pools.index', 200],
     ['admin', 'admin.periods.index', 200],
-    ['admin', 'admin.settings.edit', 200],
+    ['admin', 'admin.settings.section.edit', 200, 'borrow'],
+    ['admin', 'admin.settings.section.edit', 200, 'notices'],
+    // admin/settings 本身只是導向第一個分頁，但仍受 can:admin 保護
+    ['admin', 'admin.settings.edit', 302],
+    ['staff', 'admin.settings.edit', 403],
+    ['staff', 'admin.settings.section.edit', 403, 'borrow'],
 ]);
 
 it('停用的帳號即使是管理員也進不了後台', function () {

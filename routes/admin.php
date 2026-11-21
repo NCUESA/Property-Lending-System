@@ -47,7 +47,13 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
 
         Route::resource('periods', BorrowPeriodController::class)->only(['index', 'store', 'update', 'destroy']);
 
-        Route::get('settings', [SettingController::class, 'edit'])->name('settings.edit');
-        Route::put('settings', [SettingController::class, 'update'])->name('settings.update');
+        // 系統設定依功能分頁；分頁清單由 SettingController::SECTIONS 決定，新增分頁不必改這裡
+        Route::redirect('settings', 'admin/settings/'.SettingController::DEFAULT_SECTION)->name('settings.edit');
+        Route::get('settings/{section}', [SettingController::class, 'edit'])
+            ->whereIn('section', SettingController::slugs())
+            ->name('settings.section.edit');
+        Route::put('settings/{section}', [SettingController::class, 'update'])
+            ->whereIn('section', SettingController::slugs())
+            ->name('settings.section.update');
     });
 });

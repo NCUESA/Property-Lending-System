@@ -364,13 +364,71 @@ describe('設定與借用期間', function () {
             ->assertSessionHasErrors(['starts_on' => '這段期間和既有的期間重疊了。']);
     });
 
-    it('更新押金、借用天數與注意事項', function () {
-        $this->put(route('admin.settings.update'), [
+    it('借用規則分頁更新押金與天數', function () {
+        $this->put(route('admin.settings.section.update', 'borrow'), [
             'deposit_amount' => 200, 'max_days' => 3, 'default_open' => true, 'allow_advance' => false,
-            'notices' => ['只有一條'],
         ])->assertSessionHasNoErrors();
 
         expect(Setting::get('borrow.deposit_amount'))->toBe(200)
-            ->and(Setting::get('borrow.notices'))->toBe(['只有一條']);
+            ->and(Setting::get('borrow.max_days'))->toBe(3);
+    });
+
+    it('注意事項分頁更新條款', function () {
+        $this->put(route('admin.settings.section.update', 'notices'), ['notices' => ['只有一條']])
+            ->assertSessionHasNoErrors();
+
+        expect(Setting::get('borrow.notices'))->toBe(['只有一條']);
+    });
+
+    it('儲存一個分頁不會動到其他分頁的設定', function () {
+        $this->seed(SettingSeeder::class);
+
+        $this->put(route('admin.settings.section.update', 'notices'), ['notices' => ['改過了']])
+            ->assertSessionHasNoErrors();
+
+        // 注意事項存檔後，借用規則要原封不動
+        expect(Setting::get('borrow.notices'))->toBe(['改過了'])
+            ->and(Setting::get('borrow.deposit_amount'))->toBe(100)
+            ->and(Setting::get('borrow.max_days'))->toBe(7);
+
+        $this->put(route('admin.settings.section.update', 'borrow'), [
+            'deposit_amount' => 500, 'max_days' => 14, 'default_open' => false, 'allow_advance' => true,
+        ])->assertSessionHasNoErrors();
+
+        expect(Setting::get('borrow.deposit_amount'))->toBe(500)
+            ->and(Setting::get('borrow.notices'))->toBe(['改過了']);
+    });
+
+    it('設定分頁只載入自己的欄位，也只驗證自己的欄位', function () {
+        $this->get(route('admin.settings.section.edit', 'notices'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Admin/Settings/Notices')
+                ->has('settings.notices')
+                ->missing('settings.deposit_amount'));
+
+        // 在注意事項分頁不必送借用規則的欄位
+        $this->put(route('admin.settings.section.update', 'notices'), ['notices' => []])
+            ->assertSessionHasNoErrors();
+    });
+
+    it('側邊欄的系統群組來自後端分頁清單，且只有管理員看得到', function () {
+        $this->get(route('admin.settings.section.edit', 'borrow'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('settingsSections.0.slug', 'borrow')
+                ->where('settingsSections.0.title', '借用規則')
+                ->where('settingsSections.1.slug', 'notices'));
+
+        $this->actingAs(User::factory()->staff()->create())
+            ->get(route('admin.borrows.index'))
+            ->assertInertia(fn (Assert $page) => $page->where('settingsSections', []));
+    });
+
+    it('未定義的設定分頁回 404', function () {
+        $this->get('/admin/settings/nope')->assertNotFound();
+    });
+
+    it('settings 導向第一個分頁', function () {
+        $this->get(route('admin.settings.edit'))
+            ->assertRedirect('/admin/settings/borrow');
     });
 });

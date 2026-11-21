@@ -11,6 +11,16 @@ use RuntimeException;
  */
 class PropertyCategoryFactory extends Factory
 {
+    /**
+     * 本批次已經發出去、但還沒寫進資料庫的編號。
+     *
+     * count(n) 會先把 n 筆的屬性全部展開、最後才一次寫入，
+     * 所以光查資料庫不夠——那 n 次查詢看到的是同一份尚未包含本批次的資料。
+     *
+     * @var list<string>
+     */
+    private array $issued = [];
+
     public function definition(): array
     {
         return [
@@ -35,14 +45,19 @@ class PropertyCategoryFactory extends Factory
             range(0, 999),
         );
 
-        $available = array_values(
-            array_diff($all, PropertyCategory::query()->pluck('code')->all()),
-        );
+        $available = array_values(array_diff(
+            $all,
+            PropertyCategory::query()->pluck('code')->all(),
+            $this->issued,
+        ));
 
         if ($available === []) {
             throw new RuntimeException('property_categories 的 3 位數編號已全部用完，無法再產生測試資料。');
         }
 
-        return fake()->randomElement($available);
+        $code = fake()->randomElement($available);
+        $this->issued[] = $code;
+
+        return $code;
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Http\Controllers\Admin\SettingController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Middleware;
@@ -46,6 +47,8 @@ class HandleInertiaRequests extends Middleware
                     'admin' => Gate::allows('admin'),
                 ],
             ],
+            // 側邊欄「系統」群組的項目；只有管理員看得到，其他人拿到空陣列
+            'settingsSections' => fn () => Gate::allows('admin') ? SettingController::sectionsForNav() : [],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }
