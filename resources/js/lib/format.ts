@@ -52,6 +52,7 @@ export const requestStatusMeta: Record<
     lent: { label: '借出中', tone: 'warning' },
     partially_returned: { label: '部分歸還', tone: 'warning' },
     overdue: { label: '逾期未還', tone: 'danger' },
+    returned_late: { label: '逾期歸還', tone: 'warning' },
     returned: { label: '已歸還', tone: 'success' },
     cancelled: { label: '已退回', tone: 'neutral' },
 };

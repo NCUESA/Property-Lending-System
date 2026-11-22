@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Actions\Borrow\SendDueReminders;
 use App\Enums\BorrowMailKind;
+use App\Enums\BorrowViolationKind;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SettingsRequest;
 use App\Mail\BorrowNotificationMail;
@@ -45,6 +46,13 @@ class SettingController extends Controller
                 'allow_advance' => 'borrow.allow_advance',
                 'deposit_box_count' => 'borrow.deposit_box_count',
             ],
+        ],
+        'penalty' => [
+            'title' => '違規與封鎖',
+            'description' => '各類違規的次數上限與封鎖天數',
+            'component' => 'Admin/Settings/Penalty',
+            // 每一種違規各有 limit 與 block_days，見 penaltyKeys()
+            'keys' => [],
         ],
         'notices' => [
             'title' => '注意事項',
@@ -88,10 +96,33 @@ class SettingController extends Controller
         return array_keys(self::SECTIONS);
     }
 
+    /**
+     * 「違規與封鎖」的欄位跟著 BorrowViolationKind 走，新增一種違規不必改這裡。
+     *
+     * @return array<string, string>
+     */
+    public static function penaltyKeys(): array
+    {
+        $keys = [];
+
+        foreach (BorrowViolationKind::cases() as $kind) {
+            $keys[$kind->value.'_limit'] = $kind->settingKey('limit');
+            $keys[$kind->value.'_block_days'] = $kind->settingKey('block_days');
+        }
+
+        return $keys;
+    }
+
+    /** @return array<string, string> */
+    private static function keysOf(string $section): array
+    {
+        return $section === 'penalty' ? self::penaltyKeys() : self::SECTIONS[$section]['keys'];
+    }
+
     public function edit(string $section): Response
     {
         $config = self::SECTIONS[$section];
-        $values = collect($config['keys'])->map(fn (string $key) => Setting::get($key))->all();
+        $values = collect(self::keysOf($section))->map(fn (string $key) => Setting::get($key))->all();
 
         return Inertia::render($config['component'], [
             'settings' => $this->present($section, $values),
@@ -104,7 +135,7 @@ class SettingController extends Controller
         $data = $this->prepare($section, $request->validated());
 
         DB::transaction(function () use ($section, $data) {
-            foreach (self::SECTIONS[$section]['keys'] as $field => $key) {
+            foreach (self::keysOf($section) as $field => $key) {
                 // prepare() 可能刻意拿掉某個欄位（例如密碼留空代表不變更），這種就跳過不寫
                 if (array_key_exists($field, $data)) {
                     Setting::put($key, $data[$field]);
@@ -161,6 +192,15 @@ class SettingController extends Controller
             return $values;
         }
 
+        if ($section === 'penalty') {
+            foreach (BorrowViolationKind::cases() as $kind) {
+                $values[$kind->value.'_limit'] ??= $kind->defaultLimit();
+                $values[$kind->value.'_block_days'] ??= $kind->defaultBlockDays();
+            }
+
+            return $values;
+        }
+
         if ($section === 'notifications') {
             foreach (BorrowMailKind::cases() as $kind) {
                 $values[$kind->value.'_subject'] ??= $kind->defaultSubject();
@@ -204,6 +244,11 @@ class SettingController extends Controller
     {
         return match ($section) {
             'mail' => ['passwordSet' => MailSettings::password() !== null],
+            'penalty' => ['kinds' => array_map(fn (BorrowViolationKind $k) => [
+                'value' => $k->value,
+                'label' => $k->label(),
+                'description' => $k->description(),
+            ], BorrowViolationKind::cases())],
             'notifications' => ['variables' => MailTemplate::VARIABLES],
             default => [],
         };

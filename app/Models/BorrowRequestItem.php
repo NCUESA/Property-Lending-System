@@ -55,6 +55,26 @@ class BorrowRequestItem extends Model
         return $this->belongsTo(BorrowRequest::class);
     }
 
+    /**
+     * 顯示用的品名。
+     *
+     * property 與 pool 擇一，另一邊的關聯會是 null，所以一律先看外鍵再取值。
+     */
+    public function displayName(): string
+    {
+        if ($this->property_id !== null) {
+            return $this->property->name;
+        }
+
+        return $this->property_pool_id !== null ? $this->pool->name : '—';
+    }
+
+    /** 指定器材才有財產編號。 */
+    public function displaySsid(): ?string
+    {
+        return $this->property_id !== null ? $this->property->ssid : null;
+    }
+
     /** @return BelongsTo<Property, $this> */
     public function property(): BelongsTo
     {

@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Enums\BorrowMailKind;
+use App\Enums\BorrowViolationKind;
 use App\Models\Setting;
 use Illuminate\Database\Seeder;
 
@@ -19,6 +20,8 @@ class SettingSeeder extends Seeder
             'borrow.default_open' => true,
             'borrow.allow_advance' => false,
             'borrow.deposit_box_count' => 20,
+            // 違規與封鎖：每一種違規各自的次數上限與封鎖天數
+            ...$this->penaltyDefaults(),
             'borrow.notices' => [
                 '根據器材借用法規借用時間最長一個禮拜（借用起始日自借用當日開始計算）。目前不開放預借。',
                 '寒暑假借用時間請留意學生會公告。',
@@ -40,6 +43,23 @@ class SettingSeeder extends Seeder
         foreach ($defaults as $key => $value) {
             Setting::firstOrCreate(['key' => $key], ['value' => $value]);
         }
+    }
+
+    /**
+     * 各類違規的封鎖門檻，預設只有「自行取消」會封鎖。
+     *
+     * @return array<string, int>
+     */
+    private function penaltyDefaults(): array
+    {
+        $defaults = [];
+
+        foreach (BorrowViolationKind::cases() as $kind) {
+            $defaults[$kind->settingKey('limit')] = $kind->defaultLimit();
+            $defaults[$kind->settingKey('block_days')] = $kind->defaultBlockDays();
+        }
+
+        return $defaults;
     }
 
     /**

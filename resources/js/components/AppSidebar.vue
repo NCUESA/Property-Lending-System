@@ -8,6 +8,7 @@ import {
     Package,
     Search,
     Settings2,
+    ShieldAlert,
     Tags,
     Users,
     UsersRound,
@@ -34,7 +35,9 @@ import { index as poolsIndex } from '@/routes/admin/pools';
 import { index as propertiesIndex } from '@/routes/admin/properties';
 import { edit as settingsSection } from '@/routes/admin/settings/section';
 import { index as usersIndex } from '@/routes/admin/users';
+import { index as violationsIndex } from '@/routes/admin/violations';
 import { create as borrowCreate } from '@/routes/borrow';
+import { index as myBorrowsIndex } from '@/routes/my/borrows';
 import { status as propertyStatus } from '@/routes/properties';
 import type { NavItem } from '@/types';
 
@@ -44,7 +47,14 @@ const can = computed(() => usePage().props.auth.can);
 
 const borrowNav = computed<NavItem[]>(() =>
     can.value.staff
-        ? [{ title: '借用單', href: borrowsIndex(), icon: ClipboardList }]
+        ? [
+              { title: '借用單', href: borrowsIndex(), icon: ClipboardList },
+              {
+                  title: '違規紀錄',
+                  href: violationsIndex(),
+                  icon: ShieldAlert,
+              },
+          ]
         : [],
 );
 
@@ -80,10 +90,20 @@ const systemNav = computed<NavItem[]>(() =>
     })),
 );
 
-const frontendNav: NavItem[] = [
+const frontendNav = computed<NavItem[]>(() => [
     { title: '借用申請', href: borrowCreate(), icon: FileText },
+    // 訪客的申請沒有帳號可以歸屬，所以登入後才看得到
+    ...(usePage().props.auth.user
+        ? [
+              {
+                  title: '我的借用',
+                  href: myBorrowsIndex(),
+                  icon: ClipboardList,
+              },
+          ]
+        : []),
     { title: '器材狀態', href: propertyStatus(), icon: Search },
-];
+]);
 </script>
 
 <template>

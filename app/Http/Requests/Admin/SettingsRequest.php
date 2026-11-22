@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Enums\BorrowViolationKind;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -29,6 +30,7 @@ class SettingsRequest extends FormRequest
                 'allow_advance' => ['required', 'boolean'],
                 'deposit_box_count' => ['required', 'integer', 'min:1', 'max:200'],
             ],
+            'penalty' => $this->penaltyRules(),
             'notices' => [
                 'notices' => ['present', 'array', 'max:30'],
                 'notices.*' => ['required', 'string', 'max:500'],
@@ -63,6 +65,36 @@ class SettingsRequest extends FormRequest
     }
 
     /**
+     * 每一種違規各有次數上限與封鎖天數；0 代表只記錄不封鎖。
+     *
+     * @return array<string, mixed>
+     */
+    private function penaltyRules(): array
+    {
+        $rules = [];
+
+        foreach (BorrowViolationKind::cases() as $kind) {
+            $rules[$kind->value.'_limit'] = ['required', 'integer', 'min:0', 'max:50'];
+            $rules[$kind->value.'_block_days'] = ['required', 'integer', 'min:1', 'max:365'];
+        }
+
+        return $rules;
+    }
+
+    /** @return array<string, string> */
+    private function penaltyAttributes(): array
+    {
+        $attributes = [];
+
+        foreach (BorrowViolationKind::cases() as $kind) {
+            $attributes[$kind->value.'_limit'] = "{$kind->label()}次數上限";
+            $attributes[$kind->value.'_block_days'] = "{$kind->label()}封鎖天數";
+        }
+
+        return $attributes;
+    }
+
+    /**
      * @return array<string, string>
      */
     public function attributes(): array
@@ -75,6 +107,7 @@ class SettingsRequest extends FormRequest
                 'allow_advance' => '開放預借',
                 'deposit_box_count' => '押金箱數量',
             ],
+            'penalty' => $this->penaltyAttributes(),
             'notices' => [
                 'notices' => '注意事項',
                 'notices.*' => '注意事項',

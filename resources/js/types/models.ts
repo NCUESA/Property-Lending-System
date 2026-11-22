@@ -6,6 +6,7 @@ export type BorrowRequestStatus =
     | 'lent'
     | 'partially_returned'
     | 'overdue'
+    | 'returned_late'
     | 'returned'
     | 'cancelled';
 

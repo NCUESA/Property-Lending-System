@@ -3,6 +3,7 @@
 namespace App\Actions\Borrow;
 
 use App\Enums\BorrowItemStatus;
+use App\Enums\BorrowViolationKind;
 use App\Models\BorrowRequest;
 use App\Models\BorrowRequestItem;
 use App\Models\User;
@@ -16,6 +17,8 @@ use Illuminate\Validation\ValidationException;
  */
 class ReturnItems
 {
+    public function __construct(private readonly RecordBorrowViolation $violations) {}
+
     /**
      * @param  array<string, mixed>  $data  ReturnBorrowRequestRequest::validated()：
      *                                      items?（list<{id, quantity?}>）、id_card_returned?、deposit_returned?
@@ -63,12 +66,23 @@ class ReturnItems
             ]));
 
             $allReturned = ! $request->items()->where('status', BorrowItemStatus::Lent)->exists();
-            if ($allReturned && $request->returned_at === null && $request->lent_at !== null) {
+            $closedNow = $allReturned && $request->returned_at === null && $request->lent_at !== null;
+
+            if ($closedNow) {
                 $request->returned_by = $staff->id;
                 $request->returned_at = now();
             }
 
             $request->save();
+
+            // 歸還日當天還算準時，隔天以後才是逾期
+            if ($closedNow && $request->returned_at->startOfDay()->greaterThan($request->due_date)) {
+                $this->violations->handle(
+                    BorrowViolationKind::ReturnedLate,
+                    $request,
+                    "應於 {$request->due_date->toDateString()} 歸還，實際 {$request->returned_at->toDateString()}",
+                );
+            }
 
             return $request;
         });

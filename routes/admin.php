@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\BorrowPeriodController;
 use App\Http\Controllers\Admin\BorrowRequestController;
+use App\Http\Controllers\Admin\BorrowViolationController;
 use App\Http\Controllers\Admin\PropertyCategoryController;
 use App\Http\Controllers\Admin\PropertyCodeController;
 use App\Http\Controllers\Admin\PropertyController;
@@ -26,6 +27,9 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
         Route::post('borrows/{borrow}/return', [BorrowRequestController::class, 'return'])->name('borrows.return');
         Route::post('borrows/{borrow}/cancel', [BorrowRequestController::class, 'cancel'])->name('borrows.cancel');
         Route::post('borrows/{borrow}/extend', [BorrowRequestController::class, 'extend'])->name('borrows.extend');
+
+        // 值班人員要能查眼前這個人有沒有前科；解封是管理員的權限，在下面
+        Route::get('violations', [BorrowViolationController::class, 'index'])->name('violations.index');
     });
 
     // ── 管理員：器材、編碼、人員、群組、設定 ───────────────
@@ -47,6 +51,10 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
         Route::resource('groups', UserGroupController::class)->except(['create', 'show']);
 
         Route::resource('periods', BorrowPeriodController::class)->only(['index', 'store', 'update', 'destroy']);
+
+        // 封鎖由系統依設定自動建立，管理員只能提前解除
+        Route::post('blocks/{block}/lift', [BorrowViolationController::class, 'lift'])->name('blocks.lift');
+        Route::patch('blocks/{block}', [BorrowViolationController::class, 'adjust'])->name('blocks.adjust');
 
         // 系統設定依功能分頁；分頁清單由 SettingController::SECTIONS 決定，新增分頁不必改這裡
         Route::redirect('settings', 'admin/settings/'.SettingController::DEFAULT_SECTION)->name('settings.edit');

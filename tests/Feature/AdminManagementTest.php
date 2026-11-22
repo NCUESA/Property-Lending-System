@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\BorrowItemStatus;
+use App\Http\Controllers\Admin\SettingController;
 use App\Models\BorrowPeriod;
 use App\Models\BorrowRequestItem;
 use App\Models\Location;
@@ -412,11 +413,14 @@ describe('設定與借用期間', function () {
     });
 
     it('側邊欄的系統群組來自後端分頁清單，且只有管理員看得到', function () {
+        // 比對整份清單，新增分頁時不會因為順序變動就壞掉
         $this->get(route('admin.settings.section.edit', 'borrow'))
             ->assertInertia(fn (Assert $page) => $page
-                ->where('settingsSections.0.slug', 'borrow')
                 ->where('settingsSections.0.title', '借用規則')
-                ->where('settingsSections.1.slug', 'notices'));
+                ->where(
+                    'settingsSections',
+                    fn ($sections) => collect($sections)->pluck('slug')->all() === SettingController::slugs(),
+                ));
 
         $this->actingAs(User::factory()->staff()->create())
             ->get(route('admin.borrows.index'))

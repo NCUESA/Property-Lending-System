@@ -4,12 +4,14 @@ namespace App\Actions\Borrow;
 
 use App\Enums\BorrowMailKind;
 use App\Jobs\SendBorrowNotification;
+use App\Models\BorrowBlock;
 use App\Models\BorrowPeriod;
 use App\Models\BorrowRequest;
 use App\Models\Location;
 use App\Models\Property;
 use App\Models\PropertyPool;
 use App\Models\User;
+use App\Support\BorrowSubject;
 use App\Support\DatabaseError;
 use App\Support\ItemQuantities;
 use Carbon\CarbonImmutable;
@@ -35,6 +37,19 @@ class SubmitBorrowRequest
         $location = Location::pickupPoints()->findOrFail((int) $data['location_id']);
         $propertyIds = array_values(array_unique(array_map('intval', (array) ($data['property_ids'] ?? []))));
         $pools = ItemQuantities::parse($data['pools'] ?? []); // pool id => quantity
+
+        // 違規被封鎖的人連申請都不能送，不必等到現場才發現
+        $subject = BorrowSubject::for($user, (string) $data['phone'], (string) $data['borrower_name']);
+
+        if ($block = BorrowBlock::activeFor($subject)) {
+            throw ValidationException::withMessages([
+                'phone' => sprintf(
+                    '此借用人目前暫停借用至 %s（%s）。如有疑問請洽學生會。',
+                    $block->blocked_until->format('Y-m-d H:i'),
+                    $block->reason,
+                ),
+            ]);
+        }
 
         // 取件日與歸還日都要是開放的日子（中間跨到休館日沒關係，人不用來櫃檯）
         foreach (['borrow_date' => '借用', 'due_date' => '歸還'] as $field => $what) {

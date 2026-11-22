@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\SsoController;
 use App\Http\Controllers\BorrowRequestController;
+use App\Http\Controllers\MyBorrowController;
 use App\Http\Controllers\PropertyStatusController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -25,6 +26,12 @@ Route::middleware('guest')->group(function () {
     Route::get('login', [SsoController::class, 'create'])->name('login');
     Route::get('auth/sso/redirect', [SsoController::class, 'redirect'])->name('auth.sso.redirect');
     Route::get('auth/sso/callback', [SsoController::class, 'callback'])->name('auth.sso.callback');
+});
+
+// 借用人自己的紀錄（訪客申請沒有帳號可以歸屬，所以一定要登入）
+Route::middleware('auth')->group(function () {
+    Route::get('my/borrows', [MyBorrowController::class, 'index'])->name('my.borrows.index');
+    Route::post('my/borrows/{borrow}/cancel', [MyBorrowController::class, 'cancel'])->name('my.borrows.cancel');
 });
 
 Route::post('logout', [SsoController::class, 'destroy'])->middleware('auth')->name('logout');

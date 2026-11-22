@@ -273,7 +273,10 @@ describe('借用單狀態（VIEW 即時計算）', function () {
         '歸還日當天還不算逾期' => [[BorrowItemStatus::Lent], ['borrow_date' => today()->subDays(5), 'due_date' => today()], BorrowRequestStatus::Lent],
         '全部歸還' => [[BorrowItemStatus::Returned, BorrowItemStatus::Cancelled], [], BorrowRequestStatus::Returned],
         '全部退回' => [[BorrowItemStatus::Cancelled, BorrowItemStatus::Cancelled], [], BorrowRequestStatus::Cancelled],
-        '逾期的歸還單仍是已歸還' => [[BorrowItemStatus::Returned], ['borrow_date' => today()->subDays(9), 'due_date' => today()->subDays(3)], BorrowRequestStatus::Returned],
+        '結案日超過歸還日是逾期歸還' => [[BorrowItemStatus::Returned], ['borrow_date' => today()->subDays(9), 'due_date' => today()->subDays(3), 'returned_at' => today()->subDay()], BorrowRequestStatus::ReturnedLate],
+        '歸還日當天結案不算逾期' => [[BorrowItemStatus::Returned], ['borrow_date' => today()->subDays(9), 'due_date' => today()->subDays(3), 'returned_at' => today()->subDays(3)->setTime(23, 30)], BorrowRequestStatus::Returned],
+        // 舊資料沒有 returned_at，無從判斷是否遲還，維持已歸還
+        '沒有結案時間就還是已歸還' => [[BorrowItemStatus::Returned], ['borrow_date' => today()->subDays(9), 'due_date' => today()->subDays(3)], BorrowRequestStatus::Returned],
     ]);
 
     it('bulk 部分歸還也算部分歸還', function () {

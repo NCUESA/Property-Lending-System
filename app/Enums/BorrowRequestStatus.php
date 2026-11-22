@@ -12,6 +12,7 @@ enum BorrowRequestStatus: string
     case Lent = 'lent';                             // 借出中
     case PartiallyReturned = 'partially_returned';  // 部分歸還
     case Overdue = 'overdue';                       // 超過歸還日仍有器材未還
+    case ReturnedLate = 'returned_late';            // 全部歸還，但超過歸還日才還
     case Returned = 'returned';                     // 全部歸還
     case Cancelled = 'cancelled';                   // 整單退回
 
@@ -23,6 +24,7 @@ enum BorrowRequestStatus: string
             self::Lent => '借出中',
             self::PartiallyReturned => '部分歸還',
             self::Overdue => '逾期未還',
+            self::ReturnedLate => '逾期歸還',
             self::Returned => '已歸還',
             self::Cancelled => '已退回',
         };
