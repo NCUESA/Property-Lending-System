@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\BorrowMailKind;
 use App\Models\Setting;
 use Illuminate\Database\Seeder;
 
@@ -32,10 +33,29 @@ class SettingSeeder extends Seeder
             'notify.lent.enabled' => false,
             'notify.due.enabled' => false,
             'notify.due.days_before' => 2,
+            // 三種通知信的主旨與內文：模板來源只有 BorrowMailKind 一處，這裡不另外抄一份
+            ...$this->mailTemplates(),
         ];
 
         foreach ($defaults as $key => $value) {
             Setting::firstOrCreate(['key' => $key], ['value' => $value]);
         }
+    }
+
+    /**
+     * 通知信模板的預設值，key 例如 notify.submitted.subject。
+     *
+     * @return array<string, string>
+     */
+    private function mailTemplates(): array
+    {
+        $templates = [];
+
+        foreach (BorrowMailKind::cases() as $kind) {
+            $templates[$kind->key('subject')] = $kind->defaultSubject();
+            $templates[$kind->key('body')] = $kind->defaultBody();
+        }
+
+        return $templates;
     }
 }

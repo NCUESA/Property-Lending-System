@@ -46,4 +46,34 @@ class BorrowPeriod extends Model
             ? $period->is_open
             : (bool) Setting::get('borrow.default_open', true);
     }
+
+    /**
+     * 區間內所有暫停借用的日期（Y-m-d）。給前台日曆把這些日子標成不可選用。
+     *
+     * 一次把重疊的期間撈出來再逐日比對，避免每天都打一次 DB。
+     *
+     * @return list<string>
+     */
+    public static function closedDatesBetween(CarbonInterface $from, CarbonInterface $to): array
+    {
+        $periods = static::query()
+            ->whereDate('ends_on', '>=', $from)
+            ->whereDate('starts_on', '<=', $to)
+            ->get(['starts_on', 'ends_on', 'is_open']);
+
+        $defaultOpen = (bool) Setting::get('borrow.default_open', true);
+        $closed = [];
+
+        for ($day = CarbonImmutable::parse($from)->startOfDay(); $day->lessThanOrEqualTo($to); $day = $day->addDay()) {
+            $period = $periods->first(
+                fn (self $p) => $p->starts_on->lessThanOrEqualTo($day) && $p->ends_on->greaterThanOrEqualTo($day)
+            );
+
+            if (! ($period !== null ? $period->is_open : $defaultOpen)) {
+                $closed[] = $day->toDateString();
+            }
+        }
+
+        return $closed;
+    }
 }

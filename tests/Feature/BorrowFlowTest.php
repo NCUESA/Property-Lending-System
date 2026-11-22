@@ -2,6 +2,7 @@
 
 use App\Enums\BorrowItemStatus;
 use App\Enums\BorrowRequestStatus;
+use App\Http\Controllers\BorrowRequestController;
 use App\Models\BorrowPeriod;
 use App\Models\BorrowRequest;
 use App\Models\BorrowRequestItem;
@@ -36,6 +37,53 @@ function borrowPayload(array $overrides = []): array
         ...$overrides,
     ];
 }
+
+describe('日曆', function () {
+    it('不開放預借時借用日只到今天，歸還日還能往後 maxDays − 1 天', function () {
+        Setting::put('borrow.max_days', 5);
+        Setting::put('borrow.allow_advance', false);
+
+        $this->get(route('borrow.create'))->assertInertia(fn (Assert $page) => $page
+            ->where('calendar.today', today()->toDateString())
+            ->where('calendar.lastBorrowDate', today()->toDateString())
+            ->where('calendar.lastDate', today()->addDays(4)->toDateString())
+        );
+    });
+
+    it('開放預借時借用日可到 horizon', function () {
+        Setting::put('borrow.allow_advance', true);
+        $horizon = BorrowRequestController::CALENDAR_HORIZON_DAYS;
+
+        $this->get(route('borrow.create'))->assertInertia(fn (Assert $page) => $page
+            ->where('calendar.lastBorrowDate', today()->addDays($horizon)->toDateString())
+        );
+    });
+
+    it('暫停借用的日子會送到前端標成不可選', function () {
+        Setting::put('borrow.allow_advance', true);
+        BorrowPeriod::create(['name' => '校慶', 'starts_on' => today()->addDays(2), 'ends_on' => today()->addDays(4), 'is_open' => false]);
+
+        $this->get(route('borrow.create'))->assertInertia(fn (Assert $page) => $page
+            ->where('calendar.closedDates', [
+                today()->addDays(2)->toDateString(),
+                today()->addDays(3)->toDateString(),
+                today()->addDays(4)->toDateString(),
+            ])
+        );
+    });
+
+    it('預設不開放借用時，期間外的每一天都算暫停', function () {
+        Setting::put('borrow.default_open', false);
+        Setting::put('borrow.max_days', 3);
+        Setting::put('borrow.allow_advance', false);
+        BorrowPeriod::create(['name' => '開放週', 'starts_on' => today(), 'ends_on' => today()->addDay(), 'is_open' => true]);
+
+        // 視窗是今天 ~ 今天+2，其中只有前兩天在開放期間內
+        $this->get(route('borrow.create'))->assertInertia(fn (Assert $page) => $page
+            ->where('calendar.closedDates', [today()->addDays(2)->toDateString()])
+        );
+    });
+});
 
 describe('申請', function () {
     it('訪客可以申請 auth_level 0 的器材', function () {
@@ -161,7 +209,32 @@ describe('申請', function () {
         $property = Property::factory()->create(['location_id' => $this->jinde->id]);
 
         $this->post(route('borrow.store'), borrowPayload(['property_ids' => [$property->id]]))
-            ->assertSessionHasErrors(['borrow_date' => '此期間暫停借用，請留意學生會公告。']);
+            ->assertSessionHasErrors(['borrow_date' => '此期間暫停借用，無法於這天借用，請留意學生會公告。']);
+    });
+
+    it('歸還日落在暫停借用期間也不能申請', function () {
+        Setting::put('borrow.allow_advance', true);
+        // 取件日開放、歸還日休館
+        BorrowPeriod::create(['name' => '寒假', 'starts_on' => today()->addDays(3), 'ends_on' => today()->addDays(10), 'is_open' => false]);
+        $property = Property::factory()->create(['location_id' => $this->jinde->id]);
+
+        $this->post(route('borrow.store'), borrowPayload([
+            'property_ids' => [$property->id],
+            'borrow_date' => today()->toDateString(),
+            'due_date' => today()->addDays(3)->toDateString(),
+        ]))->assertSessionHasErrors(['due_date' => '此期間暫停借用，無法於這天歸還，請留意學生會公告。']);
+    });
+
+    it('借用期間中間跨到休館日沒關係', function () {
+        Setting::put('borrow.allow_advance', true);
+        BorrowPeriod::create(['name' => '校慶', 'starts_on' => today()->addDays(2), 'ends_on' => today()->addDays(2), 'is_open' => false]);
+        $property = Property::factory()->create(['location_id' => $this->jinde->id]);
+
+        $this->post(route('borrow.store'), borrowPayload([
+            'property_ids' => [$property->id],
+            'borrow_date' => today()->toDateString(),
+            'due_date' => today()->addDays(4)->toDateString(),
+        ]))->assertSessionHasNoErrors();
     });
 
     it('必須同意注意事項、至少選一項器材', function () {

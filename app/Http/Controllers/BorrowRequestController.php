@@ -20,19 +20,39 @@ use Inertia\Response;
  */
 class BorrowRequestController extends Controller
 {
+    /**
+     * 開放預借時，日曆最多讓使用者往後翻幾天。
+     * 系統沒有「可預借多久」這個設定，但日曆必須有個邊界才畫得出來，所以在這裡定一個。
+     */
+    public const CALENDAR_HORIZON_DAYS = 180;
+
     public function create(Request $request): Response
     {
         $user = $request->user();
         $locations = Location::pickupPoints()->get(['id', 'code', 'name']);
         $location = $locations->firstWhere('code', $request->query('location'));
 
+        $maxDays = max(1, (int) Setting::get('borrow.max_days', 7));
+        $allowAdvance = (bool) Setting::get('borrow.allow_advance', false);
+        // 不開放預借時借用日只能是今天，日曆不必知道更後面的休館日
+        $lastBorrowDate = today()->addDays($allowAdvance ? self::CALENDAR_HORIZON_DAYS : 0);
+        // 歸還日還能再往後 maxDays − 1 天，休館日要一併查到那裡
+        $lastDate = $lastBorrowDate->copy()->addDays($maxDays - 1);
+
         return Inertia::render('Borrow/Create', [
             'isOpen' => BorrowPeriod::isOpenOn(today()),
             'rules' => [
-                'maxDays' => (int) Setting::get('borrow.max_days', 7),
+                'maxDays' => $maxDays,
                 'depositAmount' => (int) Setting::get('borrow.deposit_amount', 100),
-                'allowAdvance' => (bool) Setting::get('borrow.allow_advance', false),
+                'allowAdvance' => $allowAdvance,
                 'notices' => Setting::get('borrow.notices', []),
+            ],
+            'calendar' => [
+                'today' => today()->toDateString(),
+                'lastBorrowDate' => $lastBorrowDate->toDateString(),
+                'lastDate' => $lastDate->toDateString(),
+                // 日曆把這些日子畫成不可選，和 SubmitBorrowRequest 的檢查同一套規則
+                'closedDates' => BorrowPeriod::closedDatesBetween(today(), $lastDate),
             ],
             'locations' => $locations,
             'selectedLocationId' => $location?->id,

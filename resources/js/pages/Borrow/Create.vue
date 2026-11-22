@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Head, router, useForm, usePage } from '@inertiajs/vue3';
 import { CalendarClock, Info, LogIn, Minus, Plus } from '@lucide/vue';
-import { computed, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
+import DateRangeCalendar from '@/components/DateRangeCalendar.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import PropertyPicker, {
@@ -20,7 +21,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import { addDays, todayInTaipei } from '@/lib/format';
+import { todayInTaipei } from '@/lib/format';
 import { login } from '@/routes';
 import { create, store } from '@/routes/borrow';
 
@@ -40,6 +41,12 @@ const props = defineProps<{
         allowAdvance: boolean;
         notices: string[];
     };
+    calendar: {
+        today: string;
+        lastBorrowDate: string;
+        lastDate: string;
+        closedDates: string[];
+    };
     locations: { id: number; code: string; name: string }[];
     selectedLocationId: number | null;
     properties: PickableProperty[];
@@ -49,7 +56,8 @@ const props = defineProps<{
 
 const page = usePage();
 const isGuest = computed(() => !page.props.auth.user);
-const today = todayInTaipei();
+// 後端算好的今天優先；SSR 與瀏覽器同一個值，不會因為使用者的時區而對不上
+const today = props.calendar.today || todayInTaipei();
 
 const form = useForm({
     location_id: props.selectedLocationId,
@@ -64,18 +72,40 @@ const form = useForm({
     pools: [] as { id: number; quantity: number }[],
 });
 
-const latestDue = computed(() =>
-    addDays(form.borrow_date || today, props.rules.maxDays - 1),
+/*
+ * 日曆用「取件日已選、歸還日還沒選」來決定下一次點擊的意義，
+ * 所以挑日子的過程中 due_date 會是 null；送出前再補回和取件日同一天。
+ */
+const pickedDue = ref<string | null>(form.due_date);
+
+watch(pickedDue, (value) => {
+    form.due_date = value ?? form.borrow_date;
+});
+
+/*
+ * 送出與否看「選到的取件日」而不是今天：開放預借時，今天暫停借用
+ * 不代表下週也不能借，否則使用者會選得到日期卻按不下送出。
+ * 日曆本來就不讓人選到暫停借用的日子，這裡只擋預設值還停在今天的情況。
+ */
+const selectedDayClosed = computed(() =>
+    props.calendar.closedDates.includes(form.borrow_date),
 );
 
-// 借用日改變時，歸還日不能落在範圍外
-watch(
-    () => form.borrow_date,
-    () => {
-        if (form.due_date < form.borrow_date) form.due_date = form.borrow_date;
-        if (form.due_date > latestDue.value) form.due_date = latestDue.value;
-    },
-);
+/** 含取件當天的天數，給摘要列顯示。 */
+const borrowDays = computed(() => {
+    const from = new Date(`${form.borrow_date}T00:00:00Z`).getTime();
+    const to = new Date(`${form.due_date}T00:00:00Z`).getTime();
+
+    return Math.round((to - from) / 86_400_000) + 1;
+});
+
+function pickBorrowDate(date: string | null) {
+    if (date === null) return;
+
+    form.borrow_date = date;
+    pickedDue.value = null;
+    form.due_date = date;
+}
 
 /** 換地點：重新載入該地點的器材，並清空已選（避免跨地點借用）。 */
 function selectLocation(location: { id: number; code: string }) {
@@ -136,10 +166,14 @@ function submit() {
         <form class="space-y-6" @submit.prevent="submit">
             <Alert v-if="!isOpen" variant="destructive">
                 <CalendarClock class="size-4" />
-                <AlertTitle>目前暫停借用</AlertTitle>
-                <AlertDescription
-                    >寒暑假或特殊期間暫停借用，請留意學生會公告。</AlertDescription
-                >
+                <AlertTitle>今天暫停借用</AlertTitle>
+                <AlertDescription>
+                    寒暑假或特殊期間暫停借用，請留意學生會公告。{{
+                        rules.allowAdvance
+                            ? '你仍可在日曆上改選其他開放的日期。'
+                            : ''
+                    }}
+                </AlertDescription>
             </Alert>
 
             <Alert v-if="isGuest">
@@ -339,40 +373,72 @@ function submit() {
                         />
                         <InputError :message="form.errors.email" />
                     </div>
-                    <div class="grid gap-2">
-                        <Label for="borrow_date">借用日期</Label>
-                        <Input
-                            id="borrow_date"
-                            v-model="form.borrow_date"
-                            type="date"
-                            :min="today"
-                            :disabled="!rules.allowAdvance"
-                            required
-                        />
-                        <p
-                            v-if="!rules.allowAdvance"
-                            class="text-xs text-muted-foreground"
+                </CardContent>
+            </Card>
+
+            <!-- 4. 日期 -->
+            <Card v-if="form.location_id">
+                <CardHeader>
+                    <CardTitle>4. 借用日期</CardTitle>
+                    <CardDescription>
+                        先點取件日，再點歸還日；點已選範圍外的日子可重新選擇。
+                    </CardDescription>
+                </CardHeader>
+                <CardContent class="space-y-4">
+                    <div class="flex flex-wrap gap-3 text-sm">
+                        <div class="rounded-md border px-3 py-2">
+                            <div class="text-xs text-muted-foreground">
+                                取件日
+                            </div>
+                            <div class="font-medium">
+                                {{ form.borrow_date }}
+                            </div>
+                        </div>
+                        <div class="rounded-md border px-3 py-2">
+                            <div class="text-xs text-muted-foreground">
+                                歸還日
+                            </div>
+                            <div
+                                class="font-medium"
+                                :class="
+                                    pickedDue ? '' : 'text-muted-foreground'
+                                "
+                            >
+                                {{ pickedDue ?? '請選擇' }}
+                            </div>
+                        </div>
+                        <div
+                            v-if="pickedDue"
+                            class="rounded-md border px-3 py-2"
                         >
-                            目前不開放預借，借用日為今天
-                        </p>
-                        <InputError :message="form.errors.borrow_date" />
+                            <div class="text-xs text-muted-foreground">
+                                共計
+                            </div>
+                            <div class="font-medium">{{ borrowDays }} 天</div>
+                        </div>
                     </div>
-                    <div class="grid gap-2">
-                        <Label for="due_date">歸還日期</Label>
-                        <Input
-                            id="due_date"
-                            v-model="form.due_date"
-                            type="date"
-                            :min="form.borrow_date"
-                            :max="latestDue"
-                            required
-                        />
-                        <p class="text-xs text-muted-foreground">
-                            最晚 {{ latestDue }}（最長
-                            {{ rules.maxDays }} 天，含借用當天）
-                        </p>
-                        <InputError :message="form.errors.due_date" />
-                    </div>
+
+                    <p
+                        v-if="!rules.allowAdvance"
+                        class="text-xs text-muted-foreground"
+                    >
+                        目前不開放預借，取件日為今天
+                    </p>
+
+                    <DateRangeCalendar
+                        :start="form.borrow_date"
+                        :end="pickedDue"
+                        :min-date="calendar.today"
+                        :last-borrow-date="calendar.lastBorrowDate"
+                        :last-date="calendar.lastDate"
+                        :closed-dates="calendar.closedDates"
+                        :max-days="rules.maxDays"
+                        @update:start="pickBorrowDate"
+                        @update:end="pickedDue = $event"
+                    />
+
+                    <InputError :message="form.errors.borrow_date" />
+                    <InputError :message="form.errors.due_date" />
                 </CardContent>
             </Card>
 
@@ -398,7 +464,9 @@ function submit() {
                         size="lg"
                         class="w-full"
                         :disabled="
-                            form.processing || !isOpen || totalSelected === 0
+                            form.processing ||
+                            selectedDayClosed ||
+                            totalSelected === 0
                         "
                     >
                         <Spinner v-if="form.processing" />

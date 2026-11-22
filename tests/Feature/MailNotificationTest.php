@@ -147,6 +147,21 @@ describe('模板', function () {
         expect($rendered)->toBe('王小明 於 2027-01-10 歸還，{{ nope }}');
     });
 
+    it('Seeder 把三種信的預設主旨與內文寫進 settings', function () {
+        foreach (BorrowMailKind::cases() as $kind) {
+            expect(Setting::get($kind->key('subject')))->toBe($kind->defaultSubject())
+                ->and(Setting::get($kind->key('body')))->toBe($kind->defaultBody());
+        }
+    });
+
+    it('Seeder 不會覆蓋管理員改過的模板', function () {
+        Setting::put(BorrowMailKind::Lent->key('body'), '管理員自己寫的內文');
+
+        $this->seed(SettingSeeder::class);
+
+        expect(Setting::get(BorrowMailKind::Lent->key('body')))->toBe('管理員自己寫的內文');
+    });
+
     it('模板內容不會被當成程式碼執行', function () {
         Mail::fake();
         enableMail(BorrowMailKind::Submitted);

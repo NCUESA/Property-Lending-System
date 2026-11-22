@@ -36,8 +36,13 @@ class SubmitBorrowRequest
         $propertyIds = array_values(array_unique(array_map('intval', (array) ($data['property_ids'] ?? []))));
         $pools = ItemQuantities::parse($data['pools'] ?? []); // pool id => quantity
 
-        if (! BorrowPeriod::isOpenOn(CarbonImmutable::parse((string) $data['borrow_date']))) {
-            throw ValidationException::withMessages(['borrow_date' => '此期間暫停借用，請留意學生會公告。']);
+        // 取件日與歸還日都要是開放的日子（中間跨到休館日沒關係，人不用來櫃檯）
+        foreach (['borrow_date' => '借用', 'due_date' => '歸還'] as $field => $what) {
+            if (! BorrowPeriod::isOpenOn(CarbonImmutable::parse((string) $data[$field]))) {
+                throw ValidationException::withMessages([
+                    $field => "此期間暫停借用，無法於這天{$what}，請留意學生會公告。",
+                ]);
+            }
         }
 
         $this->ensurePropertiesBorrowable($propertyIds, $location, $user);
