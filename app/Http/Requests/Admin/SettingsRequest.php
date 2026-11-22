@@ -50,6 +50,9 @@ class SettingsRequest extends FormRequest
                 'from_address' => ['nullable', 'email', 'max:255'],
                 'from_name' => ['nullable', 'string', 'max:100'],
                 'ehlo_domain' => ['nullable', 'string', 'max:255'],
+                // 留空代表沿用預設的測試信內容
+                'test_subject' => ['nullable', 'string', 'max:200'],
+                'test_body' => ['nullable', 'string', 'max:5000'],
             ],
             'notifications' => [
                 'submitted_enabled' => ['required', 'boolean'],
@@ -126,6 +129,8 @@ class SettingsRequest extends FormRequest
                 'from_address' => '寄件者信箱',
                 'from_name' => '寄件者名稱',
                 'ehlo_domain' => 'EHLO 網域',
+                'test_subject' => '測試信主旨',
+                'test_body' => '測試信內文',
             ],
             'notifications' => [
                 'submitted_enabled' => '申請確認信',

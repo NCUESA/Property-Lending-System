@@ -266,6 +266,73 @@ describe('SMTP 設定', function () {
             ->assertSessionHasNoErrors();
     });
 
+    it('測試信用後台設定的主旨與內文，變數會被替換', function () {
+        Mail::fake();
+        Setting::put('mail.test_subject', '【{{ app_name }}】連線檢查');
+        Setting::put('mail.test_body', "寄給 {{ to }}\n時間 {{ sent_at }}");
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.settings.mail.test'), ['email' => 'check@example.org'])
+            ->assertSessionHasNoErrors();
+
+        Mail::assertSent(BorrowNotificationMail::class, function (BorrowNotificationMail $mail) {
+            $html = $mail->render();
+
+            return $mail->subject === '【'.config('app.name').'】連線檢查'
+                && str_contains($html, 'check@example.org')
+                && str_contains($html, now()->format('Y-m-d'))
+                && ! str_contains($html, '{{');
+        });
+    });
+
+    it('測試信內容留空時套用預設', function () {
+        Mail::fake();
+        Setting::put('mail.test_subject', '');
+        Setting::put('mail.test_body', '');
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.settings.mail.test'), ['email' => 'x@example.org'])
+            ->assertSessionHasNoErrors();
+
+        Mail::assertSent(BorrowNotificationMail::class, fn (BorrowNotificationMail $mail) => str_contains($mail->render(), '這是一封測試信'));
+    });
+
+    it('測試信模板不會被當成程式碼執行', function () {
+        Mail::fake();
+        Setting::put('mail.test_body', '{{ 7 * 7 }} <script>alert(1)</script>');
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.settings.mail.test'), ['email' => 'x@example.org']);
+
+        Mail::assertSent(BorrowNotificationMail::class, function (BorrowNotificationMail $mail) {
+            $html = $mail->render();
+
+            return ! str_contains($html, '49') && ! str_contains($html, '<script>alert(1)</script>');
+        });
+    });
+
+    it('寄信設定頁會帶出測試信欄位與可用變數', function () {
+        $this->actingAs($this->admin)
+            ->get(route('admin.settings.section.edit', 'mail'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('settings.test_subject', MailSettings::DEFAULT_TEST_SUBJECT)
+                ->where('settings.test_body', MailSettings::DEFAULT_TEST_BODY)
+                ->has('testVariables', 3)
+                ->where('testVariables.app_name', '系統名稱'));
+    });
+
+    it('可以從後台更新測試信內容', function () {
+        $this->actingAs($this->admin)
+            ->put(route('admin.settings.section.update', 'mail'), [
+                'enabled' => true, 'host' => 'smtp.example.org', 'port' => 587,
+                'from_address' => 'noreply@example.org',
+                'test_subject' => '新主旨', 'test_body' => '新內文',
+            ])->assertSessionHasNoErrors();
+
+        expect(MailSettings::testSubject())->toBe('新主旨')
+            ->and(MailSettings::testBody())->toBe('新內文');
+    });
+
     it('只有管理員能改寄信設定', function () {
         $this->actingAs(User::factory()->staff()->create())
             ->get(route('admin.settings.section.edit', 'mail'))

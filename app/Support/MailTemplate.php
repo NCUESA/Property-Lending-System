@@ -24,6 +24,25 @@ final class MailTemplate
         'request_id' => '借用單編號',
     ];
 
+    /** 測試信沒有借用單，只有這幾個變數可以用。 */
+    public const TEST_VARIABLES = [
+        'app_name' => '系統名稱',
+        'sent_at' => '寄出時間',
+        'to' => '收件信箱',
+    ];
+
+    /**
+     * @return array<string, string>
+     */
+    public static function testVariables(string $to): array
+    {
+        return [
+            'app_name' => (string) config('app.name'),
+            'sent_at' => now()->format('Y-m-d H:i'),
+            'to' => $to,
+        ];
+    }
+
     /**
      * @return array<string, string>
      */

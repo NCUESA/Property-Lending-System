@@ -163,10 +163,12 @@ class SettingController extends Controller
         MailSettings::apply();
         Mail::purge('smtp');
 
+        $variables = MailTemplate::testVariables($to);
+
         try {
             Mail::to($to)->send(new BorrowNotificationMail(
-                '【'.config('app.name').'】測試信',
-                "這是一封測試信。\n\n如果你收到它，表示後台的 SMTP 設定可以正常寄信。",
+                MailTemplate::render(MailSettings::testSubject(), $variables),
+                MailTemplate::render(MailSettings::testBody(), $variables),
             ));
         } catch (Throwable $e) {
             throw ValidationException::withMessages([
@@ -190,6 +192,8 @@ class SettingController extends Controller
         if ($section === 'mail') {
             // SMTP 密碼不回傳給前端，只告訴它「有沒有設定過」
             $values['password'] = null;
+            $values['test_subject'] ??= MailSettings::DEFAULT_TEST_SUBJECT;
+            $values['test_body'] ??= MailSettings::DEFAULT_TEST_BODY;
 
             return $values;
         }
@@ -252,7 +256,10 @@ class SettingController extends Controller
     {
         return match ($section) {
             'borrow' => ['openModes' => BorrowOpenMode::options()],
-            'mail' => ['passwordSet' => MailSettings::password() !== null],
+            'mail' => [
+                'passwordSet' => MailSettings::password() !== null,
+                'testVariables' => MailTemplate::TEST_VARIABLES,
+            ],
             'penalty' => ['kinds' => array_map(fn (BorrowViolationKind $k) => [
                 'value' => $k->value,
                 'label' => $k->label(),

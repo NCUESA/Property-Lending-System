@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import { test as testMail } from '@/routes/admin/settings/mail';
 import { edit, update } from '@/routes/admin/settings/section';
 
@@ -27,9 +28,14 @@ const props = defineProps<{
         from_address: string | null;
         from_name: string | null;
         ehlo_domain: string | null;
+        test_subject: string | null;
+        test_body: string | null;
     };
     passwordSet: boolean;
+    testVariables: Record<string, string>;
 }>();
+
+const placeholder = (name: string) => `{{ ${name} }}`;
 
 const form = useForm({
     enabled: props.settings.enabled ?? false,
@@ -41,6 +47,8 @@ const form = useForm({
     from_address: props.settings.from_address ?? '',
     from_name: props.settings.from_name ?? '',
     ehlo_domain: props.settings.ehlo_domain ?? '',
+    test_subject: props.settings.test_subject ?? '',
+    test_body: props.settings.test_body ?? '',
 });
 
 const submit = () => form.put(update.url('mail'), { preserveScroll: true });
@@ -165,6 +173,44 @@ const sendTest = () =>
                 </div>
             </div>
 
+            <div class="space-y-3 rounded-md border p-4">
+                <div>
+                    <h3 class="text-sm font-medium">測試信內容</h3>
+                    <p class="text-xs text-muted-foreground">
+                        下面「寄一封測試信」用的主旨與內文。留空會套用預設內容。
+                    </p>
+                </div>
+
+                <ul class="flex flex-wrap gap-x-5 gap-y-1">
+                    <li
+                        v-for="(label, name) in testVariables"
+                        :key="name"
+                        class="text-xs text-muted-foreground"
+                    >
+                        <code class="font-mono text-foreground">{{
+                            placeholder(String(name))
+                        }}</code>
+                        — {{ label }}
+                    </li>
+                </ul>
+
+                <div class="grid gap-2">
+                    <Label for="test_subject">主旨</Label>
+                    <Input id="test_subject" v-model="form.test_subject" />
+                    <InputError :message="form.errors.test_subject" />
+                </div>
+                <div class="grid gap-2">
+                    <Label for="test_body">內文</Label>
+                    <Textarea
+                        id="test_body"
+                        v-model="form.test_body"
+                        rows="6"
+                        class="font-mono text-sm"
+                    />
+                    <InputError :message="form.errors.test_body" />
+                </div>
+            </div>
+
             <Button type="submit" :disabled="form.processing || !form.isDirty"
                 >儲存設定</Button
             >
@@ -175,7 +221,8 @@ const sendTest = () =>
                 <div class="text-sm">
                     寄一封測試信
                     <span class="block text-xs text-muted-foreground"
-                        >用目前「已儲存」的設定寄出，確認 SMTP 是否可用</span
+                        >用目前「已儲存」的設定與下面的內容寄出，確認 SMTP
+                        是否可用</span
                     >
                 </div>
                 <Button

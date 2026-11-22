@@ -25,7 +25,35 @@ final class MailSettings
         'from_address' => 'mail.from_address',
         'from_name' => 'mail.from_name',
         'ehlo_domain' => 'mail.ehlo_domain',
+        'test_subject' => 'mail.test_subject',
+        'test_body' => 'mail.test_body',
     ];
+
+    /** 測試信的預設主旨與內文，後台沒填過時用這個。 */
+    public const DEFAULT_TEST_SUBJECT = '【{{ app_name }}】測試信';
+
+    public const DEFAULT_TEST_BODY = <<<'TXT'
+        這是一封測試信。
+
+        如果你收到它，表示後台的 SMTP 設定可以正常寄信。
+
+        寄出時間：{{ sent_at }}
+        收件信箱：{{ to }}
+        TXT;
+
+    public static function testSubject(): string
+    {
+        $value = trim((string) Setting::get(self::KEYS['test_subject'], ''));
+
+        return $value !== '' ? $value : self::DEFAULT_TEST_SUBJECT;
+    }
+
+    public static function testBody(): string
+    {
+        $value = trim((string) Setting::get(self::KEYS['test_body'], ''));
+
+        return $value !== '' ? $value : self::DEFAULT_TEST_BODY;
+    }
 
     /** 後台是否已啟用寄信。未啟用時所有通知信都不寄。 */
     public static function enabled(): bool

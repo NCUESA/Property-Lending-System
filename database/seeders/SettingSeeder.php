@@ -6,6 +6,7 @@ use App\Enums\BorrowMailKind;
 use App\Enums\BorrowOpenMode;
 use App\Enums\BorrowViolationKind;
 use App\Models\Setting;
+use App\Support\MailSettings;
 use Illuminate\Database\Seeder;
 
 /**
@@ -35,6 +36,8 @@ class SettingSeeder extends Seeder
             ],
             // 寄信預設關閉：SMTP 沒設定好就寄不出去，寧可讓管理員自己開
             'mail.enabled' => false,
+            'mail.test_subject' => MailSettings::DEFAULT_TEST_SUBJECT,
+            'mail.test_body' => MailSettings::DEFAULT_TEST_BODY,
             'notify.submitted.enabled' => false,
             'notify.lent.enabled' => false,
             'notify.due.enabled' => false,
