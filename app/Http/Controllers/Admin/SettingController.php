@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Actions\Borrow\SendDueReminders;
 use App\Enums\BorrowMailKind;
+use App\Enums\BorrowOpenMode;
 use App\Enums\BorrowViolationKind;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SettingsRequest;
@@ -42,10 +43,10 @@ class SettingController extends Controller
             'keys' => [
                 'deposit_amount' => 'borrow.deposit_amount',
                 'max_days' => 'borrow.max_days',
-                'default_open' => 'borrow.default_open',
+                'open_mode' => 'borrow.open_mode',
                 'allow_advance' => 'borrow.allow_advance',
                 'deposit_box_count' => 'borrow.deposit_box_count',
-                'flexible_duration' => 'borrow.flexible_duration',
+                'fixed_duration' => 'borrow.fixed_duration',
             ],
         ],
         'penalty' => [
@@ -193,6 +194,12 @@ class SettingController extends Controller
             return $values;
         }
 
+        if ($section === 'borrow') {
+            $values['open_mode'] ??= BorrowOpenMode::AlwaysOpen->value;
+
+            return $values;
+        }
+
         if ($section === 'penalty') {
             foreach (BorrowViolationKind::cases() as $kind) {
                 $values[$kind->value.'_limit'] ??= $kind->defaultLimit();
@@ -244,6 +251,7 @@ class SettingController extends Controller
     private function extraProps(string $section): array
     {
         return match ($section) {
+            'borrow' => ['openModes' => BorrowOpenMode::options()],
             'mail' => ['passwordSet' => MailSettings::password() !== null],
             'penalty' => ['kinds' => array_map(fn (BorrowViolationKind $k) => [
                 'value' => $k->value,

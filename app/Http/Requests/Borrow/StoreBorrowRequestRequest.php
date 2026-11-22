@@ -27,10 +27,10 @@ class StoreBorrowRequestRequest extends FormRequest
         $latestDue = $this->date('borrow_date')?->addDays($maxDays - 1)->toDateString();
 
         /*
-         * 彈性借用開啟＝照規定一律借滿 max_days，歸還日不給自選（送什麼都以算出來的為準）。
+         * 固定借用天數＝一律借滿 max_days，歸還日不給自選（送什麼都以算出來的為準）。
          * 關閉＝借用人自己挑歸還日，不設上限，超過規定由後台借用單示警。
          */
-        $flexible = (bool) Setting::get('borrow.flexible_duration', true);
+        $fixed = (bool) Setting::get('borrow.fixed_duration', true);
 
         return [
             'location_id' => ['required', 'integer', Rule::exists('locations', 'id')->where('is_pickup_point', true)],
@@ -43,7 +43,7 @@ class StoreBorrowRequestRequest extends FormRequest
                 : ['required', 'date', "date_equals:{$today}"],
             'due_date' => array_filter([
                 'required', 'date', 'after_or_equal:borrow_date',
-                $flexible && $latestDue ? "before_or_equal:{$latestDue}" : null,
+                $fixed && $latestDue ? "before_or_equal:{$latestDue}" : null,
             ]),
             'agreed_terms' => ['accepted'],
             'property_ids' => ['array', 'required_without:pools'],
@@ -54,10 +54,10 @@ class StoreBorrowRequestRequest extends FormRequest
         ];
     }
 
-    /** 彈性借用開啟時，歸還日一律改成「借用日 + max_days − 1」，不管使用者送什麼。 */
+    /** 固定借用天數時，歸還日一律改成「借用日 + max_days − 1」，不管使用者送什麼。 */
     protected function prepareForValidation(): void
     {
-        if (! (bool) Setting::get('borrow.flexible_duration', true)) {
+        if (! (bool) Setting::get('borrow.fixed_duration', true)) {
             return;
         }
 

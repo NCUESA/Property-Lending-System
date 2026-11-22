@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Enums\BorrowOpenMode;
 use App\Enums\BorrowViolationKind;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -26,10 +27,11 @@ class SettingsRequest extends FormRequest
             'borrow' => [
                 'deposit_amount' => ['required', 'integer', 'min:0', 'max:100000'],
                 'max_days' => ['required', 'integer', 'min:1', 'max:365'],
-                'default_open' => ['required', 'boolean'],
+                // 值勤時間模式還沒接 API，不接受被選到
+                'open_mode' => ['required', Rule::in(BorrowOpenMode::selectableValues())],
                 'allow_advance' => ['required', 'boolean'],
                 'deposit_box_count' => ['required', 'integer', 'min:1', 'max:200'],
-                'flexible_duration' => ['required', 'boolean'],
+                'fixed_duration' => ['required', 'boolean'],
             ],
             'penalty' => $this->penaltyRules(),
             'notices' => [
@@ -103,11 +105,11 @@ class SettingsRequest extends FormRequest
         return match ($this->route('section')) {
             'borrow' => [
                 'deposit_amount' => '押金金額',
-                'max_days' => '最長借用天數',
-                'default_open' => '預設開放借用',
+                'max_days' => '規定借用天數',
+                'open_mode' => '開放方式',
                 'allow_advance' => '開放預借',
                 'deposit_box_count' => '押金箱數量',
-                'flexible_duration' => '彈性借用',
+                'fixed_duration' => '固定借用天數',
             ],
             'penalty' => $this->penaltyAttributes(),
             'notices' => [

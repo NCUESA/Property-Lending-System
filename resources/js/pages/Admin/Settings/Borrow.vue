@@ -4,6 +4,7 @@ import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { edit, update } from '@/routes/admin/settings/section';
@@ -12,24 +13,32 @@ defineOptions({
     layout: { breadcrumbs: [{ title: '借用規則', href: edit('borrow') }] },
 });
 
+type OpenMode = {
+    value: string;
+    label: string;
+    description: string;
+    available: boolean;
+};
+
 const props = defineProps<{
+    openModes: OpenMode[];
     settings: {
         deposit_amount: number | null;
         max_days: number | null;
-        default_open: boolean | null;
+        open_mode: string | null;
         allow_advance: boolean | null;
         deposit_box_count: number | null;
-        flexible_duration: boolean | null;
+        fixed_duration: boolean | null;
     };
 }>();
 
 const form = useForm({
     deposit_amount: props.settings.deposit_amount ?? 100,
     max_days: props.settings.max_days ?? 7,
-    default_open: props.settings.default_open ?? true,
+    open_mode: props.settings.open_mode ?? 'always_open',
     allow_advance: props.settings.allow_advance ?? false,
     deposit_box_count: props.settings.deposit_box_count ?? 20,
-    flexible_duration: props.settings.flexible_duration ?? true,
+    fixed_duration: props.settings.fixed_duration ?? true,
 });
 
 const submit = () => form.put(update.url('borrow'), { preserveScroll: true });
@@ -67,39 +76,80 @@ const submit = () => form.put(update.url('borrow'), { preserveScroll: true });
                 <InputError :message="form.errors.deposit_box_count" />
             </div>
             <div class="grid gap-2">
-                <Label for="max_days">最長借用天數（含借用當天）</Label>
+                <Label for="max_days">規定借用天數（含借用當天）</Label>
                 <Input
                     id="max_days"
                     v-model.number="form.max_days"
                     type="number"
                     min="1"
                 />
+                <p class="text-xs text-muted-foreground">
+                    {{
+                        form.fixed_duration
+                            ? '所有借用一律是這個天數'
+                            : '借用人可自選天數；超過時借用單會標示，但仍可送出'
+                    }}
+                </p>
                 <InputError :message="form.errors.max_days" />
             </div>
-            <label
-                class="flex items-center justify-between gap-4 rounded-md border p-3 text-sm"
-            >
-                <span>
-                    預設開放借用
-                    <span class="block text-xs text-muted-foreground"
-                        >不在任何「借用期間」內的日期</span
+            <div class="grid gap-2 sm:col-span-2">
+                <Label>開放方式</Label>
+                <div
+                    class="grid gap-2 sm:grid-cols-3"
+                    role="radiogroup"
+                    aria-label="開放方式"
+                >
+                    <button
+                        v-for="mode in openModes"
+                        :key="mode.value"
+                        type="button"
+                        role="radio"
+                        :aria-checked="form.open_mode === mode.value"
+                        :disabled="!mode.available"
+                        :title="mode.available ? undefined : mode.description"
+                        :class="[
+                            'rounded-md border p-3 text-left text-sm transition-colors',
+                            form.open_mode === mode.value
+                                ? 'border-primary bg-primary/10 ring-1 ring-primary'
+                                : 'hover:bg-accent',
+                            mode.available
+                                ? ''
+                                : 'cursor-not-allowed opacity-50 hover:bg-transparent',
+                        ]"
+                        @click="mode.available && (form.open_mode = mode.value)"
                     >
-                </span>
-                <Switch v-model="form.default_open" />
-            </label>
+                        <span class="block font-medium">
+                            {{ mode.label }}
+                            <Badge
+                                v-if="!mode.available"
+                                variant="secondary"
+                                class="ml-1 align-middle"
+                            >
+                                尚未開放
+                            </Badge>
+                        </span>
+                        <span
+                            class="mt-1 block text-xs text-muted-foreground"
+                            >{{ mode.description }}</span
+                        >
+                    </button>
+                </div>
+                <InputError :message="form.errors.open_mode" />
+            </div>
+
             <label
                 class="flex items-start justify-between gap-4 rounded-md border p-3 text-sm sm:col-span-2"
             >
                 <span>
-                    彈性借用
+                    固定借用天數
                     <span class="block text-xs text-muted-foreground">
-                        開啟：一律套用最長借用天數（目前
-                        {{ form.max_days }}
-                        天），借用人只選取件日。<br />
-                        關閉：借用人可自由選擇歸還日，超過規定時借用單會標示提醒值班人員。
+                        開啟：一律借滿規定的
+                        {{ form.max_days }} 天，借用人只選取件日。<br />
+                        關閉：借用人可自選天數，超過 {{ form.max_days }}
+                        天仍可送出，但借用單會標示提醒值班人員。
                     </span>
                 </span>
-                <Switch v-model="form.flexible_duration" />
+                <Switch v-model="form.fixed_duration" />
             </label>
             <label
                 class="flex items-center justify-between gap-4 rounded-md border p-3 text-sm"
@@ -107,7 +157,7 @@ const submit = () => form.put(update.url('borrow'), { preserveScroll: true });
                 <span>
                     開放預借
                     <span class="block text-xs text-muted-foreground"
-                        >關閉時借用日只能是今天</span
+                        >關閉時取件日只能是今天，不能挑未來的日子</span
                     >
                 </span>
                 <Switch v-model="form.allow_advance" />

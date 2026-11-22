@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Enums\BorrowMailKind;
+use App\Enums\BorrowOpenMode;
 use App\Enums\BorrowViolationKind;
 use App\Models\Setting;
 use Illuminate\Database\Seeder;
@@ -17,11 +18,11 @@ class SettingSeeder extends Seeder
         $defaults = [
             'borrow.max_days' => 7,
             'borrow.deposit_amount' => 100,
-            'borrow.default_open' => true,
+            'borrow.open_mode' => BorrowOpenMode::AlwaysOpen->value,
             'borrow.allow_advance' => false,
             'borrow.deposit_box_count' => 20,
-            // 預設照規定走：一律套用最長借用天數
-            'borrow.flexible_duration' => true,
+            // 預設照規定走：一律套用規定天數
+            'borrow.fixed_duration' => true,
             // 違規與封鎖：每一種違規各自的次數上限與封鎖天數
             ...$this->penaltyDefaults(),
             'borrow.notices' => [

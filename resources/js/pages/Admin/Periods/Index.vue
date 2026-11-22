@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { Pencil, Plus, Trash2 } from '@lucide/vue';
+import { Pencil, Plus, TriangleAlert, Trash2 } from '@lucide/vue';
 import { ref } from 'vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -44,6 +45,9 @@ defineOptions({
 
 defineProps<{
     periods: Period[];
+    openMode: { value: string; label: string };
+    effective: boolean;
+    settingsUrl: string;
 }>();
 
 const today = todayInTaipei();
@@ -96,12 +100,28 @@ function remove(period: Period) {
         <div class="flex flex-wrap items-start justify-between gap-3">
             <Heading
                 title="借用期間"
-                description="設定寒暑假等暫停借用（或特別開放）的期間；不在任何期間內的日期依「系統設定」的預設值"
+                description="設定寒暑假等暫停借用（或特別開放）的期間"
             />
             <Button @click="openDialog(null)"
                 ><Plus class="mr-1 size-4" />新增期間</Button
             >
         </div>
+
+        <!-- 開放方式是「預設開放借用」時，這一頁設什麼都不會生效 -->
+        <Alert v-if="!effective" variant="destructive">
+            <TriangleAlert class="size-4" />
+            <AlertTitle>此頁目前不生效</AlertTitle>
+            <AlertDescription>
+                開放方式是「{{ openMode.label }}」，所有日期一律開放借用，
+                以下期間設定不會套用。要讓它生效，請到
+                <a
+                    :href="settingsUrl"
+                    class="font-medium underline underline-offset-4"
+                    >系統設定 → 借用規則</a
+                >
+                改選「設定內時間開放借用」。
+            </AlertDescription>
+        </Alert>
 
         <div class="overflow-x-auto rounded-lg border">
             <Table>

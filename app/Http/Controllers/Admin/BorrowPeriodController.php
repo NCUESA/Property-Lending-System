@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\BorrowOpenMode;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\BorrowPeriodRequest;
 use App\Models\BorrowPeriod;
@@ -18,8 +19,14 @@ class BorrowPeriodController extends Controller
 {
     public function index(): Response
     {
+        $mode = BorrowPeriod::mode();
+
         return Inertia::render('Admin/Periods/Index', [
             'periods' => BorrowPeriod::orderByDesc('starts_on')->get(),
+            // always_open 時這一頁設什麼都不會生效，要在畫面上講清楚
+            'openMode' => ['value' => $mode->value, 'label' => $mode->label()],
+            'effective' => $mode !== BorrowOpenMode::AlwaysOpen,
+            'settingsUrl' => route('admin.settings.section.edit', 'borrow'),
         ]);
     }
 

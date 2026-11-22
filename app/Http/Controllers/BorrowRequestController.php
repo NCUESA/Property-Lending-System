@@ -36,10 +36,10 @@ class BorrowRequestController extends Controller
         $allowAdvance = (bool) Setting::get('borrow.allow_advance', false);
         // 不開放預借時借用日只能是今天，日曆不必知道更後面的休館日
         $lastBorrowDate = today()->addDays($allowAdvance ? self::CALENDAR_HORIZON_DAYS : 0);
-        // 歸還日還能再往後走：照規定是 maxDays − 1 天，關閉彈性借用時則放寬到整個 horizon
-        $flexible = (bool) Setting::get('borrow.flexible_duration', true);
+        // 歸還日還能再往後走：固定天數時是 maxDays − 1 天，可自訂時放寬到整個 horizon
+        $fixed = (bool) Setting::get('borrow.fixed_duration', true);
         $lastDate = $lastBorrowDate->copy()
-            ->addDays($flexible ? $maxDays - 1 : self::CALENDAR_HORIZON_DAYS);
+            ->addDays($fixed ? $maxDays - 1 : self::CALENDAR_HORIZON_DAYS);
 
         return Inertia::render('Borrow/Create', [
             'isOpen' => BorrowPeriod::isOpenOn(today()),
@@ -47,7 +47,7 @@ class BorrowRequestController extends Controller
                 'maxDays' => $maxDays,
                 'depositAmount' => (int) Setting::get('borrow.deposit_amount', 100),
                 'allowAdvance' => $allowAdvance,
-                'flexibleDuration' => (bool) Setting::get('borrow.flexible_duration', true),
+                'fixedDuration' => $fixed,
                 'notices' => Setting::get('borrow.notices', []),
             ],
             'calendar' => [

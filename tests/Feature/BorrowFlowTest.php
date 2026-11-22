@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\BorrowItemStatus;
+use App\Enums\BorrowOpenMode;
 use App\Enums\BorrowRequestStatus;
 use App\Http\Controllers\BorrowRequestController;
 use App\Models\BorrowPeriod;
@@ -60,7 +61,11 @@ describe('日曆', function () {
     });
 
     it('暫停借用的日子會送到前端標成不可選', function () {
+        Setting::put('borrow.open_mode', BorrowOpenMode::Periods->value);
         Setting::put('borrow.allow_advance', true);
+        // periods 模式下期間外一律關閉，所以先開一段涵蓋整個視窗的開放期間
+        BorrowPeriod::create(['name' => '學期', 'starts_on' => today(), 'ends_on' => today()->addDays(1), 'is_open' => true]);
+        BorrowPeriod::create(['name' => '開學後', 'starts_on' => today()->addDays(5), 'ends_on' => today()->addDays(400), 'is_open' => true]);
         BorrowPeriod::create(['name' => '校慶', 'starts_on' => today()->addDays(2), 'ends_on' => today()->addDays(4), 'is_open' => false]);
 
         $this->get(route('borrow.create'))->assertInertia(fn (Assert $page) => $page
@@ -73,7 +78,7 @@ describe('日曆', function () {
     });
 
     it('預設不開放借用時，期間外的每一天都算暫停', function () {
-        Setting::put('borrow.default_open', false);
+        Setting::put('borrow.open_mode', BorrowOpenMode::Periods->value);
         Setting::put('borrow.max_days', 3);
         Setting::put('borrow.allow_advance', false);
         BorrowPeriod::create(['name' => '開放週', 'starts_on' => today(), 'ends_on' => today()->addDay(), 'is_open' => true]);
@@ -175,8 +180,8 @@ describe('申請', function () {
     });
 
     it('後端強制執行日期規則（舊系統只有前端檢查）', function (array $dates, string $field) {
-        // 這幾條與彈性借用無關；歸還日的規則在下面「彈性借用」那一組
-        Setting::put('borrow.flexible_duration', false);
+        // 這幾條與借用長度無關；歸還日的規則在下面「固定借用天數」那一組
+        Setting::put('borrow.fixed_duration', false);
         $property = Property::factory()->create(['location_id' => $this->jinde->id]);
 
         $this->post(route('borrow.store'), borrowPayload(['property_ids' => [$property->id], ...$dates]))
@@ -206,6 +211,7 @@ describe('申請', function () {
     });
 
     it('暫停借用期間不能申請', function () {
+        Setting::put('borrow.open_mode', BorrowOpenMode::Periods->value);
         BorrowPeriod::create(['name' => '寒假', 'starts_on' => today()->subDay(), 'ends_on' => today()->addDays(10), 'is_open' => false]);
         $property = Property::factory()->create(['location_id' => $this->jinde->id]);
 
@@ -214,7 +220,10 @@ describe('申請', function () {
     });
 
     it('歸還日落在暫停借用期間也不能申請', function () {
+        Setting::put('borrow.open_mode', BorrowOpenMode::Periods->value);
         Setting::put('borrow.allow_advance', true);
+        // 取件日要落在開放期間裡，才測得到「歸還日」那一條規則
+        BorrowPeriod::create(['name' => '開放', 'starts_on' => today(), 'ends_on' => today()->addDays(2), 'is_open' => true]);
         // 取件日開放、歸還日休館
         BorrowPeriod::create(['name' => '寒假', 'starts_on' => today()->addDays(3), 'ends_on' => today()->addDays(10), 'is_open' => false]);
         $property = Property::factory()->create(['location_id' => $this->jinde->id]);
@@ -249,13 +258,13 @@ describe('申請', function () {
     });
 });
 
-describe('彈性借用', function () {
+describe('固定借用天數', function () {
     beforeEach(function () {
         $this->property = fn () => Property::factory()->create(['location_id' => $this->jinde->id]);
     });
 
-    it('開啟時歸還日一律套成規定天數，送什麼都一樣', function () {
-        Setting::put('borrow.flexible_duration', true);
+    it('固定天數開啟時歸還日一律套成規定值，送什麼都一樣', function () {
+        Setting::put('borrow.fixed_duration', true);
         Setting::put('borrow.max_days', 7);
 
         $this->post(route('borrow.store'), borrowPayload([
@@ -267,8 +276,8 @@ describe('彈性借用', function () {
             ->toBe(today()->addDays(6)->toDateString());
     });
 
-    it('開啟時送太短的歸還日也會被補成規定天數', function () {
-        Setting::put('borrow.flexible_duration', true);
+    it('固定天數開啟時送太短的歸還日也會被補成規定值', function () {
+        Setting::put('borrow.fixed_duration', true);
 
         $this->post(route('borrow.store'), borrowPayload([
             'property_ids' => [($this->property)()->id],
@@ -279,8 +288,8 @@ describe('彈性借用', function () {
             ->toBe(today()->addDays(6)->toDateString());
     });
 
-    it('關閉時可以自由選擇歸還日，超過規定也收', function () {
-        Setting::put('borrow.flexible_duration', false);
+    it('關閉時可以自由選擇天數，超過規定也收', function () {
+        Setting::put('borrow.fixed_duration', false);
         Setting::put('borrow.max_days', 7);
 
         $this->post(route('borrow.store'), borrowPayload([
@@ -293,7 +302,7 @@ describe('彈性借用', function () {
     });
 
     it('關閉時歸還日仍然不能早於借用日', function () {
-        Setting::put('borrow.flexible_duration', false);
+        Setting::put('borrow.fixed_duration', false);
 
         $this->post(route('borrow.store'), borrowPayload([
             'property_ids' => [($this->property)()->id],
@@ -301,23 +310,34 @@ describe('彈性借用', function () {
         ]))->assertSessionHasErrors('due_date');
     });
 
+    it('設定頁用 fixed_duration 這個鍵，舊的 flexible_duration 已經不存在', function () {
+        $this->actingAs(User::factory()->admin()->create())
+            ->put(route('admin.settings.section.update', 'borrow'), [
+                'deposit_amount' => 100, 'max_days' => 7, 'open_mode' => 'always_open',
+                'allow_advance' => false, 'deposit_box_count' => 20, 'fixed_duration' => false,
+            ])->assertSessionHasNoErrors();
+
+        expect(Setting::get('borrow.fixed_duration'))->toBeFalse()
+            ->and(Setting::query()->where('key', 'borrow.flexible_duration')->exists())->toBeFalse();
+    });
+
     it('借用頁會帶出設定與可選範圍', function () {
-        Setting::put('borrow.flexible_duration', false);
+        Setting::put('borrow.fixed_duration', false);
         Setting::put('borrow.allow_advance', true);
         Setting::put('borrow.max_days', 7);
 
-        // 關閉彈性借用時，歸還日的可選範圍不再被 maxDays 綁住
+        // 可自訂天數時，歸還日的可選範圍不再被 maxDays 綁住
         $this->get(route('borrow.create'))->assertInertia(fn (Assert $page) => $page
-            ->where('rules.flexibleDuration', false)
+            ->where('rules.fixedDuration', false)
             ->where('calendar.lastDate', today()
                 ->addDays(BorrowRequestController::CALENDAR_HORIZON_DAYS * 2)
                 ->toDateString())
         );
 
-        Setting::put('borrow.flexible_duration', true);
+        Setting::put('borrow.fixed_duration', true);
 
         $this->get(route('borrow.create'))->assertInertia(fn (Assert $page) => $page
-            ->where('rules.flexibleDuration', true)
+            ->where('rules.fixedDuration', true)
             ->where('calendar.lastDate', today()
                 ->addDays(BorrowRequestController::CALENDAR_HORIZON_DAYS + 6)
                 ->toDateString())

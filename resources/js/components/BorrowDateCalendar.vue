@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { ChevronLeft, ChevronRight } from '@lucide/vue';
+import { CalendarPlus, ChevronLeft, ChevronRight } from '@lucide/vue';
 import { computed, nextTick, ref, watch } from 'vue';
 import { Button } from '@/components/ui/button';
 import { addDays } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
 /*
- * Booking 式的區間日曆：一次把日子攤開讓使用者點「取件日 → 歸還日」，
- * 取代兩個 <input type="date">。
+ * 借用日期的日曆，兩種模式：
+ *
+ *   days 是數字 → 長度固定。點一天就選定「取件日 + 這麼多天」，一次點完。
+ *   days 是 null → 自訂。在日曆上點頭尾兩天（取件日已固定時只點歸還日）。
  *
  * 日期一律用 YYYY-MM-DD 字串運算（和 lib/format 一致）：
  * 字典序就是時間序，比較大小不必轉成 Date，也不會踩到時區。
@@ -16,31 +18,34 @@ import { cn } from '@/lib/utils';
 
 const props = withDefaults(
     defineProps<{
-        /** 取件日，YYYY-MM-DD，未選為 null */
-        start: string | null;
-        /** 歸還日，YYYY-MM-DD，未選為 null */
-        end: string | null;
+        /** 取件日，YYYY-MM-DD */
+        start: string;
+        /** 歸還日，YYYY-MM-DD */
+        end: string;
+        /** 借用天數（含取件當天）；null 代表讓使用者在日曆上自己點歸還日 */
+        days: number | null;
         /** 最早可選的日子（通常是今天） */
         minDate: string;
         /** 最晚可當取件日的日子；不開放預借時等於 minDate */
         lastBorrowDate: string;
         /** 最晚可當歸還日的日子 */
         lastDate: string;
-        /** 最長借用天數（含取件當天）；null 代表不設上限 */
-        maxDays?: number | null;
-        /** 設定後改成「點一下就選定固定天數」，使用者不能自選歸還日 */
-        fixedDays?: number | null;
         /** 暫停借用的日子，不能當取件日或歸還日 */
         closedDates?: string[];
-        /** 同時顯示幾個月（視窗較窄時只會顯示第一個） */
+        /** 一開始顯示幾個月（視窗較窄時只會顯示第一個） */
         months?: number;
+        /** 允許使用者自己多展開幾個月；借用天數可自訂時才有意義 */
+        expandable?: boolean;
     }>(),
-    { maxDays: null, fixedDays: null, closedDates: () => [], months: 2 },
+    { closedDates: () => [], months: 1, expandable: false },
 );
 
+/** 展開上限，再多就該用自訂歸還日而不是一直翻日曆。 */
+const MAX_MONTHS = 4;
+
+// 一次送出完整的一對日期，外面不會收到「只有頭沒有尾」的中間狀態
 const emit = defineEmits<{
-    'update:start': [value: string | null];
-    'update:end': [value: string | null];
+    'update:range': [value: { start: string; end: string }];
 }>();
 
 const WEEKDAYS = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
@@ -82,125 +87,120 @@ function monthLabel(month: string): string {
 
 /* ── 可選範圍 ─────────────────────────────────────────────── */
 
-/** 還沒選歸還日 → 現在點的是歸還日。 */
-const picking = computed(() => props.start !== null && props.end === null);
+/** 從某一天開始借，會還在哪一天。自訂模式沒有固定長度，就是那天本身。 */
+function endFrom(start: string): string {
+    if (props.days === null) return start;
 
-/** 從某一天開始借，最晚能還的日子。 */
-function latestEndFrom(start: string): string {
-    const byRule =
-        props.fixedDays !== null
-            ? addDays(start, props.fixedDays - 1)
-            : props.maxDays !== null
-              ? addDays(start, props.maxDays - 1)
-              : props.lastDate;
-
-    return [byRule, props.lastDate].sort()[0];
+    return [addDays(start, props.days - 1), props.lastDate].sort()[0];
 }
 
-/** 選定取件日後，最晚能還的日子。 */
-const latestEnd = computed(() =>
-    props.start === null ? null : latestEndFrom(props.start),
-);
+/** 取件日只有一種可能（不開放預借）時，點日曆就只剩下選歸還日這件事。 */
+const startLocked = computed(() => props.minDate === props.lastBorrowDate);
 
-function isStartable(date: string): boolean {
+/** 自訂模式下，已經點了取件日、正在等使用者點歸還日。 */
+const pendingStart = ref<string | null>(null);
+
+const activeStart = computed(() => pendingStart.value ?? props.start);
+
+/** 現在這一下點擊的意義。 */
+const phase = computed<'start' | 'end'>(() => {
+    if (props.days !== null) return 'start'; // 長度固定，永遠只點取件日
+    if (startLocked.value) return 'end'; // 取件日無從選起
+    return pendingStart.value === null ? 'start' : 'end';
+});
+
+function canBeStart(date: string): boolean {
     return (
         date >= props.minDate &&
         date <= props.lastBorrowDate &&
-        !closed.value.has(date)
+        !closed.value.has(date) &&
+        // 長度固定時，算出來的歸還日也不能落在暫停借用的日子
+        (props.days === null || !closed.value.has(endFrom(date)))
     );
 }
 
-function isEndable(date: string): boolean {
+function canBeEnd(date: string): boolean {
     return (
-        props.start !== null &&
-        latestEnd.value !== null &&
-        date >= props.start &&
-        date <= latestEnd.value &&
+        date >= activeStart.value &&
+        date <= props.lastDate &&
         !closed.value.has(date)
     );
 }
 
-/** 點不動的日子：既不能當取件日也不能當歸還日。 */
-function isDisabled(date: string): boolean {
-    return !isStartable(date) && !isEndable(date);
+function isSelectable(date: string): boolean {
+    if (phase.value === 'start') return canBeStart(date);
+
+    // 等著點歸還日時，往前點仍然可以重新選取件日
+    return canBeEnd(date) || (!startLocked.value && canBeStart(date));
 }
 
 function select(date: string) {
-    // 固定天數：點一下就把整段選完，不會有「等你點歸還日」的中間狀態
-    if (props.fixedDays !== null) {
-        if (isStartable(date)) {
-            emit('update:start', date);
-            emit('update:end', latestEndFrom(date));
-        }
+    if (!isSelectable(date)) return;
+
+    if (props.days !== null) {
+        emit('update:range', { start: date, end: endFrom(date) });
 
         return;
     }
 
-    // 選歸還日優先：取件日已選時，點在合法區間內就是收尾
-    if (picking.value && isEndable(date)) {
-        emit('update:end', date);
+    if (phase.value === 'start') {
+        pendingStart.value = date;
 
         return;
     }
 
-    // 其餘情況一律重新開始選，不讓使用者卡在「點了沒反應」
-    if (isStartable(date)) {
-        emit('update:start', date);
-        emit('update:end', null);
+    if (canBeEnd(date)) {
+        emit('update:range', { start: activeStart.value, end: date });
+        pendingStart.value = null;
+
+        return;
     }
+
+    pendingStart.value = date; // 點到更早的日子 → 重新選取件日
 }
 
 /* ── 顯示狀態 ─────────────────────────────────────────────── */
 
 const hovered = ref<string | null>(null);
 
-/** 選取中時用滑鼠停留的位置預覽區間，和 Booking 一樣。 */
-const previewEnd = computed(() => {
-    if (!picking.value) return props.end;
+/** 滑過哪天就預覽那一段，和 Booking 一樣。 */
+const shown = computed(() => {
+    const hover = hovered.value;
 
-    return hovered.value !== null && isEndable(hovered.value)
-        ? hovered.value
-        : null;
+    if (props.days !== null) {
+        const from = hover !== null && canBeStart(hover) ? hover : props.start;
+
+        return { from, to: endFrom(from) };
+    }
+
+    const from = activeStart.value;
+
+    if (hover !== null && hover >= from && canBeEnd(hover)) {
+        return { from, to: hover };
+    }
+
+    // 還在等使用者點歸還日時，只亮起點，不要誤導成已經選好一段
+    return { from, to: pendingStart.value !== null ? from : props.end };
 });
 
-/** 固定天數時，滑鼠停在哪天就預覽從那天起算的整段。 */
-const hoverRange = computed(() => {
-    if (props.fixedDays === null || hovered.value === null) return null;
-    if (!isStartable(hovered.value)) return null;
-
-    return { from: hovered.value, to: latestEndFrom(hovered.value) };
-});
-
-type DayState = {
-    selected: boolean;
-    inRange: boolean;
-    isStart: boolean;
-    isEnd: boolean;
-};
-
-function dayState(date: string): DayState {
-    const from = hoverRange.value?.from ?? props.start;
-    const to = hoverRange.value?.to ?? previewEnd.value;
-    const isStart = from === date;
-    const isEnd = to === date;
+function dayState(date: string) {
+    const { from, to } = shown.value;
 
     return {
-        selected: isStart || isEnd,
-        inRange: from !== null && to !== null && date > from && date < to,
-        isStart,
-        isEnd,
+        isStart: date === from,
+        isEnd: date === to && to !== from,
+        inRange: date > from && date < to,
+        selected: date === from || (date === to && to !== from),
     };
 }
 
 /** 區間底色畫在外層容器上，格子才連得起來（頭尾各切一邊圓角）。 */
 function rangeClass(date: string): string {
-    const { inRange, isStart, isEnd } = dayState(date);
-    const from = hoverRange.value?.from ?? props.start;
-    const to = hoverRange.value?.to ?? previewEnd.value;
-    const spans = from !== null && to !== null && from !== to;
+    const { isStart, isEnd, inRange } = dayState(date);
+    const { from, to } = shown.value;
 
     if (inRange) return 'bg-accent';
-    if (!spans) return '';
+    if (from === to) return '';
     if (isStart) return 'rounded-l-md bg-accent';
     if (isEnd) return 'rounded-r-md bg-accent';
 
@@ -209,19 +209,68 @@ function rangeClass(date: string): string {
 
 function dayTitle(date: string): string | undefined {
     if (closed.value.has(date)) return '暫停借用';
-    if (isDisabled(date)) return undefined;
-    if (props.fixedDays !== null) return `從這天借 ${props.fixedDays} 天`;
-    if (picking.value && isEndable(date)) return '設為歸還日';
 
-    return '設為借用日';
+    if (!isSelectable(date)) {
+        return props.days !== null && closed.value.has(endFrom(date))
+            ? `從這天借 ${props.days} 天會還在暫停借用的日子`
+            : undefined;
+    }
+
+    if (props.days !== null) return `從這天取件，${endFrom(date)} 歸還`;
+    if (phase.value === 'end' && canBeEnd(date)) return '設為歸還日';
+
+    return '設為取件日';
 }
 
 /* ── 月份切換 ─────────────────────────────────────────────── */
 
-const firstMonth = ref(monthOf(props.start ?? props.minDate));
+const firstMonth = ref(monthOf(props.start));
+
+/** 使用者按「顯示更多月份」加出來的月數。 */
+const extraMonths = ref(0);
+
+/** 從第一個可見月份算到 lastDate 總共還有幾個月。 */
+const monthsAvailable = computed(() => {
+    let count = 1;
+
+    while (
+        count < MAX_MONTHS &&
+        shiftMonth(firstMonth.value, count - 1) < monthOf(props.lastDate)
+    ) {
+        count += 1;
+    }
+
+    return count;
+});
+
+/** 選到的區間橫跨幾個月——至少要讓整段看得到，不然使用者不知道還到哪。 */
+const monthsForRange = computed(() => {
+    let count = 1;
+
+    while (
+        count < MAX_MONTHS &&
+        shiftMonth(firstMonth.value, count - 1) < monthOf(shown.value.to)
+    ) {
+        count += 1;
+    }
+
+    return count;
+});
+
+const visibleCount = computed(() =>
+    Math.min(
+        MAX_MONTHS,
+        monthsAvailable.value,
+        Math.max(props.months, monthsForRange.value, 1 + extraMonths.value),
+    ),
+);
+
+const canExpand = computed(
+    () => props.expandable && visibleCount.value < monthsAvailable.value,
+);
 
 const visibleMonths = computed(() =>
-    Array.from({ length: props.months }, (_, i) =>
+    Array.from({ length: visibleCount.value }, (_, i) =>
         shiftMonth(firstMonth.value, i),
     ),
 );
@@ -246,20 +295,15 @@ function reveal(date: string) {
     if (month < firstMonth.value) {
         firstMonth.value = month;
     } else if (month > visibleMonths.value[visibleMonths.value.length - 1]) {
-        firstMonth.value = shiftMonth(month, -(props.months - 1));
+        firstMonth.value = shiftMonth(month, -(visibleCount.value - 1));
     }
 }
 
-watch(
-    () => props.start,
-    (value) => {
-        if (value) reveal(value);
-    },
-);
+watch(() => props.start, reveal);
 
 /* ── 鍵盤操作：整張日曆只有一個 tab stop，方向鍵在格子間移動 ──── */
 
-const focused = ref(props.start ?? props.minDate);
+const focused = ref(props.start);
 const dayRefs = new Map<string, HTMLButtonElement>();
 
 function setDayRef(date: string, el: unknown) {
@@ -336,7 +380,7 @@ function onKeydown(event: KeyboardEvent, date: string) {
 
             <div
                 class="grid flex-1 gap-4"
-                :class="months > 1 ? 'md:grid-cols-2' : ''"
+                :class="visibleCount > 1 ? 'md:grid-cols-2' : ''"
             >
                 <div
                     v-for="(month, i) in visibleMonths"
@@ -365,7 +409,7 @@ function onKeydown(event: KeyboardEvent, date: string) {
         <!-- 月曆本體 -->
         <div
             class="grid gap-4 px-8"
-            :class="months > 1 ? 'md:grid-cols-2' : ''"
+            :class="visibleCount > 1 ? 'md:grid-cols-2' : ''"
             @mouseleave="hovered = null"
         >
             <div
@@ -397,13 +441,13 @@ function onKeydown(event: KeyboardEvent, date: string) {
                         >
                             <!--
                                 用 aria-disabled 而不是 disabled：
-                                disabled 的 button 不能聚焦，方向鍵走到暫停借用的
+                                disabled 的 button 不能聚焦，方向鍵走到不能選的
                                 日子就會卡住。點擊無效由 select() 自己擋。
                             -->
                             <button
                                 :ref="(el) => setDayRef(date!, el)"
                                 type="button"
-                                :aria-disabled="isDisabled(date)"
+                                :aria-disabled="!isSelectable(date)"
                                 :tabindex="focused === date ? 0 : -1"
                                 :aria-label="date"
                                 :aria-selected="dayState(date).selected"
@@ -412,15 +456,15 @@ function onKeydown(event: KeyboardEvent, date: string) {
                                     cn(
                                         'relative flex size-9 items-center justify-center rounded-md text-sm transition-colors',
                                         'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
-                                        isDisabled(date)
-                                            ? 'cursor-default text-muted-foreground/40'
-                                            : 'hover:bg-primary/15',
+                                        isSelectable(date)
+                                            ? 'hover:bg-primary/15'
+                                            : 'cursor-default text-muted-foreground/40',
                                         dayState(date).selected &&
                                             'bg-primary font-semibold text-primary-foreground hover:bg-primary',
                                         closed.has(date) && 'line-through',
                                         date === minDate &&
                                             !dayState(date).selected &&
-                                            !isDisabled(date) &&
+                                            isSelectable(date) &&
                                             'font-semibold text-primary',
                                     )
                                 "
@@ -437,18 +481,43 @@ function onKeydown(event: KeyboardEvent, date: string) {
             </div>
         </div>
 
-        <!-- 圖例 -->
-        <p class="mt-3 px-8 text-xs text-muted-foreground">
-            <span v-if="closedDates.length" class="mr-3">
-                <span class="line-through">刪除線</span> 為暫停借用的日子
-            </span>
-            <span v-if="fixedDays !== null">
-                依規定一律借用 {{ fixedDays }} 天（含借用當天），點一天即可
-            </span>
-            <span v-else-if="maxDays !== null">
-                最長 {{ maxDays }} 天（含借用當天）
-            </span>
-            <span v-else>可自由選擇歸還日</span>
-        </p>
+        <div
+            class="mt-3 flex flex-wrap items-center justify-between gap-2 px-8"
+        >
+            <p class="text-xs text-muted-foreground">
+                <span v-if="closedDates.length" class="mr-3">
+                    <span class="line-through">刪除線</span> 為暫停借用的日子
+                </span>
+                <span v-if="days !== null">
+                    點一天就選定 {{ days }} 天的借用區間
+                </span>
+                <span v-else-if="phase === 'end' && pendingStart !== null">
+                    已選取件日 {{ pendingStart }}，再點一天作為歸還日
+                </span>
+                <span v-else-if="startLocked">點一天設定歸還日</span>
+                <span v-else>先點取件日，再點歸還日</span>
+            </p>
+
+            <div v-if="expandable" class="flex gap-1">
+                <Button
+                    v-if="canExpand"
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    @click="extraMonths = visibleCount"
+                >
+                    <CalendarPlus class="size-4" />多顯示一個月
+                </Button>
+                <Button
+                    v-if="extraMonths > 0"
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    @click="extraMonths = 0"
+                >
+                    收合
+                </Button>
+            </div>
+        </div>
     </div>
 </template>

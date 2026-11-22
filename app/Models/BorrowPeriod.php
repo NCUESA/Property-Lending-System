@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\BorrowOpenMode;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -37,14 +38,26 @@ class BorrowPeriod extends Model
             ->first();
     }
 
-    /** 某天是否開放借用：落在某個期間內就看該期間，否則看 settings 的 borrow.default_open。 */
+    /** 目前的開放判斷方式。 */
+    public static function mode(): BorrowOpenMode
+    {
+        return BorrowOpenMode::tryFrom((string) Setting::get('borrow.open_mode', BorrowOpenMode::AlwaysOpen->value))
+            ?? BorrowOpenMode::AlwaysOpen;
+    }
+
+    /**
+     * 某天是否開放借用。
+     *
+     * always_open：一律開放，連期間都不看。
+     * periods：只有落在設為開放的期間內才算開放，期間外一律關閉。
+     */
     public static function isOpenOn(CarbonInterface $date): bool
     {
-        $period = static::covering($date);
+        if (static::mode() === BorrowOpenMode::AlwaysOpen) {
+            return true;
+        }
 
-        return $period !== null
-            ? $period->is_open
-            : (bool) Setting::get('borrow.default_open', true);
+        return static::covering($date)?->is_open === true;
     }
 
     /**
@@ -56,12 +69,15 @@ class BorrowPeriod extends Model
      */
     public static function closedDatesBetween(CarbonInterface $from, CarbonInterface $to): array
     {
+        if (static::mode() === BorrowOpenMode::AlwaysOpen) {
+            return [];
+        }
+
         $periods = static::query()
             ->whereDate('ends_on', '>=', $from)
             ->whereDate('starts_on', '<=', $to)
             ->get(['starts_on', 'ends_on', 'is_open']);
 
-        $defaultOpen = (bool) Setting::get('borrow.default_open', true);
         $closed = [];
 
         for ($day = CarbonImmutable::parse($from)->startOfDay(); $day->lessThanOrEqualTo($to); $day = $day->addDay()) {
@@ -69,7 +85,7 @@ class BorrowPeriod extends Model
                 fn (self $p) => $p->starts_on->lessThanOrEqualTo($day) && $p->ends_on->greaterThanOrEqualTo($day)
             );
 
-            if (! ($period !== null ? $period->is_open : $defaultOpen)) {
+            if ($period === null || ! $period->is_open) {
                 $closed[] = $day->toDateString();
             }
         }

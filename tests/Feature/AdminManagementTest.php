@@ -367,7 +367,7 @@ describe('設定與借用期間', function () {
 
     it('借用規則分頁更新押金與天數', function () {
         $this->put(route('admin.settings.section.update', 'borrow'), [
-            'deposit_amount' => 200, 'max_days' => 3, 'default_open' => true, 'allow_advance' => false, 'deposit_box_count' => 20, 'flexible_duration' => true,
+            'deposit_amount' => 200, 'max_days' => 3, 'open_mode' => 'always_open', 'allow_advance' => false, 'deposit_box_count' => 20, 'fixed_duration' => true,
         ])->assertSessionHasNoErrors();
 
         expect(Setting::get('borrow.deposit_amount'))->toBe(200)
@@ -393,7 +393,7 @@ describe('設定與借用期間', function () {
             ->and(Setting::get('borrow.max_days'))->toBe(7);
 
         $this->put(route('admin.settings.section.update', 'borrow'), [
-            'deposit_amount' => 500, 'max_days' => 14, 'default_open' => false, 'allow_advance' => true, 'deposit_box_count' => 20, 'flexible_duration' => true,
+            'deposit_amount' => 500, 'max_days' => 14, 'open_mode' => 'periods', 'allow_advance' => true, 'deposit_box_count' => 20, 'fixed_duration' => true,
         ])->assertSessionHasNoErrors();
 
         expect(Setting::get('borrow.deposit_amount'))->toBe(500)
@@ -425,6 +425,60 @@ describe('設定與借用期間', function () {
         $this->actingAs(User::factory()->staff()->create())
             ->get(route('admin.borrows.index'))
             ->assertInertia(fn (Assert $page) => $page->where('settingsSections', []));
+    });
+
+    describe('開放方式', function () {
+        it('借用規則分頁會帶出三種模式，值勤時間標成尚未開放', function () {
+            $this->get(route('admin.settings.section.edit', 'borrow'))
+                ->assertInertia(fn (Assert $page) => $page
+                    ->has('openModes', 3)
+                    ->where('openModes.0.value', 'always_open')
+                    ->where('openModes.1.value', 'periods')
+                    ->where('openModes.2.value', 'duty_hours')
+                    ->where('openModes.2.available', false)
+                    ->where('openModes.0.available', true));
+        });
+
+        it('不接受還沒實作的值勤時間模式', function () {
+            $this->put(route('admin.settings.section.update', 'borrow'), [
+                'deposit_amount' => 100, 'max_days' => 7, 'open_mode' => 'duty_hours',
+                'allow_advance' => false, 'deposit_box_count' => 20, 'fixed_duration' => true,
+            ])->assertSessionHasErrors('open_mode');
+
+            $this->put(route('admin.settings.section.update', 'borrow'), [
+                'deposit_amount' => 100, 'max_days' => 7, 'open_mode' => 'nope',
+                'allow_advance' => false, 'deposit_box_count' => 20, 'fixed_duration' => true,
+            ])->assertSessionHasErrors('open_mode');
+        });
+
+        it('借用期間頁在 always_open 時標示不生效', function () {
+            Setting::put('borrow.open_mode', 'always_open');
+
+            $this->get(route('admin.periods.index'))
+                ->assertInertia(fn (Assert $page) => $page
+                    ->where('effective', false)
+                    ->where('openMode.label', '預設開放借用'));
+
+            Setting::put('borrow.open_mode', 'periods');
+
+            $this->get(route('admin.periods.index'))
+                ->assertInertia(fn (Assert $page) => $page
+                    ->where('effective', true)
+                    ->where('openMode.label', '設定內時間開放借用'));
+        });
+
+        it('切成 always_open 之後，停借期間就真的不生效了', function () {
+            BorrowPeriod::create([
+                'name' => '寒假', 'starts_on' => today()->subDay(),
+                'ends_on' => today()->addDays(10), 'is_open' => false,
+            ]);
+
+            Setting::put('borrow.open_mode', 'periods');
+            expect(BorrowPeriod::isOpenOn(today()))->toBeFalse();
+
+            Setting::put('borrow.open_mode', 'always_open');
+            expect(BorrowPeriod::isOpenOn(today()))->toBeTrue();
+        });
     });
 
     it('未定義的設定分頁回 404', function () {

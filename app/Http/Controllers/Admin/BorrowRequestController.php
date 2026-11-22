@@ -84,7 +84,7 @@ class BorrowRequestController extends Controller
             'borrow' => $overview,
             'defaultDepositAmount' => (int) Setting::get('borrow.deposit_amount', 100),
             'depositBoxCount' => (int) Setting::get('borrow.deposit_box_count', 20),
-            // 關閉彈性借用時借用人可自選歸還日，超過規定要讓值班人員看得出來
+            // 可自訂天數時借用人可自選歸還日，超過規定要讓值班人員看得出來
             'maxDays' => max(1, (int) Setting::get('borrow.max_days', 7)),
         ]);
     }

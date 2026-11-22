@@ -8,8 +8,8 @@ import {
     Plus,
     TriangleAlert,
 } from '@lucide/vue';
-import { computed, ref, watch } from 'vue';
-import DateRangeCalendar from '@/components/DateRangeCalendar.vue';
+import { computed, ref } from 'vue';
+import BorrowDateCalendar from '@/components/BorrowDateCalendar.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import PropertyPicker, {
@@ -28,7 +28,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import { todayInTaipei } from '@/lib/format';
+import { addDays, todayInTaipei } from '@/lib/format';
 import { login } from '@/routes';
 import { create, store } from '@/routes/borrow';
 
@@ -46,7 +46,7 @@ const props = defineProps<{
         maxDays: number;
         depositAmount: number;
         allowAdvance: boolean;
-        flexibleDuration: boolean;
+        fixedDuration: boolean;
         notices: string[];
     };
     calendar: {
@@ -81,54 +81,72 @@ const form = useForm({
 });
 
 /*
- * 日曆用「取件日已選、歸還日還沒選」來決定下一次點擊的意義，
- * 所以挑日子的過程中 due_date 會是 null；送出前再補回和取件日同一天。
+ * 日期只有兩個自由度：哪天取件、借幾天。
+ * form.due_date 由這兩者算出來，不另外存狀態，摘要與日曆才不會對不起來。
  */
-const pickedDue = ref<string | null>(form.due_date);
 
-watch(pickedDue, (value) => {
-    form.due_date = value ?? form.borrow_date;
-});
-
-/*
- * 送出與否看「選到的取件日」而不是今天：開放預借時，今天暫停借用
- * 不代表下週也不能借，否則使用者會選得到日期卻按不下送出。
- * 日曆本來就不讓人選到暫停借用的日子，這裡只擋預設值還停在今天的情況。
- */
-const selectedDayClosed = computed(() =>
-    props.calendar.closedDates.includes(form.borrow_date),
-);
-
-/** 含取件當天的天數，給摘要列顯示。 */
+/** 含取件當天的天數。 */
 const borrowDays = computed(() => {
     const from = new Date(`${form.borrow_date}T00:00:00Z`).getTime();
     const to = new Date(`${form.due_date}T00:00:00Z`).getTime();
 
-    return Math.round((to - from) / 86_400_000) + 1;
+    return Math.max(1, Math.round((to - from) / 86_400_000) + 1);
 });
 
-function pickBorrowDate(date: string | null) {
-    if (date === null) return;
+/** 日曆能挑到的最晚歸還日，拿來夾住天數。 */
+const maxSelectableDays = computed(() => {
+    const from = new Date(`${form.borrow_date}T00:00:00Z`).getTime();
+    const to = new Date(`${props.calendar.lastDate}T00:00:00Z`).getTime();
 
-    form.borrow_date = date;
+    return Math.max(1, Math.round((to - from) / 86_400_000) + 1);
+});
 
-    // 彈性借用開啟時歸還日由規定決定，日曆會同時送 update:end，這裡不留空等人點
-    if (props.rules.flexibleDuration) return;
+function setDays(days: number) {
+    const clamped = Math.min(
+        Math.max(1, Math.round(days)),
+        maxSelectableDays.value,
+    );
 
-    pickedDue.value = null;
-    form.due_date = date;
+    form.due_date = addDays(form.borrow_date, clamped - 1);
 }
 
-/** 彈性借用關閉時才讓使用者自選歸還日；開啟時日曆一點就選滿規定天數。 */
-const fixedDays = computed(() =>
-    props.rules.flexibleDuration ? props.rules.maxDays : null,
+/** 天數快捷鍵。一定包含規定天數，數字不重複且由小到大。 */
+const dayPresets = computed(() =>
+    [...new Set([1, 3, 5, 7, props.rules.maxDays])]
+        .filter((n) => n >= 1 && n <= maxSelectableDays.value)
+        .sort((a, b) => a - b),
 );
+
+/** 固定借用天數時，快捷鍵只是讓人看見規則，不能改。 */
+const daysLocked = computed(() => props.rules.fixedDuration);
+
+const customDue = ref(false);
 
 /** 超過規定天數：不擋，但告訴借用人借用單上會被標示。 */
 const overRuleDays = computed(
-    () =>
-        !props.rules.flexibleDuration && borrowDays.value > props.rules.maxDays,
+    () => !daysLocked.value && borrowDays.value > props.rules.maxDays,
 );
+
+function pickRange(range: { start: string; end: string }) {
+    form.borrow_date = range.start;
+    form.due_date = range.end;
+}
+
+/*
+ * 送出與否看「選到的取件日」而不是今天：開放預借時，今天暫停借用
+ * 不代表下週也不能借，否則使用者會選得到日期卻按不下送出。
+ */
+const selectedDayClosed = computed(
+    () =>
+        props.calendar.closedDates.includes(form.borrow_date) ||
+        props.calendar.closedDates.includes(form.due_date),
+);
+
+/*
+ * 一進頁面就套上規定天數（可自訂時這只是預設值，使用者可以改）。
+ * 不這樣做的話，摘要會先顯示「共計 1 天」，等使用者點一下才變對。
+ */
+setDays(props.rules.maxDays);
 
 /** 換地點：重新載入該地點的器材，並清空已選（避免跨地點借用）。 */
 function selectLocation(location: { id: number; code: string }) {
@@ -405,39 +423,90 @@ function submit() {
                     <CardTitle>4. 借用日期</CardTitle>
                     <CardDescription>
                         {{
-                            rules.flexibleDuration
-                                ? `依規定一律借用 ${rules.maxDays} 天，點選取件日即可。`
-                                : '先點取件日，再點歸還日；點已選範圍外的日子可重新選擇。'
+                            daysLocked
+                                ? `依規定一律借用 ${rules.maxDays} 天，選好取件日就完成。`
+                                : '選一個天數快捷鍵，或按「自訂」直接在日曆上點日期。'
                         }}
                     </CardDescription>
                 </CardHeader>
-                <CardContent class="space-y-4">
-                    <div class="flex flex-wrap gap-3 text-sm">
+                <CardContent class="space-y-5">
+                    <!-- 借用天數 -->
+                    <div class="space-y-2">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="mr-1 text-sm font-medium"
+                                >借用天數</span
+                            >
+                            <Button
+                                v-for="n in dayPresets"
+                                :key="n"
+                                type="button"
+                                size="sm"
+                                :variant="
+                                    borrowDays === n && !customDue
+                                        ? 'default'
+                                        : 'outline'
+                                "
+                                :disabled="daysLocked && n !== rules.maxDays"
+                                :aria-pressed="borrowDays === n && !customDue"
+                                @click="
+                                    customDue = false;
+                                    setDays(n);
+                                "
+                            >
+                                {{ n }} 天
+                            </Button>
+                            <Button
+                                type="button"
+                                size="sm"
+                                :variant="customDue ? 'default' : 'outline'"
+                                :disabled="daysLocked"
+                                :aria-pressed="customDue"
+                                @click="customDue = true"
+                            >
+                                自訂
+                            </Button>
+                        </div>
+
+                        <p
+                            v-if="daysLocked"
+                            class="text-xs text-muted-foreground"
+                        >
+                            借用規則目前固定為 {{ rules.maxDays }} 天，不可更改
+                        </p>
+
+                        <p
+                            v-else-if="customDue"
+                            class="text-xs text-muted-foreground"
+                        >
+                            直接在下面的日曆上點選日期
+                        </p>
+                    </div>
+
+                    <!-- 摘要 -->
+                    <div class="flex flex-wrap items-stretch gap-2 text-sm">
                         <div class="rounded-md border px-3 py-2">
                             <div class="text-xs text-muted-foreground">
                                 取件日
                             </div>
-                            <div class="font-medium">
+                            <div class="font-medium tabular-nums">
                                 {{ form.borrow_date }}
                             </div>
+                        </div>
+                        <div
+                            class="flex items-center text-muted-foreground"
+                            aria-hidden="true"
+                        >
+                            →
                         </div>
                         <div class="rounded-md border px-3 py-2">
                             <div class="text-xs text-muted-foreground">
                                 歸還日
                             </div>
-                            <div
-                                class="font-medium"
-                                :class="
-                                    pickedDue ? '' : 'text-muted-foreground'
-                                "
-                            >
-                                {{ pickedDue ?? '請選擇' }}
+                            <div class="font-medium tabular-nums">
+                                {{ form.due_date }}
                             </div>
                         </div>
-                        <div
-                            v-if="pickedDue"
-                            class="rounded-md border px-3 py-2"
-                        >
+                        <div class="rounded-md border px-3 py-2">
                             <div class="text-xs text-muted-foreground">
                                 共計
                             </div>
@@ -445,34 +514,33 @@ function submit() {
                         </div>
                     </div>
 
-                    <p
-                        v-if="!rules.allowAdvance"
-                        class="text-xs text-muted-foreground"
-                    >
-                        目前不開放預借，取件日為今天
-                    </p>
-
                     <Alert v-if="overRuleDays">
                         <TriangleAlert class="size-4" />
                         <AlertTitle>超過規定借用天數</AlertTitle>
                         <AlertDescription>
-                            規定最長 {{ rules.maxDays }} 天，你選了
+                            目前規定最長 {{ rules.maxDays }} 天，已選
                             {{ borrowDays }}
-                            天。還是可以送出，但借用單上會標示給值班人員確認。
+                            天。待確認後才會核可此次借用。
                         </AlertDescription>
                     </Alert>
 
-                    <DateRangeCalendar
+                    <p
+                        v-if="!rules.allowAdvance"
+                        class="text-xs text-muted-foreground"
+                    >
+                        目前不開放預借，取件日固定為今天。
+                    </p>
+
+                    <BorrowDateCalendar
                         :start="form.borrow_date"
-                        :end="pickedDue"
+                        :end="form.due_date"
+                        :days="customDue ? null : borrowDays"
                         :min-date="calendar.today"
                         :last-borrow-date="calendar.lastBorrowDate"
                         :last-date="calendar.lastDate"
                         :closed-dates="calendar.closedDates"
-                        :max-days="fixedDays === null ? null : rules.maxDays"
-                        :fixed-days="fixedDays"
-                        @update:start="pickBorrowDate"
-                        @update:end="pickedDue = $event"
+                        :expandable="!daysLocked"
+                        @update:range="pickRange"
                     />
 
                     <InputError :message="form.errors.borrow_date" />

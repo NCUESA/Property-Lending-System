@@ -78,7 +78,7 @@ const borrowDays = computed(() => {
     return Math.round((to.getTime() - from.getTime()) / 86_400_000) + 1;
 });
 
-/** 關閉彈性借用時借用人可自選歸還日，超過規定要讓值班人員看得出來。 */
+/** 可自訂天數時借用人可自選歸還日，超過規定要讓值班人員看得出來。 */
 const overRuleDays = computed(() => borrowDays.value > props.maxDays);
 
 const items = computed(() => props.borrow.items);

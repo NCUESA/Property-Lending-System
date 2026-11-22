@@ -16,7 +16,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // 開放／暫停借用期間（例如寒暑假）。不在任何期間內的日期依 settings 的 borrow.default_open 決定。
+        // 開放／暫停借用期間（例如寒暑假）。要不要看這張表由 settings 的 borrow.open_mode 決定。
         Schema::create('borrow_periods', function (Blueprint $table) {
             $table->id();
             $table->string('name', 50);

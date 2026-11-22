@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\BorrowItemStatus;
+use App\Enums\BorrowOpenMode;
 use App\Enums\BorrowRequestStatus;
 use App\Models\BorrowPeriod;
 use App\Models\BorrowRequest;
@@ -312,16 +313,34 @@ describe('借用單狀態（VIEW 即時計算）', function () {
 });
 
 describe('開放借用期間', function () {
-    it('期間內看期間設定，期間外看預設值', function () {
-        Setting::put('borrow.default_open', true);
+    it('always_open：一律開放，期間設定完全不看', function () {
+        Setting::put('borrow.open_mode', BorrowOpenMode::AlwaysOpen->value);
         BorrowPeriod::create(['name' => '寒假', 'starts_on' => '2027-01-20', 'ends_on' => '2027-02-15', 'is_open' => false]);
+
+        expect(BorrowPeriod::isOpenOn(Carbon\Carbon::parse('2027-01-25')))->toBeTrue()
+            ->and(BorrowPeriod::isOpenOn(Carbon\Carbon::parse('2027-03-01')))->toBeTrue()
+            ->and(BorrowPeriod::closedDatesBetween(
+                Carbon\Carbon::parse('2027-01-20'),
+                Carbon\Carbon::parse('2027-01-25'),
+            ))->toBe([]);
+    });
+
+    it('periods：只有設為開放的期間內才算開放，期間外一律關閉', function () {
+        Setting::put('borrow.open_mode', BorrowOpenMode::Periods->value);
+        BorrowPeriod::create(['name' => '寒假', 'starts_on' => '2027-01-20', 'ends_on' => '2027-02-15', 'is_open' => false]);
+        BorrowPeriod::create(['name' => '開學', 'starts_on' => '2027-02-16', 'ends_on' => '2027-06-30', 'is_open' => true]);
 
         expect(BorrowPeriod::isOpenOn(Carbon\Carbon::parse('2027-01-20')))->toBeFalse()
             ->and(BorrowPeriod::isOpenOn(Carbon\Carbon::parse('2027-02-15')))->toBeFalse()
-            ->and(BorrowPeriod::isOpenOn(Carbon\Carbon::parse('2027-02-16')))->toBeTrue();
+            ->and(BorrowPeriod::isOpenOn(Carbon\Carbon::parse('2027-02-16')))->toBeTrue()
+            // 沒有任何期間涵蓋 → 關閉
+            ->and(BorrowPeriod::isOpenOn(Carbon\Carbon::parse('2027-07-01')))->toBeFalse();
+    });
 
-        Setting::put('borrow.default_open', false);
-        expect(BorrowPeriod::isOpenOn(Carbon\Carbon::parse('2027-03-01')))->toBeFalse();
+    it('值勤時間模式還沒接 API，不能被選取', function () {
+        expect(BorrowOpenMode::DutyHours->available())->toBeFalse()
+            ->and(BorrowOpenMode::selectableValues())
+            ->toBe([BorrowOpenMode::AlwaysOpen->value, BorrowOpenMode::Periods->value]);
     });
 
     it('期間不能重疊', function () {
