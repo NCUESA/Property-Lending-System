@@ -125,6 +125,10 @@ export type BorrowOverview = {
     id_card_returned: boolean;
     deposit_returned: boolean;
     remark: string | null;
+    extension_reason: string | null;
+    extended_at: string | null;
+    extended_by: number | null;
+    due_reminder_sent_at: string | null;
     legacy_lender_name: string | null;
     legacy_returner_name: string | null;
     created_at: string;
@@ -136,6 +140,7 @@ export type BorrowOverview = {
     cancelled_count: number;
     location?: LocationRef;
     items?: BorrowItem[];
+    extender?: UserRef | null;
     lender?: UserRef | null;
     returner?: UserRef | null;
     borrower?: UserRef | null;

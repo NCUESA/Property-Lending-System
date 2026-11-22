@@ -64,6 +64,8 @@ class BorrowRequest extends Model
             'deposit_amount' => 'integer',
             'id_card_returned' => 'boolean',
             'deposit_returned' => 'boolean',
+            'extended_at' => 'datetime',
+            'due_reminder_sent_at' => 'datetime',
         ];
     }
 
@@ -109,5 +111,15 @@ class BorrowRequest extends Model
     public function returner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'returned_by');
+    }
+
+    /**
+     * 最近一次展延歸還日的經手人。
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function extender(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'extended_by');
     }
 }

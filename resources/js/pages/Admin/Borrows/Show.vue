@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
-import { ArrowLeft, PackageCheck, PackageOpen, Undo2 } from '@lucide/vue';
-import { computed, reactive, watch } from 'vue';
+import {
+    ArrowLeft,
+    CalendarClock,
+    PackageCheck,
+    PackageOpen,
+    Undo2,
+} from '@lucide/vue';
+import { computed, reactive, ref, watch } from 'vue';
 import InputError from '@/components/InputError.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
@@ -39,6 +45,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { formatDate, formatDateTime } from '@/lib/format';
 import {
     cancel,
+    extend,
     index,
     lend,
     returnMethod,
@@ -58,6 +65,7 @@ defineOptions({
 const props = defineProps<{
     borrow: BorrowOverview & { items: BorrowItem[] };
     defaultDepositAmount: number;
+    depositBoxCount: number;
 }>();
 
 const items = computed(() => props.borrow.items);
@@ -90,8 +98,9 @@ const lendSelection = reactive<Selection>({});
 
 const lendForm = useForm({
     items: [] as { id: number; quantity?: number }[],
-    id_card_taken: true,
-    deposit_taken: true,
+    // 預設未勾：和器材一樣要值班人員主動確認收到，未勾時欄位會顯示警示色
+    id_card_taken: false,
+    deposit_taken: false,
     deposit_amount: props.defaultDepositAmount as number | undefined,
     deposit_box_no: undefined as number | undefined,
 });
@@ -99,6 +108,49 @@ const lendForm = useForm({
 const lendCount = computed(
     () => Object.values(lendSelection).filter((s) => s.checked).length,
 );
+
+// ── 條碼掃描 ──────────────────────────────────────
+// 掃描器的行為等同鍵盤輸入後按 Enter，所以只要監聽 Enter 就好。
+// 掃到只是「標記已交付」，實際出借仍要按下方的確認按鈕。
+const scanInput = ref('');
+const scanFeedback = ref<{ ok: boolean; message: string } | null>(null);
+const scanBox = ref<HTMLInputElement | null>(null);
+
+function handleScan() {
+    const code = scanInput.value.trim().toUpperCase();
+    scanInput.value = '';
+
+    if (!code) return;
+
+    const item = pendingItems.value.find(
+        (i) => i.property?.ssid?.toUpperCase() === code,
+    );
+
+    if (!item) {
+        const elsewhere = items.value.find(
+            (i) => i.property?.ssid?.toUpperCase() === code,
+        );
+
+        scanFeedback.value = {
+            ok: false,
+            message: elsewhere
+                ? `${code} 已經處理過了（${elsewhere.status === 'lent' ? '已出借' : '不在待出借清單'}）`
+                : `${code} 不在這張借用單裡`,
+        };
+
+        return;
+    }
+
+    const already = lendSelection[item.id]?.checked;
+    lendSelection[item.id].checked = true;
+
+    scanFeedback.value = {
+        ok: true,
+        message: already
+            ? `${code} ${itemLabel(item)}（已掃過）`
+            : `${code} ${itemLabel(item)} 已標記交付`,
+    };
+}
 
 function submitLend() {
     lendForm
@@ -126,20 +178,28 @@ function resetSelection(
     target: Selection,
     list: BorrowItem[],
     quantity: (i: BorrowItem) => number,
+    checked = true,
 ) {
     for (const key of Object.keys(target)) {
         delete target[Number(key)];
     }
 
     for (const item of list) {
-        target[item.id] = { checked: true, quantity: quantity(item) };
+        target[item.id] = { checked, quantity: quantity(item) };
     }
 }
 
 watch(
     items,
     () => {
-        resetSelection(lendSelection, pendingItems.value, (i) => i.quantity);
+        // 出借預設不勾：有沒有交付出去要靠掃條碼（或人工勾選）確認
+        resetSelection(
+            lendSelection,
+            pendingItems.value,
+            (i) => i.quantity,
+            false,
+        );
+        scanFeedback.value = null;
         resetSelection(returnSelection, lentItems.value, outstanding);
     },
     { immediate: true },
@@ -184,12 +244,20 @@ const cancelForm = useForm({ reason: '' });
 const submitCancel = () =>
     cancelForm.post(cancel.url(props.borrow.id), { preserveScroll: true });
 
-const updateForm = useForm({
-    remark: props.borrow.remark ?? '',
-    due_date: formatDate(props.borrow.due_date),
-});
+const updateForm = useForm({ remark: props.borrow.remark ?? '' });
 const submitUpdate = () =>
     updateForm.patch(update.url(props.borrow.id), { preserveScroll: true });
+
+// ── 展延 ─────────────────────────────────────────
+const extendForm = useForm({
+    due_date: formatDate(props.borrow.due_date),
+    reason: '',
+});
+const submitExtend = () =>
+    extendForm.post(extend.url(props.borrow.id), {
+        preserveScroll: true,
+        onSuccess: () => extendForm.reset('reason'),
+    });
 </script>
 
 <template>
@@ -363,10 +431,44 @@ const submitUpdate = () =>
             </CardHeader>
             <CardContent class="space-y-4">
                 <div class="space-y-2">
+                    <Label for="scan">掃描財產條碼</Label>
+                    <Input
+                        id="scan"
+                        ref="scanBox"
+                        v-model="scanInput"
+                        autofocus
+                        autocomplete="off"
+                        placeholder="掃描器讀取後會自動標記；也可以手動勾選"
+                        class="font-mono"
+                        @keydown.enter.prevent="handleScan"
+                    />
+                    <p
+                        v-if="scanFeedback"
+                        class="text-sm"
+                        :class="
+                            scanFeedback.ok
+                                ? 'text-emerald-600 dark:text-emerald-400'
+                                : 'text-destructive'
+                        "
+                        role="status"
+                    >
+                        {{ scanFeedback.message }}
+                    </p>
+                    <p class="text-xs text-muted-foreground">
+                        已標記 {{ lendCount }} / {{ pendingItems.length }} 項
+                    </p>
+                </div>
+
+                <div class="space-y-2">
                     <label
                         v-for="item in pendingItems"
                         :key="item.id"
-                        class="flex items-center gap-3 rounded-md border p-2 text-sm"
+                        class="flex items-center gap-3 rounded-md border p-2 text-sm transition-colors"
+                        :class="
+                            lendSelection[item.id].checked
+                                ? 'border-emerald-500/60 bg-emerald-50 dark:bg-emerald-950/30'
+                                : ''
+                        "
                     >
                         <Checkbox
                             :model-value="lendSelection[item.id].checked"
@@ -394,17 +496,52 @@ const submitUpdate = () =>
                     </label>
                 </div>
                 <div class="grid gap-4 sm:grid-cols-2">
+                    <!-- 沒收到證件／押金是最常見的疏漏，所以未勾選時用警示色提醒 -->
                     <label
-                        class="flex items-center justify-between rounded-md border p-3 text-sm"
+                        class="flex cursor-pointer items-center gap-3 rounded-md border-2 p-3 text-sm transition-colors"
+                        :class="
+                            lendForm.id_card_taken
+                                ? 'border-emerald-500/60 bg-emerald-50 dark:bg-emerald-950/30'
+                                : 'border-amber-500/60 bg-amber-50 dark:bg-amber-950/30'
+                        "
                     >
-                        收取證件
-                        <Switch v-model="lendForm.id_card_taken" />
+                        <Checkbox
+                            :model-value="lendForm.id_card_taken"
+                            @update:model-value="
+                                lendForm.id_card_taken = $event === true
+                            "
+                        />
+                        <span>
+                            <span class="font-medium">已收取證件</span>
+                            <span
+                                v-if="!lendForm.id_card_taken"
+                                class="block text-xs text-amber-700 dark:text-amber-400"
+                                >尚未收取</span
+                            >
+                        </span>
                     </label>
                     <label
-                        class="flex items-center justify-between rounded-md border p-3 text-sm"
+                        class="flex cursor-pointer items-center gap-3 rounded-md border-2 p-3 text-sm transition-colors"
+                        :class="
+                            lendForm.deposit_taken
+                                ? 'border-emerald-500/60 bg-emerald-50 dark:bg-emerald-950/30'
+                                : 'border-amber-500/60 bg-amber-50 dark:bg-amber-950/30'
+                        "
                     >
-                        收取押金
-                        <Switch v-model="lendForm.deposit_taken" />
+                        <Checkbox
+                            :model-value="lendForm.deposit_taken"
+                            @update:model-value="
+                                lendForm.deposit_taken = $event === true
+                            "
+                        />
+                        <span>
+                            <span class="font-medium">已收取押金</span>
+                            <span
+                                v-if="!lendForm.deposit_taken"
+                                class="block text-xs text-amber-700 dark:text-amber-400"
+                                >尚未收取</span
+                            >
+                        </span>
                     </label>
                     <div v-if="lendForm.deposit_taken" class="grid gap-2">
                         <Label for="deposit_amount">押金金額</Label>
@@ -418,13 +555,23 @@ const submitUpdate = () =>
                     </div>
                     <div class="grid gap-2">
                         <Label for="deposit_box_no">押金箱號</Label>
-                        <Input
+                        <select
                             id="deposit_box_no"
-                            v-model.number="lendForm.deposit_box_no"
-                            type="number"
-                            min="0"
-                            placeholder="選填"
-                        />
+                            v-model="lendForm.deposit_box_no"
+                            class="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+                        >
+                            <option :value="undefined">未使用</option>
+                            <option
+                                v-for="n in depositBoxCount"
+                                :key="n"
+                                :value="n"
+                            >
+                                {{ n }} 號
+                            </option>
+                        </select>
+                        <p class="text-xs text-muted-foreground">
+                            箱數可在「系統設定 → 借用規則」調整
+                        </p>
                         <InputError :message="lendForm.errors.deposit_box_no" />
                     </div>
                 </div>
@@ -580,34 +727,86 @@ const submitUpdate = () =>
             </CardContent>
         </Card>
 
-        <!-- 備註、延長 -->
+        <!-- 展延 -->
+        <Card>
+            <CardHeader>
+                <CardTitle class="flex items-center gap-2 text-base"
+                    ><CalendarClock class="size-4" />展延歸還日</CardTitle
+                >
+                <CardDescription>
+                    目前歸還日
+                    {{ formatDate(borrow.due_date) }}。展延需填寫理由，
+                    只能往後延；延後後提醒信會依新的日期重新寄出。
+                </CardDescription>
+            </CardHeader>
+            <CardContent class="space-y-4">
+                <div
+                    v-if="borrow.extended_at"
+                    class="rounded-md border bg-muted/40 p-3 text-sm"
+                >
+                    <span class="text-muted-foreground"
+                        >最近一次展延：{{ formatDateTime(borrow.extended_at) }}
+                        <template v-if="borrow.extender"
+                            >（{{ borrow.extender.name }}）</template
+                        ></span
+                    >
+                    <p class="mt-1 whitespace-pre-line">
+                        {{ borrow.extension_reason }}
+                    </p>
+                </div>
+
+                <form
+                    class="grid gap-4 sm:grid-cols-[12rem_1fr]"
+                    @submit.prevent="submitExtend"
+                >
+                    <div class="grid content-start gap-2">
+                        <Label for="extend_due_date">新的歸還日</Label>
+                        <Input
+                            id="extend_due_date"
+                            v-model="extendForm.due_date"
+                            type="date"
+                            :min="formatDate(borrow.due_date)"
+                        />
+                        <InputError :message="extendForm.errors.due_date" />
+                    </div>
+                    <div class="grid gap-2">
+                        <Label for="extend_reason">展延理由</Label>
+                        <Textarea
+                            id="extend_reason"
+                            v-model="extendForm.reason"
+                            rows="3"
+                            placeholder="例如：活動延期至下週"
+                            required
+                        />
+                        <InputError :message="extendForm.errors.reason" />
+                    </div>
+                    <div class="sm:col-span-2">
+                        <Button
+                            type="submit"
+                            variant="outline"
+                            :disabled="extendForm.processing"
+                            >確認展延</Button
+                        >
+                    </div>
+                </form>
+            </CardContent>
+        </Card>
+
+        <!-- 備註 -->
         <Card>
             <CardHeader
-                ><CardTitle class="text-base">備註與延長</CardTitle></CardHeader
+                ><CardTitle class="text-base">備註</CardTitle></CardHeader
             >
             <CardContent>
-                <form
-                    class="grid gap-4 sm:grid-cols-[1fr_12rem]"
-                    @submit.prevent="submitUpdate"
-                >
+                <form class="grid gap-4" @submit.prevent="submitUpdate">
                     <div class="grid gap-2">
-                        <Label for="remark">備註</Label>
                         <Textarea
                             id="remark"
                             v-model="updateForm.remark"
                             rows="3"
+                            aria-label="備註"
                         />
                         <InputError :message="updateForm.errors.remark" />
-                    </div>
-                    <div class="grid content-start gap-2">
-                        <Label for="due_date">歸還日</Label>
-                        <Input
-                            id="due_date"
-                            v-model="updateForm.due_date"
-                            type="date"
-                            :min="formatDate(borrow.borrow_date)"
-                        />
-                        <InputError :message="updateForm.errors.due_date" />
                     </div>
                     <div>
                         <Button

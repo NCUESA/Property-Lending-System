@@ -326,6 +326,115 @@ describe('出借與歸還', function () {
     });
 });
 
+describe('展延歸還日', function () {
+    beforeEach(function () {
+        $this->mic = Property::factory()->create(['location_id' => $this->jinde->id]);
+        $this->post(route('borrow.store'), borrowPayload([
+            'property_ids' => [$this->mic->id],
+        ]))->assertSessionHasNoErrors();
+        $this->borrow = BorrowRequest::sole();
+    });
+
+    it('展延要填理由，並記下經手人與時間', function () {
+        $newDue = $this->borrow->due_date->copy()->addDays(3)->toDateString();
+
+        $this->actingAs($this->staff)
+            ->post(route('admin.borrows.extend', $this->borrow), [
+                'due_date' => $newDue,
+                'reason' => '活動延期到下週',
+            ])->assertSessionHasNoErrors();
+
+        $this->borrow->refresh();
+
+        expect($this->borrow->due_date->toDateString())->toBe($newDue)
+            ->and($this->borrow->extension_reason)->toBe('活動延期到下週')
+            ->and($this->borrow->extended_by)->toBe($this->staff->id)
+            ->and($this->borrow->extended_at)->not->toBeNull();
+    });
+
+    it('沒填理由不給展延', function () {
+        $this->actingAs($this->staff)
+            ->post(route('admin.borrows.extend', $this->borrow), [
+                'due_date' => $this->borrow->due_date->copy()->addDay()->toDateString(),
+            ])->assertSessionHasErrors('reason');
+    });
+
+    it('只能往後延', function () {
+        $this->actingAs($this->staff)
+            ->post(route('admin.borrows.extend', $this->borrow), [
+                'due_date' => $this->borrow->due_date->copy()->subDay()->toDateString(),
+                'reason' => '想改早',
+            ])->assertSessionHasErrors('due_date');
+    });
+
+    it('展延後提醒信會依新的日期重寄', function () {
+        $this->borrow->forceFill(['due_reminder_sent_at' => now()])->save();
+
+        $this->actingAs($this->staff)
+            ->post(route('admin.borrows.extend', $this->borrow), [
+                'due_date' => $this->borrow->due_date->copy()->addDays(3)->toDateString(),
+                'reason' => '延期',
+            ])->assertSessionHasNoErrors();
+
+        expect($this->borrow->refresh()->due_reminder_sent_at)->toBeNull();
+    });
+
+    it('備註端點不再能改歸還日', function () {
+        $original = $this->borrow->due_date->toDateString();
+
+        $this->actingAs($this->staff)
+            ->patch(route('admin.borrows.update', $this->borrow), [
+                'remark' => '改備註',
+                'due_date' => $this->borrow->due_date->copy()->addDays(10)->toDateString(),
+            ])->assertSessionHasNoErrors();
+
+        $this->borrow->refresh();
+
+        expect($this->borrow->remark)->toBe('改備註')
+            ->and($this->borrow->due_date->toDateString())->toBe($original);
+    });
+});
+
+describe('押金箱號', function () {
+    beforeEach(function () {
+        $this->mic = Property::factory()->create(['location_id' => $this->jinde->id]);
+        $this->post(route('borrow.store'), borrowPayload([
+            'property_ids' => [$this->mic->id],
+        ]))->assertSessionHasNoErrors();
+        $this->borrow = BorrowRequest::sole();
+        $this->itemId = $this->borrow->items->first()->id;
+    });
+
+    it('箱號上限跟著後台設定走', function () {
+        Setting::put('borrow.deposit_box_count', 20);
+
+        $payload = fn (int $box) => [
+            'items' => [['id' => $this->itemId]],
+            'id_card_taken' => true,
+            'deposit_taken' => true,
+            'deposit_box_no' => $box,
+        ];
+
+        $this->actingAs($this->staff)
+            ->post(route('admin.borrows.lend', $this->borrow), $payload(21))
+            ->assertSessionHasErrors('deposit_box_no');
+
+        $this->actingAs($this->staff)
+            ->post(route('admin.borrows.lend', $this->borrow), $payload(20))
+            ->assertSessionHasNoErrors();
+
+        expect($this->borrow->refresh()->deposit_box_no)->toBe(20);
+    });
+
+    it('明細頁會帶出箱數給前端', function () {
+        Setting::put('borrow.deposit_box_count', 12);
+
+        $this->actingAs($this->staff)
+            ->get(route('admin.borrows.show', $this->borrow))
+            ->assertInertia(fn (Assert $page) => $page->where('depositBoxCount', 12));
+    });
+});
+
 describe('排程：逾期未取', function () {
     it('借用日已過仍未取件的申請會被退回並釋出器材', function () {
         $property = Property::factory()->create(['location_id' => $this->jinde->id]);

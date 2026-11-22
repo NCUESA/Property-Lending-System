@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\Setting;
 use Illuminate\Foundation\Http\FormRequest;
 
 class LendBorrowRequestRequest extends FormRequest
@@ -23,7 +24,8 @@ class LendBorrowRequestRequest extends FormRequest
             'id_card_taken' => ['required', 'boolean'],
             'deposit_taken' => ['required', 'boolean'],
             'deposit_amount' => ['nullable', 'integer', 'min:0', 'max:100000'],
-            'deposit_box_no' => ['nullable', 'integer', 'min:0', 'max:9999'],
+            // 箱號上限跟著後台的「押金箱數量」走，避免填到不存在的箱子
+            'deposit_box_no' => ['nullable', 'integer', 'min:1', 'max:'.(int) Setting::get('borrow.deposit_box_count', 20)],
         ];
     }
 

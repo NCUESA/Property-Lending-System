@@ -25,6 +25,7 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
         Route::post('borrows/{borrow}/lend', [BorrowRequestController::class, 'lend'])->name('borrows.lend');
         Route::post('borrows/{borrow}/return', [BorrowRequestController::class, 'return'])->name('borrows.return');
         Route::post('borrows/{borrow}/cancel', [BorrowRequestController::class, 'cancel'])->name('borrows.cancel');
+        Route::post('borrows/{borrow}/extend', [BorrowRequestController::class, 'extend'])->name('borrows.extend');
     });
 
     // ── 管理員：器材、編碼、人員、群組、設定 ───────────────

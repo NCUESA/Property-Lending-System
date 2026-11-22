@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Actions\Borrow\CancelBorrowRequest;
+use App\Actions\Borrow\ExtendBorrowRequest;
 use App\Actions\Borrow\LendOutItems;
 use App\Actions\Borrow\ReturnItems;
 use App\Enums\BorrowRequestStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\ExtendBorrowRequestRequest;
 use App\Http\Requests\Admin\LendBorrowRequestRequest;
 use App\Http\Requests\Admin\ReturnBorrowRequestRequest;
 use App\Http\Requests\Admin\UpdateBorrowRequestRequest;
@@ -71,6 +73,7 @@ class BorrowRequestController extends Controller
                 'items.property.location:id,name',
                 'items.pool:id,name',
                 'items.returner:id,name',
+                'extender:id,name',
                 'lender:id,name',
                 'returner:id,name',
                 'borrower:id,name,student_id',
@@ -80,6 +83,7 @@ class BorrowRequestController extends Controller
         return Inertia::render('Admin/Borrows/Show', [
             'borrow' => $overview,
             'defaultDepositAmount' => (int) Setting::get('borrow.deposit_amount', 100),
+            'depositBoxCount' => (int) Setting::get('borrow.deposit_box_count', 20),
         ]);
     }
 
@@ -106,6 +110,17 @@ class BorrowRequestController extends Controller
         $return->handle($borrow, $request->user(), $request->validated());
 
         Toast::success('已登記歸還。');
+
+        return back();
+    }
+
+    public function extend(ExtendBorrowRequestRequest $request, BorrowRequest $borrow, ExtendBorrowRequest $extend): RedirectResponse
+    {
+        $data = $request->validated();
+
+        $extend->handle($borrow, $request->user(), $data['due_date'], $data['reason']);
+
+        Toast::success('已展延歸還日。');
 
         return back();
     }

@@ -18,6 +18,7 @@ const props = defineProps<{
         max_days: number | null;
         default_open: boolean | null;
         allow_advance: boolean | null;
+        deposit_box_count: number | null;
     };
 }>();
 
@@ -26,6 +27,7 @@ const form = useForm({
     max_days: props.settings.max_days ?? 7,
     default_open: props.settings.default_open ?? true,
     allow_advance: props.settings.allow_advance ?? false,
+    deposit_box_count: props.settings.deposit_box_count ?? 20,
 });
 
 const submit = () => form.put(update.url('borrow'), { preserveScroll: true });
@@ -47,6 +49,20 @@ const submit = () => form.put(update.url('borrow'), { preserveScroll: true });
                     min="0"
                 />
                 <InputError :message="form.errors.deposit_amount" />
+            </div>
+            <div class="grid gap-2">
+                <Label for="deposit_box_count">押金箱數量</Label>
+                <Input
+                    id="deposit_box_count"
+                    v-model.number="form.deposit_box_count"
+                    type="number"
+                    min="1"
+                    max="200"
+                />
+                <p class="text-xs text-muted-foreground">
+                    出借時的箱號下拉選單會是 1 ~ 這個數字
+                </p>
+                <InputError :message="form.errors.deposit_box_count" />
             </div>
             <div class="grid gap-2">
                 <Label for="max_days">最長借用天數（含借用當天）</Label>

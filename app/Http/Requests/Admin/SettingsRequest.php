@@ -27,6 +27,7 @@ class SettingsRequest extends FormRequest
                 'max_days' => ['required', 'integer', 'min:1', 'max:365'],
                 'default_open' => ['required', 'boolean'],
                 'allow_advance' => ['required', 'boolean'],
+                'deposit_box_count' => ['required', 'integer', 'min:1', 'max:200'],
             ],
             'notices' => [
                 'notices' => ['present', 'array', 'max:30'],
@@ -72,6 +73,7 @@ class SettingsRequest extends FormRequest
                 'max_days' => '最長借用天數',
                 'default_open' => '預設開放借用',
                 'allow_advance' => '開放預借',
+                'deposit_box_count' => '押金箱數量',
             ],
             'notices' => [
                 'notices' => '注意事項',
