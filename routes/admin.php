@@ -55,5 +55,9 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
         Route::put('settings/{section}', [SettingController::class, 'update'])
             ->whereIn('section', SettingController::slugs())
             ->name('settings.section.update');
+        // 當場驗證 SMTP 設定，不用靠真實借用流程試錯
+        Route::post('settings/mail/test', [SettingController::class, 'sendTestMail'])
+            ->middleware('throttle:5,1')
+            ->name('settings.mail.test');
     });
 });

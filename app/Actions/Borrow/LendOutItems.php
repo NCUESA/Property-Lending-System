@@ -3,6 +3,8 @@
 namespace App\Actions\Borrow;
 
 use App\Enums\BorrowItemStatus;
+use App\Enums\BorrowMailKind;
+use App\Jobs\SendBorrowNotification;
 use App\Models\BorrowRequest;
 use App\Models\BorrowRequestItem;
 use App\Models\Setting;
@@ -75,6 +77,9 @@ class LendOutItems
                         : null,
                     'deposit_box_no' => $data['deposit_box_no'] ?? null,
                 ]);
+
+                // 交易成功後才寄，避免出借其實回滾了卻已經通知借用人
+                DB::afterCommit(fn () => SendBorrowNotification::dispatch($request, BorrowMailKind::Lent));
 
                 return $request;
             });

@@ -2,14 +2,23 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\Borrow\SendDueReminders;
+use App\Enums\BorrowMailKind;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SettingsRequest;
+use App\Mail\BorrowNotificationMail;
 use App\Models\Setting;
+use App\Support\MailSettings;
+use App\Support\MailTemplate;
 use App\Support\Toast;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Throwable;
 
 /**
  * 系統設定依功能分頁。
@@ -44,6 +53,29 @@ class SettingController extends Controller
                 'notices' => 'borrow.notices',
             ],
         ],
+        'mail' => [
+            'title' => '寄信設定',
+            'description' => 'SMTP 連線與寄件者',
+            'component' => 'Admin/Settings/Mail',
+            'keys' => MailSettings::KEYS,
+        ],
+        'notifications' => [
+            'title' => '通知信',
+            'description' => '信件模板與提醒時間',
+            'component' => 'Admin/Settings/Notifications',
+            'keys' => [
+                'submitted_enabled' => 'notify.submitted.enabled',
+                'submitted_subject' => 'notify.submitted.subject',
+                'submitted_body' => 'notify.submitted.body',
+                'lent_enabled' => 'notify.lent.enabled',
+                'lent_subject' => 'notify.lent.subject',
+                'lent_body' => 'notify.lent.body',
+                'due_enabled' => 'notify.due.enabled',
+                'due_subject' => 'notify.due.subject',
+                'due_body' => 'notify.due.body',
+                'due_days_before' => 'notify.due.days_before',
+            ],
+        ],
     ];
 
     /** 路由限制與預設導向都用這份清單，避免 slug 寫死在兩個地方。 */
@@ -58,25 +90,122 @@ class SettingController extends Controller
     public function edit(string $section): Response
     {
         $config = self::SECTIONS[$section];
+        $values = collect($config['keys'])->map(fn (string $key) => Setting::get($key))->all();
 
         return Inertia::render($config['component'], [
-            'settings' => collect($config['keys'])->map(fn (string $key) => Setting::get($key)),
+            'settings' => $this->present($section, $values),
+            ...$this->extraProps($section),
         ]);
     }
 
     public function update(SettingsRequest $request, string $section): RedirectResponse
     {
-        $data = $request->validated();
+        $data = $this->prepare($section, $request->validated());
 
         DB::transaction(function () use ($section, $data) {
             foreach (self::SECTIONS[$section]['keys'] as $field => $key) {
-                Setting::put($key, $data[$field] ?? []);
+                // prepare() 可能刻意拿掉某個欄位（例如密碼留空代表不變更），這種就跳過不寫
+                if (array_key_exists($field, $data)) {
+                    Setting::put($key, $data[$field]);
+                }
             }
         });
 
         Toast::success('已更新設定。');
 
         return back();
+    }
+
+    /**
+     * 寄一封測試信，當場確認 SMTP 設定是否可用。
+     * 失敗時把 SMTP 的錯誤訊息原樣帶回表單，否則管理員只會看到「寄不出去」卻不知道為什麼。
+     */
+    public function sendTestMail(Request $request): RedirectResponse
+    {
+        $to = $request->validate([
+            'email' => ['required', 'email', 'max:255'],
+        ])['email'];
+
+        MailSettings::apply();
+        Mail::purge('smtp');
+
+        try {
+            Mail::to($to)->send(new BorrowNotificationMail(
+                '【'.config('app.name').'】測試信',
+                "這是一封測試信。\n\n如果你收到它，表示後台的 SMTP 設定可以正常寄信。",
+            ));
+        } catch (Throwable $e) {
+            throw ValidationException::withMessages([
+                'email' => '寄送失敗：'.$e->getMessage(),
+            ]);
+        }
+
+        Toast::success("測試信已寄至 {$to}。");
+
+        return back();
+    }
+
+    /**
+     * 回傳給表單前的加工。
+     *
+     * @param  array<string, mixed>  $values
+     * @return array<string, mixed>
+     */
+    private function present(string $section, array $values): array
+    {
+        if ($section === 'mail') {
+            // SMTP 密碼不回傳給前端，只告訴它「有沒有設定過」
+            $values['password'] = null;
+
+            return $values;
+        }
+
+        if ($section === 'notifications') {
+            foreach (BorrowMailKind::cases() as $kind) {
+                $values[$kind->value.'_subject'] ??= $kind->defaultSubject();
+                $values[$kind->value.'_body'] ??= $kind->defaultBody();
+            }
+
+            $values['due_days_before'] ??= SendDueReminders::DEFAULT_DAYS_BEFORE;
+        }
+
+        return $values;
+    }
+
+    /**
+     * 寫入前的加工。
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function prepare(string $section, array $data): array
+    {
+        if ($section === 'mail') {
+            $password = (string) ($data['password'] ?? '');
+
+            // 留空代表沿用原本的密碼，所以直接把欄位拿掉不寫入
+            if ($password === '') {
+                unset($data['password']);
+            } else {
+                $data['password'] = MailSettings::encryptPassword($password);
+            }
+        }
+
+        return $data;
+    }
+
+    /**
+     * 分頁額外需要的資料。
+     *
+     * @return array<string, mixed>
+     */
+    private function extraProps(string $section): array
+    {
+        return match ($section) {
+            'mail' => ['passwordSet' => MailSettings::password() !== null],
+            'notifications' => ['variables' => MailTemplate::VARIABLES],
+            default => [],
+        };
     }
 
     /**

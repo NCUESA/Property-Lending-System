@@ -25,6 +25,12 @@ class SettingSeeder extends Seeder
                 '器材借用如遺失或判定為人損，借用人應負賠償責任。',
                 '確認器材歸還完畢後將退回押金與證件。',
             ],
+            // 寄信預設關閉：SMTP 沒設定好就寄不出去，寧可讓管理員自己開
+            'mail.enabled' => false,
+            'notify.submitted.enabled' => false,
+            'notify.lent.enabled' => false,
+            'notify.due.enabled' => false,
+            'notify.due.days_before' => 2,
         ];
 
         foreach ($defaults as $key => $value) {

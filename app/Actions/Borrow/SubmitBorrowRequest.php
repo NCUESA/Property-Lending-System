@@ -2,6 +2,8 @@
 
 namespace App\Actions\Borrow;
 
+use App\Enums\BorrowMailKind;
+use App\Jobs\SendBorrowNotification;
 use App\Models\BorrowPeriod;
 use App\Models\BorrowRequest;
 use App\Models\Location;
@@ -62,6 +64,9 @@ class SubmitBorrowRequest
                 foreach ($pools as $poolId => $quantity) {
                     $request->items()->create(['property_pool_id' => $poolId, 'quantity' => $quantity ?? 1]);
                 }
+
+                // 交易成功後才寄，避免申請其實失敗卻先寄出確認信
+                DB::afterCommit(fn () => SendBorrowNotification::dispatch($request, BorrowMailKind::Submitted));
 
                 return $request;
             });
