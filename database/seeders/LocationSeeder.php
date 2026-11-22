@@ -14,19 +14,22 @@ class LocationSeeder extends Seeder
     public function run(): void
     {
         $jinde = Location::updateOrCreate(['code' => 'jinde'], [
-            'ssid_prefix' => 'J', 'name' => '進德', 'is_pickup_point' => true, 'pickup_location_id' => null, 'sort_order' => 1,
+            'ssid_prefix' => 'J', 'name' => '進德', 'is_pickup_point' => true, 'is_active' => true, 'sort_order' => 1,
         ]);
 
         Location::updateOrCreate(['code' => 'baosan'], [
-            'ssid_prefix' => 'B', 'name' => '寶山', 'is_pickup_point' => true, 'pickup_location_id' => null, 'sort_order' => 2,
+            'ssid_prefix' => 'B', 'name' => '寶山', 'is_pickup_point' => true, 'is_active' => true, 'sort_order' => 2,
         ]);
 
-        Location::updateOrCreate(['code' => '307'], [
-            'ssid_prefix' => '3', 'name' => '307倉庫', 'is_pickup_point' => false, 'pickup_location_id' => $jinde->id, 'sort_order' => 3,
+        $warehouse = Location::updateOrCreate(['code' => '307'], [
+            'ssid_prefix' => '3', 'name' => '307倉庫', 'is_pickup_point' => false, 'is_active' => true, 'sort_order' => 3,
         ]);
 
         Location::updateOrCreate(['code' => '405'], [
-            'ssid_prefix' => '4', 'name' => '405議會辦公室', 'is_pickup_point' => false, 'pickup_location_id' => null, 'sort_order' => 4,
+            'ssid_prefix' => '4', 'name' => '405議會辦公室', 'is_pickup_point' => false, 'is_active' => true, 'sort_order' => 4,
         ]);
+
+        // 互連關係（有向圖）：在進德取件可以借出 307 倉庫的器材
+        $jinde->storageLocations()->syncWithoutDetaching([$warehouse->id]);
     }
 }

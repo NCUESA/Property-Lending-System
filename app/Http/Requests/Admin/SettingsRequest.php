@@ -29,6 +29,7 @@ class SettingsRequest extends FormRequest
                 'default_open' => ['required', 'boolean'],
                 'allow_advance' => ['required', 'boolean'],
                 'deposit_box_count' => ['required', 'integer', 'min:1', 'max:200'],
+                'flexible_duration' => ['required', 'boolean'],
             ],
             'penalty' => $this->penaltyRules(),
             'notices' => [
@@ -106,6 +107,7 @@ class SettingsRequest extends FormRequest
                 'default_open' => '預設開放借用',
                 'allow_advance' => '開放預借',
                 'deposit_box_count' => '押金箱數量',
+                'flexible_duration' => '彈性借用',
             ],
             'penalty' => $this->penaltyAttributes(),
             'notices' => [

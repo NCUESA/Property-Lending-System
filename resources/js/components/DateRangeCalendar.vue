@@ -26,14 +26,16 @@ const props = withDefaults(
         lastBorrowDate: string;
         /** 最晚可當歸還日的日子 */
         lastDate: string;
-        /** 最長借用天數，含取件當天 */
-        maxDays: number;
+        /** 最長借用天數（含取件當天）；null 代表不設上限 */
+        maxDays?: number | null;
+        /** 設定後改成「點一下就選定固定天數」，使用者不能自選歸還日 */
+        fixedDays?: number | null;
         /** 暫停借用的日子，不能當取件日或歸還日 */
         closedDates?: string[];
         /** 同時顯示幾個月（視窗較窄時只會顯示第一個） */
         months?: number;
     }>(),
-    { closedDates: () => [], months: 2 },
+    { maxDays: null, fixedDays: null, closedDates: () => [], months: 2 },
 );
 
 const emit = defineEmits<{
@@ -83,11 +85,21 @@ function monthLabel(month: string): string {
 /** 還沒選歸還日 → 現在點的是歸還日。 */
 const picking = computed(() => props.start !== null && props.end === null);
 
+/** 從某一天開始借，最晚能還的日子。 */
+function latestEndFrom(start: string): string {
+    const byRule =
+        props.fixedDays !== null
+            ? addDays(start, props.fixedDays - 1)
+            : props.maxDays !== null
+              ? addDays(start, props.maxDays - 1)
+              : props.lastDate;
+
+    return [byRule, props.lastDate].sort()[0];
+}
+
 /** 選定取件日後，最晚能還的日子。 */
 const latestEnd = computed(() =>
-    props.start === null
-        ? null
-        : [addDays(props.start, props.maxDays - 1), props.lastDate].sort()[0],
+    props.start === null ? null : latestEndFrom(props.start),
 );
 
 function isStartable(date: string): boolean {
@@ -114,6 +126,16 @@ function isDisabled(date: string): boolean {
 }
 
 function select(date: string) {
+    // 固定天數：點一下就把整段選完，不會有「等你點歸還日」的中間狀態
+    if (props.fixedDays !== null) {
+        if (isStartable(date)) {
+            emit('update:start', date);
+            emit('update:end', latestEndFrom(date));
+        }
+
+        return;
+    }
+
     // 選歸還日優先：取件日已選時，點在合法區間內就是收尾
     if (picking.value && isEndable(date)) {
         emit('update:end', date);
@@ -141,6 +163,14 @@ const previewEnd = computed(() => {
         : null;
 });
 
+/** 固定天數時，滑鼠停在哪天就預覽從那天起算的整段。 */
+const hoverRange = computed(() => {
+    if (props.fixedDays === null || hovered.value === null) return null;
+    if (!isStartable(hovered.value)) return null;
+
+    return { from: hovered.value, to: latestEndFrom(hovered.value) };
+});
+
 type DayState = {
     selected: boolean;
     inRange: boolean;
@@ -149,8 +179,8 @@ type DayState = {
 };
 
 function dayState(date: string): DayState {
-    const from = props.start;
-    const to = previewEnd.value;
+    const from = hoverRange.value?.from ?? props.start;
+    const to = hoverRange.value?.to ?? previewEnd.value;
     const isStart = from === date;
     const isEnd = to === date;
 
@@ -165,10 +195,9 @@ function dayState(date: string): DayState {
 /** 區間底色畫在外層容器上，格子才連得起來（頭尾各切一邊圓角）。 */
 function rangeClass(date: string): string {
     const { inRange, isStart, isEnd } = dayState(date);
-    const spans =
-        props.start !== null &&
-        previewEnd.value !== null &&
-        props.start !== previewEnd.value;
+    const from = hoverRange.value?.from ?? props.start;
+    const to = hoverRange.value?.to ?? previewEnd.value;
+    const spans = from !== null && to !== null && from !== to;
 
     if (inRange) return 'bg-accent';
     if (!spans) return '';
@@ -181,6 +210,7 @@ function rangeClass(date: string): string {
 function dayTitle(date: string): string | undefined {
     if (closed.value.has(date)) return '暫停借用';
     if (isDisabled(date)) return undefined;
+    if (props.fixedDays !== null) return `從這天借 ${props.fixedDays} 天`;
     if (picking.value && isEndable(date)) return '設為歸還日';
 
     return '設為借用日';
@@ -412,7 +442,13 @@ function onKeydown(event: KeyboardEvent, date: string) {
             <span v-if="closedDates.length" class="mr-3">
                 <span class="line-through">刪除線</span> 為暫停借用的日子
             </span>
-            <span>最長 {{ maxDays }} 天（含借用當天）</span>
+            <span v-if="fixedDays !== null">
+                依規定一律借用 {{ fixedDays }} 天（含借用當天），點一天即可
+            </span>
+            <span v-else-if="maxDays !== null">
+                最長 {{ maxDays }} 天（含借用當天）
+            </span>
+            <span v-else>可自由選擇歸還日</span>
         </p>
     </div>
 </template>

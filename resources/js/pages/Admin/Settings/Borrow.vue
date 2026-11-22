@@ -19,6 +19,7 @@ const props = defineProps<{
         default_open: boolean | null;
         allow_advance: boolean | null;
         deposit_box_count: number | null;
+        flexible_duration: boolean | null;
     };
 }>();
 
@@ -28,6 +29,7 @@ const form = useForm({
     default_open: props.settings.default_open ?? true,
     allow_advance: props.settings.allow_advance ?? false,
     deposit_box_count: props.settings.deposit_box_count ?? 20,
+    flexible_duration: props.settings.flexible_duration ?? true,
 });
 
 const submit = () => form.put(update.url('borrow'), { preserveScroll: true });
@@ -84,6 +86,20 @@ const submit = () => form.put(update.url('borrow'), { preserveScroll: true });
                     >
                 </span>
                 <Switch v-model="form.default_open" />
+            </label>
+            <label
+                class="flex items-start justify-between gap-4 rounded-md border p-3 text-sm sm:col-span-2"
+            >
+                <span>
+                    彈性借用
+                    <span class="block text-xs text-muted-foreground">
+                        開啟：一律套用最長借用天數（目前
+                        {{ form.max_days }}
+                        天），借用人只選取件日。<br />
+                        關閉：借用人可自由選擇歸還日，超過規定時借用單會標示提醒值班人員。
+                    </span>
+                </span>
+                <Switch v-model="form.flexible_duration" />
             </label>
             <label
                 class="flex items-center justify-between gap-4 rounded-md border p-3 text-sm"

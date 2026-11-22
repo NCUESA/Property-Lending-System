@@ -367,7 +367,7 @@ describe('設定與借用期間', function () {
 
     it('借用規則分頁更新押金與天數', function () {
         $this->put(route('admin.settings.section.update', 'borrow'), [
-            'deposit_amount' => 200, 'max_days' => 3, 'default_open' => true, 'allow_advance' => false, 'deposit_box_count' => 20,
+            'deposit_amount' => 200, 'max_days' => 3, 'default_open' => true, 'allow_advance' => false, 'deposit_box_count' => 20, 'flexible_duration' => true,
         ])->assertSessionHasNoErrors();
 
         expect(Setting::get('borrow.deposit_amount'))->toBe(200)
@@ -393,7 +393,7 @@ describe('設定與借用期間', function () {
             ->and(Setting::get('borrow.max_days'))->toBe(7);
 
         $this->put(route('admin.settings.section.update', 'borrow'), [
-            'deposit_amount' => 500, 'max_days' => 14, 'default_open' => false, 'allow_advance' => true, 'deposit_box_count' => 20,
+            'deposit_amount' => 500, 'max_days' => 14, 'default_open' => false, 'allow_advance' => true, 'deposit_box_count' => 20, 'flexible_duration' => true,
         ])->assertSessionHasNoErrors();
 
         expect(Setting::get('borrow.deposit_amount'))->toBe(500)

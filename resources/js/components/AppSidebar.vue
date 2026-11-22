@@ -5,6 +5,7 @@ import {
     CalendarRange,
     ClipboardList,
     FileText,
+    MapPin,
     Package,
     Search,
     Settings2,
@@ -30,6 +31,7 @@ import { home } from '@/routes';
 import { index as borrowsIndex } from '@/routes/admin/borrows';
 import { index as categoriesIndex } from '@/routes/admin/categories';
 import { index as groupsIndex } from '@/routes/admin/groups';
+import { index as locationsIndex } from '@/routes/admin/locations';
 import { index as periodsIndex } from '@/routes/admin/periods';
 import { index as poolsIndex } from '@/routes/admin/pools';
 import { index as propertiesIndex } from '@/routes/admin/properties';
@@ -74,6 +76,7 @@ const adminNav = computed<NavItem[]>(() =>
               { title: '人員', href: usersIndex(), icon: Users },
               { title: '群組與授權', href: groupsIndex(), icon: UsersRound },
               { title: '借用期間', href: periodsIndex(), icon: CalendarRange },
+              { title: '地點', href: locationsIndex(), icon: MapPin },
           ]
         : [],
 );

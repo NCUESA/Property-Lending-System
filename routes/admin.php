@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\BorrowPeriodController;
 use App\Http\Controllers\Admin\BorrowRequestController;
 use App\Http\Controllers\Admin\BorrowViolationController;
+use App\Http\Controllers\Admin\LocationController;
 use App\Http\Controllers\Admin\PropertyCategoryController;
 use App\Http\Controllers\Admin\PropertyCodeController;
 use App\Http\Controllers\Admin\PropertyController;
@@ -51,6 +52,10 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
         Route::resource('groups', UserGroupController::class)->except(['create', 'show']);
 
         Route::resource('periods', BorrowPeriodController::class)->only(['index', 'store', 'update', 'destroy']);
+
+        // 地點與互連關係（有向圖）
+        Route::resource('locations', LocationController::class)->only(['index', 'store', 'update', 'destroy']);
+        Route::put('locations/{location}/links', [LocationController::class, 'syncLinks'])->name('locations.links.update');
 
         // 封鎖由系統依設定自動建立，管理員只能提前解除
         Route::post('blocks/{block}/lift', [BorrowViolationController::class, 'lift'])->name('blocks.lift');

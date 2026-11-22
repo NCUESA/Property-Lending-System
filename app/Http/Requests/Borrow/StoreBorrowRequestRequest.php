@@ -26,6 +26,12 @@ class StoreBorrowRequestRequest extends FormRequest
         // 借用日當天算第 1 天，所以最晚歸還日 = 借用日 + (max_days − 1)
         $latestDue = $this->date('borrow_date')?->addDays($maxDays - 1)->toDateString();
 
+        /*
+         * 彈性借用開啟＝照規定一律借滿 max_days，歸還日不給自選（送什麼都以算出來的為準）。
+         * 關閉＝借用人自己挑歸還日，不設上限，超過規定由後台借用單示警。
+         */
+        $flexible = (bool) Setting::get('borrow.flexible_duration', true);
+
         return [
             'location_id' => ['required', 'integer', Rule::exists('locations', 'id')->where('is_pickup_point', true)],
             'borrower_department' => ['required', 'string', 'max:100'],
@@ -35,7 +41,10 @@ class StoreBorrowRequestRequest extends FormRequest
             'borrow_date' => $allowAdvance
                 ? ['required', 'date', "after_or_equal:{$today}"]
                 : ['required', 'date', "date_equals:{$today}"],
-            'due_date' => array_filter(['required', 'date', 'after_or_equal:borrow_date', $latestDue ? "before_or_equal:{$latestDue}" : null]),
+            'due_date' => array_filter([
+                'required', 'date', 'after_or_equal:borrow_date',
+                $flexible && $latestDue ? "before_or_equal:{$latestDue}" : null,
+            ]),
             'agreed_terms' => ['accepted'],
             'property_ids' => ['array', 'required_without:pools'],
             'property_ids.*' => ['integer', 'distinct'],
@@ -43,6 +52,21 @@ class StoreBorrowRequestRequest extends FormRequest
             'pools.*.id' => ['required', 'integer', 'distinct'],
             'pools.*.quantity' => ['required', 'integer', 'min:1', 'max:999'],
         ];
+    }
+
+    /** 彈性借用開啟時，歸還日一律改成「借用日 + max_days − 1」，不管使用者送什麼。 */
+    protected function prepareForValidation(): void
+    {
+        if (! (bool) Setting::get('borrow.flexible_duration', true)) {
+            return;
+        }
+
+        $maxDays = max(1, (int) Setting::get('borrow.max_days', 7));
+        $borrowDate = $this->date('borrow_date');
+
+        if ($borrowDate !== null) {
+            $this->merge(['due_date' => $borrowDate->addDays($maxDays - 1)->toDateString()]);
+        }
     }
 
     /**

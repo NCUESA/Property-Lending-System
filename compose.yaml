@@ -1,31 +1,51 @@
 # 本機開發環境：docker compose up -d --build
 # 資料庫名稱與帳密讀取專案根目錄的 .env（DB_DATABASE / DB_USERNAME / DB_PASSWORD）。
 
+# app / queue / scheduler 共用同一份 image 與掛載設定
+x-app: &app
+    build:
+        context: ./docker/app
+        args:
+            # bash 的 UID 是唯讀變數無法 export，所以用 WWWUSER / WWWGROUP（Sail 慣例）
+            UID: ${WWWUSER:-1000}
+            GID: ${WWWGROUP:-1000}
+    image: property-lending-dev
+    environment:
+        # 只覆寫「連線位置」。DB_DATABASE 不在這裡設定，以免蓋掉測試用的 property_testing
+        DB_CONNECTION: pgsql
+        DB_HOST: pgsql
+        DB_PORT: 5432
+        VITE_PORT: ${VITE_PORT:-5173}
+    volumes:
+        - .:/var/www/html
+        # node_modules 放在 volume：避免和主機（macOS / Windows）的原生套件互相覆蓋
+        - node_modules:/var/www/html/node_modules
+    depends_on:
+        pgsql:
+            condition: service_healthy
+
 services:
     app:
-        build:
-            context: ./docker/app
-            args:
-                # bash 的 UID 是唯讀變數無法 export，所以用 WWWUSER / WWWGROUP（Sail 慣例）
-                UID: ${WWWUSER:-1000}
-                GID: ${WWWGROUP:-1000}
-        image: property-lending-dev
+        <<: *app
         ports:
             - '${APP_PORT:-8000}:8000'
             - '${VITE_PORT:-5173}:${VITE_PORT:-5173}'
-        environment:
-            # 只覆寫「連線位置」。DB_DATABASE 不在這裡設定，以免蓋掉測試用的 property_testing
-            DB_CONNECTION: pgsql
-            DB_HOST: pgsql
-            DB_PORT: 5432
-            VITE_PORT: ${VITE_PORT:-5173}
-        volumes:
-            - .:/var/www/html
-            # node_modules 放在 volume：避免和主機（macOS / Windows）的原生套件互相覆蓋
-            - node_modules:/var/www/html/node_modules
-        depends_on:
-            pgsql:
-                condition: service_healthy
+
+    # 以下兩個只在 workers profile 啟動：
+    #   docker compose --profile workers up -d
+    # 本機開發不需要，因為 app 跑的 `composer run dev` 已經包含 queue 與 schedule:work。
+    # 正式／測試機不跑 dev server 時，這兩個就是寄信與排程真正會動的地方。
+    queue:
+        <<: *app
+        command: php artisan queue:work --tries=3 --max-time=3600
+        restart: unless-stopped
+        profiles: [workers]
+
+    scheduler:
+        <<: *app
+        command: php artisan schedule:work
+        restart: unless-stopped
+        profiles: [workers]
 
     pgsql:
         image: postgres:17-bookworm
@@ -40,7 +60,11 @@ services:
             - pgsql-data:/var/lib/postgresql/data
             - ./docker/pgsql/create-testing-database.sql:/docker-entrypoint-initdb.d/10-create-testing-database.sql:ro
         healthcheck:
-            test: ['CMD-SHELL', 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+            test:
+                [
+                    'CMD-SHELL',
+                    'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"',
+                ]
             interval: 5s
             timeout: 5s
             retries: 10

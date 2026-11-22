@@ -45,6 +45,7 @@ class SettingController extends Controller
                 'default_open' => 'borrow.default_open',
                 'allow_advance' => 'borrow.allow_advance',
                 'deposit_box_count' => 'borrow.deposit_box_count',
+                'flexible_duration' => 'borrow.flexible_duration',
             ],
         ],
         'penalty' => [

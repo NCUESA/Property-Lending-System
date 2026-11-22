@@ -175,6 +175,8 @@ describe('申請', function () {
     });
 
     it('後端強制執行日期規則（舊系統只有前端檢查）', function (array $dates, string $field) {
+        // 這幾條與彈性借用無關；歸還日的規則在下面「彈性借用」那一組
+        Setting::put('borrow.flexible_duration', false);
         $property = Property::factory()->create(['location_id' => $this->jinde->id]);
 
         $this->post(route('borrow.store'), borrowPayload(['property_ids' => [$property->id], ...$dates]))
@@ -182,7 +184,6 @@ describe('申請', function () {
     })->with([
         '不開放預借' => [['borrow_date' => today()->addDay()->toDateString(), 'due_date' => today()->addDays(2)->toDateString()], 'borrow_date'],
         '借用日不能是過去' => [['borrow_date' => today()->subDay()->toDateString()], 'borrow_date'],
-        '最長 7 天（含借用當天）' => [['due_date' => today()->addDays(7)->toDateString()], 'due_date'],
         '歸還日早於借用日' => [['due_date' => today()->subDay()->toDateString()], 'due_date'],
     ]);
 
@@ -245,6 +246,91 @@ describe('申請', function () {
     it('驗證訊息是中文', function () {
         $this->post(route('borrow.store'), borrowPayload(['borrower_name' => '']))
             ->assertSessionHasErrors(['borrower_name' => '請填寫聯絡人姓名。']);
+    });
+});
+
+describe('彈性借用', function () {
+    beforeEach(function () {
+        $this->property = fn () => Property::factory()->create(['location_id' => $this->jinde->id]);
+    });
+
+    it('開啟時歸還日一律套成規定天數，送什麼都一樣', function () {
+        Setting::put('borrow.flexible_duration', true);
+        Setting::put('borrow.max_days', 7);
+
+        $this->post(route('borrow.store'), borrowPayload([
+            'property_ids' => [($this->property)()->id],
+            'due_date' => today()->addDays(30)->toDateString(), // 亂送
+        ]))->assertSessionHasNoErrors();
+
+        expect(BorrowRequest::sole()->due_date->toDateString())
+            ->toBe(today()->addDays(6)->toDateString());
+    });
+
+    it('開啟時送太短的歸還日也會被補成規定天數', function () {
+        Setting::put('borrow.flexible_duration', true);
+
+        $this->post(route('borrow.store'), borrowPayload([
+            'property_ids' => [($this->property)()->id],
+            'due_date' => today()->toDateString(),
+        ]))->assertSessionHasNoErrors();
+
+        expect(BorrowRequest::sole()->due_date->toDateString())
+            ->toBe(today()->addDays(6)->toDateString());
+    });
+
+    it('關閉時可以自由選擇歸還日，超過規定也收', function () {
+        Setting::put('borrow.flexible_duration', false);
+        Setting::put('borrow.max_days', 7);
+
+        $this->post(route('borrow.store'), borrowPayload([
+            'property_ids' => [($this->property)()->id],
+            'due_date' => today()->addDays(20)->toDateString(),
+        ]))->assertSessionHasNoErrors();
+
+        expect(BorrowRequest::sole()->due_date->toDateString())
+            ->toBe(today()->addDays(20)->toDateString());
+    });
+
+    it('關閉時歸還日仍然不能早於借用日', function () {
+        Setting::put('borrow.flexible_duration', false);
+
+        $this->post(route('borrow.store'), borrowPayload([
+            'property_ids' => [($this->property)()->id],
+            'due_date' => today()->subDay()->toDateString(),
+        ]))->assertSessionHasErrors('due_date');
+    });
+
+    it('借用頁會帶出設定與可選範圍', function () {
+        Setting::put('borrow.flexible_duration', false);
+        Setting::put('borrow.allow_advance', true);
+        Setting::put('borrow.max_days', 7);
+
+        // 關閉彈性借用時，歸還日的可選範圍不再被 maxDays 綁住
+        $this->get(route('borrow.create'))->assertInertia(fn (Assert $page) => $page
+            ->where('rules.flexibleDuration', false)
+            ->where('calendar.lastDate', today()
+                ->addDays(BorrowRequestController::CALENDAR_HORIZON_DAYS * 2)
+                ->toDateString())
+        );
+
+        Setting::put('borrow.flexible_duration', true);
+
+        $this->get(route('borrow.create'))->assertInertia(fn (Assert $page) => $page
+            ->where('rules.flexibleDuration', true)
+            ->where('calendar.lastDate', today()
+                ->addDays(BorrowRequestController::CALENDAR_HORIZON_DAYS + 6)
+                ->toDateString())
+        );
+    });
+
+    it('借用單會把借用天數送給後台判斷有沒有超過規定', function () {
+        Setting::put('borrow.max_days', 7);
+        $borrow = BorrowRequest::factory()->create(['location_id' => $this->jinde->id]);
+
+        $this->actingAs($this->staff)
+            ->get(route('admin.borrows.show', $borrow))
+            ->assertInertia(fn (Assert $page) => $page->where('maxDays', 7));
     });
 });
 

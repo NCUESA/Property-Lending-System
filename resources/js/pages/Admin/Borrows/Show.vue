@@ -5,6 +5,7 @@ import {
     CalendarClock,
     PackageCheck,
     PackageOpen,
+    TriangleAlert,
     Undo2,
 } from '@lucide/vue';
 import { computed, reactive, ref, watch } from 'vue';
@@ -66,7 +67,19 @@ const props = defineProps<{
     borrow: BorrowOverview & { items: BorrowItem[] };
     defaultDepositAmount: number;
     depositBoxCount: number;
+    maxDays: number;
 }>();
+
+/** 借用天數，含借用當天。 */
+const borrowDays = computed(() => {
+    const from = new Date(`${props.borrow.borrow_date.slice(0, 10)}T00:00:00Z`);
+    const to = new Date(`${props.borrow.due_date.slice(0, 10)}T00:00:00Z`);
+
+    return Math.round((to.getTime() - from.getTime()) / 86_400_000) + 1;
+});
+
+/** 關閉彈性借用時借用人可自選歸還日，超過規定要讓值班人員看得出來。 */
+const overRuleDays = computed(() => borrowDays.value > props.maxDays);
 
 const items = computed(() => props.borrow.items);
 const pendingItems = computed(() =>
@@ -321,6 +334,21 @@ const submitExtend = () =>
                         歸還日：<span class="tabular-nums">{{
                             formatDate(borrow.due_date)
                         }}</span>
+                    </div>
+                    <div
+                        :class="
+                            overRuleDays
+                                ? 'font-medium text-amber-700 dark:text-amber-400'
+                                : 'text-muted-foreground'
+                        "
+                    >
+                        <TriangleAlert
+                            v-if="overRuleDays"
+                            class="mr-1 inline size-4 align-text-bottom"
+                        />
+                        共 {{ borrowDays }} 天<template v-if="overRuleDays">
+                            — 超過規定的 {{ maxDays }} 天</template
+                        >
                     </div>
                 </CardContent>
             </Card>

@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Auth\NcuesaSsoProvider;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Illuminate\Foundation\DevCommands;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -30,6 +31,16 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
         $this->configureAuthorization();
         $this->configureSso();
+        $this->configureDevProcesses();
+    }
+
+    /**
+     * `composer run dev` 預設只跑 server／queue／logs／vite，沒有排程。
+     * 逾期未取退回、逾期未還違規、歸還提醒信都靠排程，本機也要跑才看得到效果。
+     */
+    protected function configureDevProcesses(): void
+    {
+        DevCommands::artisan('schedule:work')->yellow();
     }
 
     /**

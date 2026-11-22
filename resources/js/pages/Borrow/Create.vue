@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { Head, router, useForm, usePage } from '@inertiajs/vue3';
-import { CalendarClock, Info, LogIn, Minus, Plus } from '@lucide/vue';
+import {
+    CalendarClock,
+    Info,
+    LogIn,
+    Minus,
+    Plus,
+    TriangleAlert,
+} from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
 import DateRangeCalendar from '@/components/DateRangeCalendar.vue';
 import Heading from '@/components/Heading.vue';
@@ -39,6 +46,7 @@ const props = defineProps<{
         maxDays: number;
         depositAmount: number;
         allowAdvance: boolean;
+        flexibleDuration: boolean;
         notices: string[];
     };
     calendar: {
@@ -103,9 +111,24 @@ function pickBorrowDate(date: string | null) {
     if (date === null) return;
 
     form.borrow_date = date;
+
+    // 彈性借用開啟時歸還日由規定決定，日曆會同時送 update:end，這裡不留空等人點
+    if (props.rules.flexibleDuration) return;
+
     pickedDue.value = null;
     form.due_date = date;
 }
+
+/** 彈性借用關閉時才讓使用者自選歸還日；開啟時日曆一點就選滿規定天數。 */
+const fixedDays = computed(() =>
+    props.rules.flexibleDuration ? props.rules.maxDays : null,
+);
+
+/** 超過規定天數：不擋，但告訴借用人借用單上會被標示。 */
+const overRuleDays = computed(
+    () =>
+        !props.rules.flexibleDuration && borrowDays.value > props.rules.maxDays,
+);
 
 /** 換地點：重新載入該地點的器材，並清空已選（避免跨地點借用）。 */
 function selectLocation(location: { id: number; code: string }) {
@@ -381,7 +404,11 @@ function submit() {
                 <CardHeader>
                     <CardTitle>4. 借用日期</CardTitle>
                     <CardDescription>
-                        先點取件日，再點歸還日；點已選範圍外的日子可重新選擇。
+                        {{
+                            rules.flexibleDuration
+                                ? `依規定一律借用 ${rules.maxDays} 天，點選取件日即可。`
+                                : '先點取件日，再點歸還日；點已選範圍外的日子可重新選擇。'
+                        }}
                     </CardDescription>
                 </CardHeader>
                 <CardContent class="space-y-4">
@@ -425,6 +452,16 @@ function submit() {
                         目前不開放預借，取件日為今天
                     </p>
 
+                    <Alert v-if="overRuleDays">
+                        <TriangleAlert class="size-4" />
+                        <AlertTitle>超過規定借用天數</AlertTitle>
+                        <AlertDescription>
+                            規定最長 {{ rules.maxDays }} 天，你選了
+                            {{ borrowDays }}
+                            天。還是可以送出，但借用單上會標示給值班人員確認。
+                        </AlertDescription>
+                    </Alert>
+
                     <DateRangeCalendar
                         :start="form.borrow_date"
                         :end="pickedDue"
@@ -432,7 +469,8 @@ function submit() {
                         :last-borrow-date="calendar.lastBorrowDate"
                         :last-date="calendar.lastDate"
                         :closed-dates="calendar.closedDates"
-                        :max-days="rules.maxDays"
+                        :max-days="fixedDays === null ? null : rules.maxDays"
+                        :fixed-days="fixedDays"
                         @update:start="pickBorrowDate"
                         @update:end="pickedDue = $event"
                     />
