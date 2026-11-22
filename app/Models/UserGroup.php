@@ -13,8 +13,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $id
  * @property string $name
  * @property string|null $description
+ * @property int $auth_level 這個群組可借的最高器材等級
  */
-#[Fillable(['name', 'description'])]
+#[Fillable(['name', 'description', 'auth_level'])]
 class UserGroup extends Model
 {
     /** @use HasFactory<UserGroupFactory> */

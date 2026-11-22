@@ -41,6 +41,7 @@ const props = defineProps<{
     locations: LocationRef[];
     categories: Category[];
     pools: PoolRef[];
+    authLevels: { value: number; label: string }[];
 }>();
 
 const isEdit = computed(() => props.property !== null);
@@ -360,15 +361,24 @@ function remove() {
                         </div>
                         <div class="grid gap-2">
                             <Label for="auth_level">借用權限等級</Label>
-                            <Input
+                            <select
                                 id="auth_level"
                                 v-model.number="form.auth_level"
-                                type="number"
-                                min="0"
                                 :disabled="form.property_pool_id !== ''"
-                            />
+                                class="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none disabled:opacity-50"
+                            >
+                                <option
+                                    v-for="level in authLevels"
+                                    :key="level.value"
+                                    :value="level.value"
+                                >
+                                    {{ level.label }}
+                                </option>
+                            </select>
                             <p class="text-xs text-muted-foreground">
-                                0 = 訪客可借；大於 0 需在「群組與授權」開放
+                                公開 =
+                                訪客也能借。設了等級就只有「群組與授權」裡
+                                範圍涵蓋這件器材、而且等級夠高的群組才借得到。
                             </p>
                             <InputError :message="form.errors.auth_level" />
                         </div>

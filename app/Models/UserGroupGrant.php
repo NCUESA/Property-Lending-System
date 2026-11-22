@@ -51,13 +51,18 @@ class UserGroupGrant extends Model
     }
 
     /**
-     * 給 whereExists 用的子查詢：此使用者（含繼承自上層群組）擁有的授權，別名為 g。
+     * 給 whereExists 用的子查詢：此使用者（含繼承自上層群組）擁有、而且等級夠的授權，別名為 g。
+     *
+     * @param  string  $levelColumn  外層要比對的器材等級欄位，例如 properties.auth_level
      */
-    public static function queryForUser(QueryBuilder $sub, User $user): QueryBuilder
+    public static function queryForUser(QueryBuilder $sub, User $user, string $levelColumn): QueryBuilder
     {
         return $sub->selectRaw('1')
             ->from('user_group_grants as g')
             ->join('user_effective_groups as eg', 'eg.user_group_id', '=', 'g.user_group_id')
-            ->where('eg.user_id', $user->id);
+            ->join('user_groups as ug', 'ug.id', '=', 'g.user_group_id')
+            ->where('eg.user_id', $user->id)
+            // 範圍涵蓋還不夠，群組等級也要夠高
+            ->whereColumn('ug.auth_level', '>=', $levelColumn);
     }
 }

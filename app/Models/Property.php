@@ -138,7 +138,7 @@ class Property extends Model
             $q->where('properties.auth_level', 0);
 
             if ($user !== null) {
-                $q->orWhereExists(fn (QueryBuilder $sub) => UserGroupGrant::queryForUser($sub, $user)
+                $q->orWhereExists(fn (QueryBuilder $sub) => UserGroupGrant::queryForUser($sub, $user, 'properties.auth_level')
                     ->where(fn (QueryBuilder $w) => $w
                         ->whereColumn('g.property_id', 'properties.id')
                         ->orWhereColumn('g.property_subcategory_id', 'properties.property_subcategory_id')

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Models\Property;
+use App\Support\AuthLevel;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -35,7 +36,7 @@ class PropertyRequest extends FormRequest
             'property_pool_id' => ['nullable', 'integer', 'exists:property_pools,id'],
             'acquired_on' => ['nullable', 'date'],
             'is_school_owned' => ['required', 'boolean'],
-            'auth_level' => ['required', 'integer', 'min:0', 'max:255'],
+            'auth_level' => ['required', 'integer', 'min:0', 'max:'.AuthLevel::MAX],
             'is_lendable' => ['required', 'boolean'],
             'remark' => ['nullable', 'string', 'max:2000'],
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],

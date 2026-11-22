@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Models\UserGroup;
+use App\Support\AuthLevel;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -26,6 +27,7 @@ class UserGroupRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:50', Rule::unique('user_groups', 'name')->ignore($group)],
             'description' => ['nullable', 'string', 'max:1000'],
+            'auth_level' => ['sometimes', 'integer', 'min:0', 'max:'.AuthLevel::MAX],
             'member_ids' => ['sometimes', 'array'],
             'member_ids.*' => ['integer', 'distinct', 'exists:users,id'],
             'subgroup_ids' => ['sometimes', 'array'],
@@ -47,6 +49,7 @@ class UserGroupRequest extends FormRequest
         return [
             'name' => '群組名稱',
             'description' => '說明',
+            'auth_level' => '授權等級',
             'member_ids' => '成員',
             'subgroup_ids' => '子群組',
             'subgroup_ids.*' => '子群組',

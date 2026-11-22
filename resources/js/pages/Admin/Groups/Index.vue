@@ -34,6 +34,7 @@ type Group = {
     members_count: number;
     subgroups_count: number;
     grants_count: number;
+    auth_level: number;
     parent_groups: { id: number; name: string }[];
 };
 
@@ -70,6 +71,7 @@ const submit = () => form.post(store.url());
                     <TableRow>
                         <TableHead>群組</TableHead>
                         <TableHead>屬於</TableHead>
+                        <TableHead class="text-right">等級</TableHead>
                         <TableHead class="text-right">成員</TableHead>
                         <TableHead class="text-right">子群組</TableHead>
                         <TableHead class="text-right">授權</TableHead>
@@ -95,6 +97,15 @@ const submit = () => form.post(store.url());
                                 >{{ p.name }}</Badge
                             >
                         </TableCell>
+                        <TableCell class="text-right">
+                            <Badge
+                                :variant="
+                                    g.auth_level > 0 ? 'secondary' : 'outline'
+                                "
+                                class="tabular-nums"
+                                >{{ g.auth_level }}</Badge
+                            >
+                        </TableCell>
                         <TableCell class="text-right tabular-nums">{{
                             g.members_count
                         }}</TableCell>
@@ -112,7 +123,7 @@ const submit = () => form.post(store.url());
                     </TableRow>
                     <TableRow v-if="!groups.length">
                         <TableCell
-                            colspan="6"
+                            colspan="7"
                             class="py-10 text-center text-muted-foreground"
                             >還沒有任何群組</TableCell
                         >

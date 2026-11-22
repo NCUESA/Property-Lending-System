@@ -42,11 +42,13 @@ const props = defineProps<{
         id: number;
         name: string;
         description: string | null;
+        auth_level: number;
         member_ids: number[];
         subgroup_ids: number[];
         grants: Grants;
     };
     options: {
+        levels: { value: number; label: string }[];
         users: { id: number; name: string; student_id: string | null }[];
         groups: { id: number; name: string }[];
         categories: Category[];
@@ -68,6 +70,7 @@ const props = defineProps<{
 const form = useForm({
     name: props.group.name,
     description: props.group.description ?? '',
+    auth_level: props.group.auth_level,
     member_ids: [...props.group.member_ids],
     subgroup_ids: [...props.group.subgroup_ids],
     grants: {
@@ -92,14 +95,14 @@ const propertyOptions = computed(() =>
     props.options.properties.map((p) => ({
         value: p.id,
         label: p.name,
-        hint: `${p.ssid}・等級 ${p.auth_level}`,
+        hint: `${p.ssid}・${p.auth_level > 0 ? `需等級 ${p.auth_level}` : '公開'}`,
     })),
 );
 const poolOptions = computed(() =>
     props.options.pools.map((p) => ({
         value: p.id,
         label: `${p.name}（${p.location.name}）`,
-        hint: p.auth_level > 0 ? `等級 ${p.auth_level}` : '公開',
+        hint: p.auth_level > 0 ? `需等級 ${p.auth_level}` : '公開',
     })),
 );
 
@@ -169,6 +172,27 @@ function remove() {
                         v-model="form.description"
                         rows="1"
                     />
+                </div>
+                <div class="grid gap-2">
+                    <Label for="auth_level">授權等級</Label>
+                    <select
+                        id="auth_level"
+                        v-model.number="form.auth_level"
+                        class="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+                    >
+                        <option
+                            v-for="level in options.levels"
+                            :key="level.value"
+                            :value="level.value"
+                        >
+                            {{ level.label }}
+                        </option>
+                    </select>
+                    <p class="text-xs text-muted-foreground">
+                        下方的授權決定<strong>碰得到哪些範圍</strong>，等級決定<strong>碰得到多敏感的器材</strong>。
+                        兩個條件都成立才借得到：等級必須大於等於器材本身的等級。
+                    </p>
+                    <InputError :message="form.errors.auth_level" />
                 </div>
             </CardContent>
         </Card>

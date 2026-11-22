@@ -49,6 +49,7 @@ defineOptions({
 const props = defineProps<{
     pools: Pool[];
     locations: { id: number; name: string }[];
+    authLevels: { value: number; label: string }[];
 }>();
 
 const open = ref(false);
@@ -261,13 +262,22 @@ function remove(pool: Pool) {
                 </div>
                 <div class="grid gap-2">
                     <Label for="auth_level">借用權限等級</Label>
-                    <Input
+                    <select
                         id="auth_level"
                         v-model.number="form.auth_level"
-                        type="number"
-                        min="0"
-                    />
-                    <p class="text-xs text-muted-foreground">0 = 訪客可借</p>
+                        class="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+                    >
+                        <option
+                            v-for="level in authLevels"
+                            :key="level.value"
+                            :value="level.value"
+                        >
+                            {{ level.label }}
+                        </option>
+                    </select>
+                    <p class="text-xs text-muted-foreground">
+                        公開 = 訪客也能借；設了等級要有對應授權且群組等級夠高
+                    </p>
                     <InputError :message="form.errors.auth_level" />
                 </div>
                 <div class="grid gap-2">

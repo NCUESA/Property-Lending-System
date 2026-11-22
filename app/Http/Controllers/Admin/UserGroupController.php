@@ -9,6 +9,7 @@ use App\Models\PropertyCategory;
 use App\Models\PropertyPool;
 use App\Models\User;
 use App\Models\UserGroup;
+use App\Support\AuthLevel;
 use App\Support\DatabaseError;
 use App\Support\Toast;
 use Illuminate\Database\QueryException;
@@ -49,6 +50,7 @@ class UserGroupController extends Controller
                 'id' => $group->id,
                 'name' => $group->name,
                 'description' => $group->description,
+                'auth_level' => $group->auth_level,
                 'member_ids' => $group->members->pluck('id'),
                 'subgroup_ids' => $group->subgroups->pluck('id'),
                 'grants' => [
@@ -59,6 +61,7 @@ class UserGroupController extends Controller
                 ],
             ],
             'options' => [
+                'levels' => AuthLevel::groupOptions(),
                 'users' => User::where('is_active', true)->orderBy('name')->get(['id', 'name', 'student_id']),
                 'groups' => UserGroup::whereKeyNot($group->id)->orderBy('name')->get(['id', 'name']),
                 'categories' => PropertyCategory::with('subcategories:id,property_category_id,code,name')->orderBy('code')->get(['id', 'code', 'name']),
@@ -75,7 +78,11 @@ class UserGroupController extends Controller
 
         try {
             DB::transaction(function () use ($group, $data) {
-                $group->update(['name' => $data['name'], 'description' => $data['description'] ?? null]);
+                $group->update([
+                    'name' => $data['name'],
+                    'description' => $data['description'] ?? null,
+                    ...array_key_exists('auth_level', $data) ? ['auth_level' => $data['auth_level']] : [],
+                ]);
 
                 if (array_key_exists('member_ids', $data)) {
                     $group->members()->sync($data['member_ids']);

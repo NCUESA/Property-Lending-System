@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\PropertyPoolRequest;
 use App\Models\Location;
 use App\Models\Property;
 use App\Models\PropertyPool;
+use App\Support\AuthLevel;
 use App\Support\Toast;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -30,6 +31,7 @@ class PropertyPoolController extends Controller
                 ->orderBy('location_id')->orderBy('name')
                 ->get(),
             'locations' => Location::pickupPoints()->get(['id', 'name']),
+            'authLevels' => AuthLevel::options(),
         ]);
     }
 

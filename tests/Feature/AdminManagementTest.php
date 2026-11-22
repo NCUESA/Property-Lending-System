@@ -12,6 +12,7 @@ use App\Models\PropertySubcategory;
 use App\Models\Setting;
 use App\Models\User;
 use App\Models\UserGroup;
+use App\Support\AuthLevel;
 use Database\Seeders\LocationSeeder;
 use Database\Seeders\SettingSeeder;
 use Illuminate\Http\UploadedFile;
@@ -242,6 +243,71 @@ describe('人員與群組', function () {
         ])->assertSessionHasNoErrors();
 
         expect($user->fresh()->isStaffOrAbove())->toBeTrue();
+    });
+
+    it('群組設定頁帶出等級與可選的等級清單', function () {
+        $group = UserGroup::factory()->level(2)->create();
+
+        $this->get(route('admin.groups.edit', $group))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('group.auth_level', 2)
+                ->has('options.levels', AuthLevel::MAX + 1)
+                ->where('options.levels.0.value', 0)
+                ->where('options.levels.5.value', 5));
+
+        $this->get(route('admin.groups.index'))
+            ->assertInertia(fn (Assert $page) => $page->where('groups.0.auth_level', 2));
+    });
+
+    it('可以從後台改群組等級，改完立刻影響借得到什麼', function () {
+        $sub = PropertySubcategory::factory()->create();
+        $lv1 = Property::factory()->restricted(1)->create(['property_subcategory_id' => $sub->id]);
+        $lv3 = Property::factory()->restricted(3)->create(['property_subcategory_id' => $sub->id]);
+
+        $group = UserGroup::factory()->level(1)->create();
+        $member = User::factory()->create();
+        $group->members()->attach($member);
+        $group->grants()->create(['property_subcategory_id' => $sub->id]);
+
+        expect(Property::borrowableBy($member)->whereKey($lv3->id)->exists())->toBeFalse();
+
+        $this->put(route('admin.groups.update', $group), [
+            'name' => $group->name, 'auth_level' => 3,
+        ])->assertSessionHasNoErrors();
+
+        expect($group->fresh()->auth_level)->toBe(3)
+            ->and(Property::borrowableBy($member)->whereKey($lv1->id)->exists())->toBeTrue()
+            ->and(Property::borrowableBy($member)->whereKey($lv3->id)->exists())->toBeTrue();
+    });
+
+    it('等級超出範圍會被擋下來', function () {
+        $group = UserGroup::factory()->create();
+
+        $this->put(route('admin.groups.update', $group), [
+            'name' => $group->name, 'auth_level' => AuthLevel::MAX + 1,
+        ])->assertSessionHasErrors('auth_level');
+    });
+
+    it('器材表單會帶出等級選項', function () {
+        $this->get(route('admin.properties.create'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('authLevels', AuthLevel::MAX + 1)
+                ->where('authLevels.0.label', '公開（訪客可借）')
+                ->where('authLevels.3.label', '等級 3'));
+
+        $this->get(route('admin.pools.index'))
+            ->assertInertia(fn (Assert $page) => $page->has('authLevels', AuthLevel::MAX + 1));
+    });
+
+    it('器材等級不能超過上限', function () {
+        $location = Location::where('code', 'jinde')->firstOrFail();
+        $sub = PropertySubcategory::factory()->create();
+
+        $this->post(route('admin.properties.store'), [
+            'ssid' => 'J9990001', 'property_subcategory_id' => $sub->id,
+            'location_id' => $location->id, 'name' => '測試', 'is_school_owned' => true,
+            'is_lendable' => true, 'auth_level' => AuthLevel::MAX + 1,
+        ])->assertSessionHasErrors('auth_level');
     });
 
     it('一次同步群組的成員、子群組與授權', function () {

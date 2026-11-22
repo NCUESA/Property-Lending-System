@@ -8,6 +8,7 @@ use App\Models\Location;
 use App\Models\Property;
 use App\Models\PropertyCategory;
 use App\Models\PropertyPool;
+use App\Support\AuthLevel;
 use App\Support\Toast;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -128,6 +129,7 @@ class PropertyController extends Controller
             'locations' => Location::orderBy('sort_order')->get(['id', 'code', 'name', 'ssid_prefix']),
             'categories' => PropertyCategory::with('subcategories:id,property_category_id,code,name')->orderBy('code')->get(['id', 'code', 'name']),
             'pools' => PropertyPool::with('location:id,name')->orderBy('name')->get(['id', 'name', 'location_id']),
+            'authLevels' => AuthLevel::options(),
         ];
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Support\AuthLevel;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -23,7 +24,7 @@ class PropertyPoolRequest extends FormRequest
                 Rule::unique('property_pools', 'name')->where('location_id', $this->input('location_id'))->ignore($this->route('pool')),
             ],
             'location_id' => ['required', 'integer', Rule::exists('locations', 'id')->where('is_pickup_point', true)],
-            'auth_level' => ['required', 'integer', 'min:0', 'max:255'],
+            'auth_level' => ['required', 'integer', 'min:0', 'max:'.AuthLevel::MAX],
             'remark' => ['nullable', 'string', 'max:2000'],
         ];
     }

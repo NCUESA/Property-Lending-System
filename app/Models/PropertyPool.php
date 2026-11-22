@@ -80,7 +80,7 @@ class PropertyPool extends Model
             $q->where('property_pools.auth_level', 0);
 
             if ($user !== null) {
-                $q->orWhereExists(fn (QueryBuilder $sub) => UserGroupGrant::queryForUser($sub, $user)
+                $q->orWhereExists(fn (QueryBuilder $sub) => UserGroupGrant::queryForUser($sub, $user, 'property_pools.auth_level')
                     ->whereColumn('g.property_pool_id', 'property_pools.id'));
             }
         });

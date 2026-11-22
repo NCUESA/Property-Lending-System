@@ -16,6 +16,7 @@ use App\Models\Setting;
 use App\Models\User;
 use App\Models\UserGroup;
 use App\Models\UserGroupGrant;
+use App\Support\AuthLevel;
 use App\Support\PropertyCode;
 use Database\Seeders\LocationSeeder;
 use Illuminate\Database\QueryException;
@@ -199,6 +200,61 @@ describe('借用權限與群組', function () {
             ->and($this->user->effectiveGroups()->pluck('user_groups.id')->sort()->values()->all())
             ->toBe(sorted([$top->id, $middle->id, $this->group->id]))
             ->and($top->effectiveMembers()->pluck('users.id')->all())->toBe([$this->user->id]);
+    });
+
+    it('群組等級不夠就借不到，即使授權範圍涵蓋它', function () {
+        // restricted = 等級 1、restrictedOther = 等級 2，兩件都在主類別 200 底下
+        $this->group->grants()->create(['property_category_id' => $this->category->id]);
+
+        $this->group->update(['auth_level' => 0]);
+        expect(idsOf(Property::borrowableBy($this->user)))->toBe([$this->public->id]);
+
+        $this->group->update(['auth_level' => 1]);
+        expect(idsOf(Property::borrowableBy($this->user)))
+            ->toBe(sorted([$this->public->id, $this->restricted->id]));
+
+        $this->group->update(['auth_level' => 2]);
+        expect(idsOf(Property::borrowableBy($this->user)))
+            ->toBe(sorted([$this->public->id, $this->restricted->id, $this->restrictedOther->id]));
+    });
+
+    it('等級夠但授權範圍沒涵蓋，一樣借不到', function () {
+        // 等級 5 卻只授權 otherSub，就只拿得到 otherSub 底下那件
+        $this->group->update(['auth_level' => AuthLevel::MAX]);
+        $this->group->grants()->create(['property_subcategory_id' => $this->otherSub->id]);
+
+        expect(idsOf(Property::borrowableBy($this->user)))
+            ->toBe(sorted([$this->public->id, $this->restrictedOther->id]));
+    });
+
+    it('繼承來的授權看的是「授權所屬群組」的等級，不是使用者自己那一層', function () {
+        $top = UserGroup::factory()->level(1)->create();
+        $top->subgroups()->attach($this->group);
+        $top->grants()->create(['property_category_id' => $this->category->id]);
+
+        // 使用者所屬的 group 是 5 級，但授權掛在 1 級的 top 上 → 只借得到等級 1 的那件
+        expect(idsOf(Property::borrowableBy($this->user)))
+            ->toBe(sorted([$this->public->id, $this->restricted->id]));
+
+        $top->update(['auth_level' => 2]);
+        expect(idsOf(Property::borrowableBy($this->user)))
+            ->toBe(sorted([$this->public->id, $this->restricted->id, $this->restrictedOther->id]));
+    });
+
+    it('品項也照等級走', function () {
+        $pool = PropertyPool::factory()->create(['auth_level' => 3]);
+        $this->group->grants()->create(['property_pool_id' => $pool->id]);
+
+        $this->group->update(['auth_level' => 2]);
+        expect(PropertyPool::borrowableBy($this->user)->whereKey($pool->id)->exists())->toBeFalse();
+
+        $this->group->update(['auth_level' => 3]);
+        expect(PropertyPool::borrowableBy($this->user)->whereKey($pool->id)->exists())->toBeTrue();
+    });
+
+    it('資料庫擋掉超出範圍的等級', function () {
+        expect(fn () => $this->group->update(['auth_level' => AuthLevel::MAX + 1]))
+            ->toThrow(QueryException::class);
     });
 
     it('上層群組的成員不會得到子群組的授權', function () {
