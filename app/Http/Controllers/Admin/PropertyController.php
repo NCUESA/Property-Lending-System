@@ -49,7 +49,8 @@ class PropertyController extends Controller
             ->with(['subcategory.category:id,code,name', 'location:id,name', 'pool:id,name', 'activeBorrowItem:id,property_id,status,borrow_request_id'])
             ->orderBy('ssid')
             ->paginate($filters['per_page'] ?? self::PER_PAGE_OPTIONS[0])
-            ->withQueryString();
+            ->withQueryString()
+            ->through(fn (Property $p) => $p->setAttribute('image_url', PropertyImage::url($p->image_path)));
 
         return Inertia::render('Admin/Properties/Index', [
             'filters' => $filters,

@@ -162,8 +162,8 @@ const selectClass =
                                 class="flex size-9 items-center justify-center overflow-hidden rounded bg-muted"
                             >
                                 <img
-                                    v-if="p.image_path"
-                                    :src="`/storage/${p.image_path}`"
+                                    v-if="p.image_url"
+                                    :src="p.image_url"
                                     :alt="p.name"
                                     class="size-full object-cover"
                                     loading="lazy"
