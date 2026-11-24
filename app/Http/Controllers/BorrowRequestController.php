@@ -9,6 +9,7 @@ use App\Models\Location;
 use App\Models\Property;
 use App\Models\PropertyPool;
 use App\Models\Setting;
+use App\Support\PropertyImage;
 use App\Support\Toast;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -76,7 +77,7 @@ class BorrowRequestController extends Controller
                     'category' => $p->subcategory->category->name,
                     'subcategory' => $p->subcategory->name,
                     'location' => $p->location->name,
-                    'image_url' => $p->image_path ? asset('storage/'.$p->image_path) : null,
+                    'image_url' => PropertyImage::url($p->image_path),
                     'restricted' => $p->auth_level > 0,
                 ]),
             'pools' => fn () => $location === null ? [] : PropertyPool::query()
@@ -89,7 +90,7 @@ class BorrowRequestController extends Controller
                     'id' => $pool->id,
                     'name' => $pool->name,
                     'available' => max(0, (int) $pool->available_quantity),
-                    'image_url' => $pool->image_path ? asset('storage/'.$pool->image_path) : null,
+                    'image_url' => PropertyImage::url($pool->image_path),
                     'restricted' => $pool->auth_level > 0,
                 ]),
             'prefill' => $user ? ['borrower_name' => $user->name, 'email' => $user->email] : null,

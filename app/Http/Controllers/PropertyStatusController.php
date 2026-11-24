@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Location;
 use App\Models\Property;
 use App\Models\PropertyPool;
+use App\Support\PropertyImage;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -52,7 +53,7 @@ class PropertyStatusController extends Controller
                 'spec' => $p->spec,
                 'category' => $p->subcategory->category->name,
                 'location' => $p->location->name,
-                'image_url' => $p->image_path ? asset('storage/'.$p->image_path) : null,
+                'image_url' => PropertyImage::url($p->image_path),
                 'restricted' => $p->auth_level > 0,
                 'borrow' => $p->activeBorrowItem ? [
                     'status' => $p->activeBorrowItem->status,

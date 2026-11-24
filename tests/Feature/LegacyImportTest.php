@@ -31,7 +31,7 @@ test('器材匯入會修正重複與錯誤的財產編號', function () {
         'J0081005' => '大型雙面展示板',
     ]);
 
-    expect(Property::where('ssid', 'J0080004')->value('image_path'))->toBe('properties/33.jpg')
+    expect(Property::where('ssid', 'J0080004')->value('image_path'))->toBe('33.jpg')
         ->and(Property::where('ssid', 'J0081005')->value('image_path'))->toBeNull();
 });
 

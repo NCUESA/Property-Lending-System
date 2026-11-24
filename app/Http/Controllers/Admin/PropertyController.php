@@ -9,6 +9,7 @@ use App\Models\Property;
 use App\Models\PropertyCategory;
 use App\Models\PropertyPool;
 use App\Support\AuthLevel;
+use App\Support\PropertyImage;
 use App\Support\Toast;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -82,7 +83,7 @@ class PropertyController extends Controller
         return Inertia::render('Admin/Properties/Form', [
             'property' => [
                 ...$property->toArray(),
-                'image_url' => $property->image_path ? asset('storage/'.$property->image_path) : null,
+                'image_url' => PropertyImage::url($property->image_path),
             ],
             ...$this->formOptions(),
         ]);
