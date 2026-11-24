@@ -71,6 +71,23 @@ docker compose down -v         # 停止並清空資料庫與 node_modules volume
 SSO 的回呼網址仍是 `http://localhost:8000/auth/sso/callback`；若改了 `APP_PORT`，
 `.env` 的 `NCUESA_SSO_REDIRECT_URI` 與 Keycloak client 設定都要一起改。
 
+## 匯入舊系統資料
+
+把舊系統的 mysqldump 放在專案根目錄（預設檔名 `sqlexample`，已 gitignore），依序執行：
+
+```bash
+docker compose exec app php artisan migrate:fresh --seeder=LocationSeeder
+docker compose exec app php artisan db:seed --class=SettingSeeder
+docker compose exec app php artisan property:import-legacy        # 分類（coderule.csv）與器材
+docker compose exec app php artisan borrow:import-legacy --dry-run # 先看報告
+docker compose exec app php artisan borrow:import-legacy           # 經手人帳號與借用紀錄
+```
+
+- 舊單號保留，可重複執行；新系統一旦有自己的借用單就會拒絕執行。
+- 財產編號的修正在 `app/Support/Legacy/LegacyPropertyCodes.php`，略過的測試單在 `ImportLegacyBorrows::TEST_REQUEST_IDS`。
+- 經手人以學號建帳號（在職 admin/staff、離職 borrower），SSO 第一次登入時以學號綁定。
+- 不要用 `migrate:fresh --seed`：本機環境會多出示範器材。
+
 ## 搬移現有的開發資料庫
 
 在舊環境匯出，再匯入容器：

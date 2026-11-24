@@ -6,6 +6,8 @@ use App\Models\Location;
 use App\Models\Property;
 use App\Models\PropertyCategory;
 use App\Models\PropertySubcategory;
+use App\Support\Legacy\LegacyPropertyCodes;
+use App\Support\Legacy\MysqlDump;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -38,15 +40,6 @@ class ImportLegacyProperties extends Command
         '405' => '405',
     ];
 
-    /**
-     * 舊系統的財產編號打錯：類別碼 400 不在 coderule 的任何區間內（最大到 299）。
-     * 34000001 與 41030001 是同型號的兩台個人電腦主機，後者的 103（個人電腦）才正確，
-     * 且 coderule 的 103-0 正是「個人電腦主機」。
-     */
-    private const SSID_FIXES = [
-        '34000001' => '31030001',
-    ];
-
     /** 舊 property 資料表的欄位順序（mysqldump 不帶欄位名稱）。 */
     private const COLUMNS = [
         'id', 'ssid', 'class', 'name', 'second_name', 'order_number', 'price',
@@ -71,15 +64,7 @@ class ImportLegacyProperties extends Command
         [$categories, $subcategories] = $this->parseCoderule($codePath);
         $this->line('coderule：'.count($categories).' 個類別、'.array_sum(array_map('count', $subcategories)).' 個子類別');
 
-        $dump = file_get_contents($sqlPath);
-
-        if ($dump === false) {
-            $this->error("讀取失敗：{$sqlPath}");
-
-            return self::FAILURE;
-        }
-
-        $rows = $this->parseInsertRows($dump, 'property');
+        $rows = MysqlDump::open($sqlPath)->rows('property', self::COLUMNS);
 
         if ($rows === []) {
             $this->error('在 dump 裡找不到 property 資料表的 INSERT。');
@@ -92,17 +77,24 @@ class ImportLegacyProperties extends Command
         $properties = [];
         $fixed = [];
 
-        foreach ($rows as $row) {
-            $r = $this->toAssoc($row);
-            $ssid = (string) $r['ssid'];
+        foreach ($rows as $r) {
+            $ssid = LegacyPropertyCodes::forProperty((string) $r['id'], (string) $r['ssid']);
 
-            if (isset(self::SSID_FIXES[$ssid])) {
-                $fixed[] = [$ssid, self::SSID_FIXES[$ssid], (string) $r['name']];
-                $ssid = self::SSID_FIXES[$ssid];
+            if ($ssid !== $r['ssid']) {
+                $fixed[] = [(string) $r['ssid'], $ssid, (string) $r['name']];
             }
 
             $r['ssid'] = $ssid;
             $properties[] = $r;
+        }
+
+        $counts = array_count_values(array_map(fn (array $r): string => (string) $r['ssid'], $properties));
+
+        if ($duplicates = array_keys(array_filter($counts, fn (int $n): bool => $n > 1))) {
+            // updateOrCreate 會把重複的編號合併成一筆，器材會無聲無息地少掉
+            $this->error('修正後仍有重複的財產編號，請在 LegacyPropertyCodes 補上修正：'.implode('、', $duplicates));
+
+            return self::FAILURE;
         }
 
         // 補上 coderule 沒有細分、但舊資料有用到的子類別
@@ -328,7 +320,7 @@ class ImportLegacyProperties extends Command
     {
         if ($fixed !== []) {
             $this->newLine();
-            $this->warn('財產編號修正（類別碼不在 coderule 區間內）：');
+            $this->warn('財產編號修正（見 LegacyPropertyCodes）：');
 
             foreach ($fixed as [$from, $to, $name]) {
                 $this->line("  {$from} → {$to}  {$name}");
@@ -364,129 +356,6 @@ class ImportLegacyProperties extends Command
                 $this->line("  {$ssid}  實際存放：{$place}");
             }
         }
-    }
-
-    /**
-     * 解析 mysqldump 的 INSERT INTO `table` VALUES (...),(...); 取出每一列。
-     *
-     * @return list<list<string|null>>
-     */
-    private function parseInsertRows(string $dump, string $table): array
-    {
-        $prefix = "INSERT INTO `{$table}` VALUES ";
-        $rows = [];
-
-        foreach (explode("\n", $dump) as $line) {
-            if (! str_starts_with($line, $prefix)) {
-                continue;
-            }
-
-            foreach ($this->parseValues(rtrim(substr($line, strlen($prefix)), ";\r")) as $row) {
-                $rows[] = $row;
-            }
-        }
-
-        return $rows;
-    }
-
-    /**
-     * mysqldump 的值字串：字串用單引號並以反斜線轉義，NULL 不加引號。
-     *
-     * @return list<list<string|null>>
-     */
-    private function parseValues(string $values): array
-    {
-        $rows = [];
-        $row = [];
-        $field = '';
-        $quoted = false;
-        $inString = false;
-        $inRow = false;
-        $length = strlen($values);
-
-        for ($i = 0; $i < $length; $i++) {
-            $char = $values[$i];
-
-            if ($inString) {
-                if ($char === '\\') {
-                    $field .= $this->unescape($values[$i + 1] ?? '');
-                    $i++;
-                } elseif ($char === "'") {
-                    $inString = false;
-                } else {
-                    $field .= $char;
-                }
-
-                continue;
-            }
-
-            if (! $inRow) {
-                if ($char === '(') {
-                    $inRow = true;
-                    $row = [];
-                    $field = '';
-                    $quoted = false;
-                }
-
-                continue;
-            }
-
-            if ($char === "'") {
-                $inString = true;
-                $quoted = true;
-            } elseif ($char === ',') {
-                $row[] = $this->finishField($field, $quoted);
-                $field = '';
-                $quoted = false;
-            } elseif ($char === ')') {
-                $row[] = $this->finishField($field, $quoted);
-                $rows[] = $row;
-                $inRow = false;
-            } else {
-                $field .= $char;
-            }
-        }
-
-        return $rows;
-    }
-
-    private function finishField(string $raw, bool $quoted): ?string
-    {
-        if ($quoted) {
-            return $raw;
-        }
-
-        $trimmed = trim($raw);
-
-        return strcasecmp($trimmed, 'NULL') === 0 ? null : $trimmed;
-    }
-
-    private function unescape(string $char): string
-    {
-        return match ($char) {
-            'n' => "\n",
-            'r' => "\r",
-            't' => "\t",
-            '0' => "\0",
-            'b' => "\x08",
-            'Z' => "\x1a",
-            default => $char,
-        };
-    }
-
-    /**
-     * @param  list<string|null>  $row
-     * @return array<string, string|null>
-     */
-    private function toAssoc(array $row): array
-    {
-        $assoc = [];
-
-        foreach (self::COLUMNS as $i => $column) {
-            $assoc[$column] = $row[$i] ?? null;
-        }
-
-        return $assoc;
     }
 
     private function nullIfBlank(?string $value): ?string

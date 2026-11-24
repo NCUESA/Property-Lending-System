@@ -98,7 +98,8 @@ class SsoController extends Controller
     {
         $user = User::where('sso_id', $ssoId)->first()
             ?? ($email ? User::whereNull('sso_id')->where('email', $email)->first() : null)
-            ?? ($studentId ? User::whereNull('sso_id')->where('student_id', $studentId)->first() : null);
+            // 舊系統匯入的學號是大寫，SSO 給的大小寫不一定
+            ?? ($studentId ? User::whereNull('sso_id')->whereRaw('upper(student_id) = ?', [strtoupper($studentId)])->first() : null);
 
         if ($user === null) {
             return User::create([
