@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\LocationController;
 use App\Http\Controllers\Admin\PropertyCategoryController;
 use App\Http\Controllers\Admin\PropertyCodeController;
 use App\Http\Controllers\Admin\PropertyController;
+use App\Http\Controllers\Admin\PropertyImportController;
 use App\Http\Controllers\Admin\PropertyPoolController;
 use App\Http\Controllers\Admin\PropertySubcategoryController;
 use App\Http\Controllers\Admin\SettingController;
@@ -37,6 +38,11 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
 
     // ── 管理員：器材、編碼、人員、群組、設定 ───────────────
     Route::middleware('can:admin')->group(function () {
+        // 匯出／匯入要放在 resource 之前，否則 properties/export 會被當成 show 的 {property}
+        Route::get('properties/export', [PropertyController::class, 'export'])->name('properties.export');
+        Route::get('properties/import', [PropertyImportController::class, 'create'])->name('properties.import.create');
+        Route::post('properties/import/preview', [PropertyImportController::class, 'preview'])->name('properties.import.preview');
+        Route::post('properties/import', [PropertyImportController::class, 'store'])->name('properties.import.store');
         Route::resource('properties', PropertyController::class);
         Route::get('property-codes/next', [PropertyCodeController::class, 'next'])->name('property-codes.next');
 

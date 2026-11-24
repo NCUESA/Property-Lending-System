@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\BorrowItemStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\PropertyRequest;
+use App\Models\BorrowItemUnit;
 use App\Models\BorrowRequestItem;
 use App\Models\BorrowRequestOverview;
 use App\Models\Location;
@@ -12,6 +13,7 @@ use App\Models\Property;
 use App\Models\PropertyCategory;
 use App\Models\PropertyPool;
 use App\Support\AuthLevel;
+use App\Support\PropertyCsv;
 use App\Support\PropertyImage;
 use App\Support\Toast;
 use Illuminate\Database\Eloquent\Builder;
@@ -25,6 +27,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PropertyController extends Controller
 {
@@ -34,15 +37,71 @@ class PropertyController extends Controller
     public function index(Request $request): Response
     {
         $filters = $request->validate([
-            'q' => ['nullable', 'string', 'max:50'],
-            'location_id' => ['nullable', 'integer'],
-            'category_id' => ['nullable', 'integer'],
-            // 品項池 id，或 none = 只看不屬於任何品項池的器材
-            'pool_id' => ['nullable', 'regex:/^(none|\d+)$/'],
+            ...self::FILTER_RULES,
             'per_page' => ['nullable', 'integer', Rule::in(self::PER_PAGE_OPTIONS)],
         ]);
 
-        $properties = Property::query()
+        $properties = self::filtered($filters)
+            ->with([
+                'subcategory.category:id,code,name', 'location:id,name', 'pool:id,name',
+                'activeBorrowItem:id,property_id,status,borrow_request_id',
+                'activeUnit:id,borrow_request_item_id,property_id',
+                'activeUnit.item:id,borrow_request_id',
+            ])
+            ->orderBy('ssid')
+            ->paginate($filters['per_page'] ?? self::PER_PAGE_OPTIONS[0])
+            ->withQueryString()
+            ->through(fn (Property $p) => $this->withActiveUnit($p)->setAttribute('image_url', PropertyImage::url($p->image_path)));
+
+        return Inertia::render('Admin/Properties/Index', [
+            'filters' => $filters,
+            'properties' => $properties,
+            'perPageOptions' => self::PER_PAGE_OPTIONS,
+            ...$this->formOptions(),
+        ]);
+    }
+
+    /** 匯出目前篩選條件下的器材清冊（CSV，可改完再匯入）。 */
+    public function export(Request $request): StreamedResponse
+    {
+        $filters = $request->validate(self::FILTER_RULES);
+
+        return PropertyCsv::export(self::filtered($filters), '器材清冊-'.now()->format('Ymd').'.csv');
+    }
+
+    /**
+     * 以大量借用品項借出的器材沒有自己的明細，列表上用它所在的那一行當作「借出中」顯示。
+     */
+    private function withActiveUnit(Property $p): Property
+    {
+        if ($p->activeBorrowItem === null && $p->activeUnit !== null) {
+            $p->setRelation('activeBorrowItem', (new BorrowRequestItem)->forceFill([
+                'id' => $p->activeUnit->borrow_request_item_id,
+                'property_id' => $p->id,
+                'status' => BorrowItemStatus::Lent,
+                'borrow_request_id' => $p->activeUnit->item->borrow_request_id,
+            ]));
+        }
+
+        return $p->unsetRelation('activeUnit');
+    }
+
+    /** 列表與匯出共用的篩選條件 */
+    private const FILTER_RULES = [
+        'q' => ['nullable', 'string', 'max:50'],
+        'location_id' => ['nullable', 'integer'],
+        'category_id' => ['nullable', 'integer'],
+        // 品項池 id，或 none = 只看不屬於任何品項池的器材
+        'pool_id' => ['nullable', 'regex:/^(none|\d+)$/'],
+    ];
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return Builder<Property>
+     */
+    private static function filtered(array $filters): Builder
+    {
+        return Property::query()
             ->when($filters['q'] ?? null, fn (Builder $q, string $term) => $q->where(fn (Builder $w) => $w
                 ->where('ssid', 'ilike', "%{$term}%")
                 ->orWhere('name', 'ilike', "%{$term}%")
@@ -52,19 +111,7 @@ class PropertyController extends Controller
             ->when($filters['category_id'] ?? null, fn (Builder $q, int $id) => $q->whereHas('subcategory', fn (Builder $s) => $s->where('property_category_id', $id)))
             ->when($filters['pool_id'] ?? null, fn (Builder $q, string $pool) => $pool === 'none'
                 ? $q->whereNull('property_pool_id')
-                : $q->where('property_pool_id', (int) $pool))
-            ->with(['subcategory.category:id,code,name', 'location:id,name', 'pool:id,name', 'activeBorrowItem:id,property_id,status,borrow_request_id'])
-            ->orderBy('ssid')
-            ->paginate($filters['per_page'] ?? self::PER_PAGE_OPTIONS[0])
-            ->withQueryString()
-            ->through(fn (Property $p) => $p->setAttribute('image_url', PropertyImage::url($p->image_path)));
-
-        return Inertia::render('Admin/Properties/Index', [
-            'filters' => $filters,
-            'properties' => $properties,
-            'perPageOptions' => self::PER_PAGE_OPTIONS,
-            ...$this->formOptions(),
-        ]);
+                : $q->where('property_pool_id', (int) $pool));
     }
 
     public function create(): Response
@@ -93,25 +140,33 @@ class PropertyController extends Controller
     public function show(Property $property): Response
     {
         $property->load(['subcategory.category:id,code,name', 'location:id,name', 'pool:id,name']);
+        $id = $property->id;
+
+        // 單件借出（明細直接指定這件），或以大量借用品項借出時掃到這件
+        $involves = fn (Builder $q) => $q->where('property_id', $id)
+            ->orWhereHas('units', fn (Builder $u) => $u->where('property_id', $id));
+        $relations = [
+            'items' => fn ($q) => $q->where($involves)->with([
+                'returner:id,name',
+                'units' => fn ($u) => $u->where('property_id', $id)->with('returner:id,name'),
+            ]),
+            'lender:id,name',
+            'returner:id,name',
+        ];
 
         $history = BorrowRequestOverview::query()
-            ->whereHas('items', fn (Builder $q) => $q->where('property_id', $property->id))
-            ->with([
-                'items' => fn ($q) => $q->where('property_id', $property->id)->with('returner:id,name'),
-                'lender:id,name',
-                'returner:id,name',
-            ])
+            ->whereHas('items', $involves)
+            ->with($relations)
             ->orderByDesc('borrow_date')
             ->orderByDesc('id')
             ->paginate(20)
             ->through(fn (BorrowRequestOverview $b) => $this->historyRow($b));
 
         $current = BorrowRequestOverview::query()
-            ->whereHas('items', fn (Builder $q) => $q->where('property_id', $property->id)->active())
-            ->with([
-                'items' => fn ($q) => $q->where('property_id', $property->id),
-                'lender:id,name',
-            ])
+            ->whereHas('items', fn (Builder $q) => $q->where(fn (Builder $w) => $w
+                ->where(fn (Builder $serial) => $serial->where('property_id', $id)->active())
+                ->orWhereHas('units', fn (Builder $u) => $u->where('property_id', $id)->whereNull('returned_at'))))
+            ->with($relations)
             ->first();
 
         return Inertia::render('Admin/Properties/Show', [
@@ -130,12 +185,25 @@ class PropertyController extends Controller
     {
         /** @var BorrowRequestItem|null $item */
         $item = $b->items->first();
-        $itemReturnedAt = $item?->returned_at;
+        /** @var BorrowItemUnit|null $unit 以大量借用品項借出時的這一件 */
+        $unit = $item?->units->first();
+
+        // 大量借用品項以單件紀錄為準：這一件可能比同一行的其他件早還
+        if ($unit !== null) {
+            $status = $unit->returned_at !== null ? BorrowItemStatus::Returned : BorrowItemStatus::Lent;
+            $returnedAt = $unit->returned_at;
+            $returner = $unit->returner?->name;
+        } else {
+            $status = $item?->status;
+            $returnedAt = $item?->returned_at;
+            $returner = $item?->returner?->name;
+        }
 
         return [
             'id' => $b->id,
             'status' => $b->status,
-            'item_status' => $item?->status,
+            'item_status' => $status,
+            'via_pool' => $unit !== null ? $item->pool->name ?? '大量借用' : null,
             'borrower_department' => $b->borrower_department,
             'borrower_name' => $b->borrower_name,
             'phone' => $b->phone,
@@ -143,13 +211,13 @@ class PropertyController extends Controller
             'due_date' => $b->due_date->toDateString(),
             // 以台北時間的日期給前端：舊資料只有日期（00:00），轉成 UTC 會變成前一天
             'lent_on' => $b->lent_at?->toDateString(),
-            'returned_on' => $itemReturnedAt?->toDateString(),
+            'returned_on' => $returnedAt?->toDateString(),
             'lender' => $b->lender->name ?? $b->legacy_lender_name,
-            'returner' => $item?->returner->name ?? $b->returner->name ?? $b->legacy_returner_name,
+            'returner' => $returner ?? $b->returner->name ?? $b->legacy_returner_name,
             'extended' => $b->extended_at !== null,
             // 這一件是否晚還（或至今未還且已過歸還日）
-            'late' => $item !== null && match ($item->status) {
-                BorrowItemStatus::Returned => $itemReturnedAt !== null && $itemReturnedAt->startOfDay()->greaterThan($b->due_date),
+            'late' => match ($status) {
+                BorrowItemStatus::Returned => $returnedAt !== null && $returnedAt->startOfDay()->greaterThan($b->due_date),
                 BorrowItemStatus::Lent => $b->due_date->lessThan(today()),
                 default => false,
             },
@@ -159,15 +227,25 @@ class PropertyController extends Controller
     /** @return array{times: int, days: int, late: int, last_lent_on: ?string} */
     private function borrowStats(Property $property): array
     {
-        $row = DB::table('borrow_request_items as i')
+        // 單件借出的明細，與大量借用品項掃到這件的紀錄，合在一起統計
+        $serial = DB::table('borrow_request_items as i')
             ->join('borrow_requests as r', 'r.id', '=', 'i.borrow_request_id')
             ->where('i.property_id', $property->id)
             ->whereIn('i.status', [BorrowItemStatus::Lent->value, BorrowItemStatus::Returned->value])
+            ->selectRaw("i.returned_at, i.status = 'lent' AS open, r.lent_at, r.borrow_date, r.due_date");
+
+        $units = DB::table('borrow_item_units as u')
+            ->join('borrow_request_items as i', 'i.id', '=', 'u.borrow_request_item_id')
+            ->join('borrow_requests as r', 'r.id', '=', 'i.borrow_request_id')
+            ->where('u.property_id', $property->id)
+            ->selectRaw('u.returned_at, u.returned_at IS NULL AS open, r.lent_at, r.borrow_date, r.due_date');
+
+        $row = DB::query()->fromSub($serial->unionAll($units), 'x')
             ->selectRaw('count(*) AS times')
-            ->selectRaw('max(r.lent_at) AS last_lent_at')
+            ->selectRaw('max(lent_at) AS last_lent_at')
             // 借出到歸還（未還算到今天）的天數，同一天借還算 1 天
-            ->selectRaw('coalesce(sum(coalesce(i.returned_at::date, current_date) - coalesce(r.lent_at::date, r.borrow_date) + 1), 0) AS days')
-            ->selectRaw("count(*) FILTER (WHERE coalesce(i.returned_at::date, CASE WHEN i.status = 'lent' THEN current_date END) > r.due_date) AS late")
+            ->selectRaw('coalesce(sum(coalesce(returned_at::date, current_date) - coalesce(lent_at::date, borrow_date) + 1), 0) AS days')
+            ->selectRaw('count(*) FILTER (WHERE coalesce(returned_at::date, CASE WHEN open THEN current_date END) > due_date) AS late')
             ->first();
 
         return [

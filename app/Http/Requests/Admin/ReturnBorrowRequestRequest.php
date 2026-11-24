@@ -20,6 +20,9 @@ class ReturnBorrowRequestRequest extends FormRequest
             'items' => ['array'],
             'items.*.id' => ['required', 'integer', 'distinct'],
             'items.*.quantity' => ['nullable', 'integer', 'min:1'],
+            // 大量借用品項：掃到的器材財產編號（記錄實際是哪幾件）
+            'items.*.units' => ['nullable', 'array'],
+            'items.*.units.*' => ['string', 'size:8'],
             'id_card_returned' => ['boolean'],
             'deposit_returned' => ['boolean'],
         ];

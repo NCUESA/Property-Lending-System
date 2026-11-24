@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { ImageOff, Lock, Plus, Search } from '@lucide/vue';
+import { Download, ImageOff, Lock, Plus, Search, Upload } from '@lucide/vue';
 import { computed } from 'vue';
 import Heading from '@/components/Heading.vue';
 import PaginationLinks from '@/components/PaginationLinks.vue';
@@ -18,7 +18,14 @@ import {
 } from '@/components/ui/table';
 import { useQueryFilters } from '@/composables/useQueryFilters';
 import { show as borrowShow } from '@/routes/admin/borrows';
-import { create, edit, index, show } from '@/routes/admin/properties';
+import {
+    create,
+    edit,
+    exportMethod,
+    index,
+    show,
+} from '@/routes/admin/properties';
+import { create as importCreate } from '@/routes/admin/properties/import';
 import type {
     Category,
     LocationRef,
@@ -70,6 +77,20 @@ const { filters } = useQueryFilters(index.url(), {
     per_page: String(props.properties.per_page),
 });
 
+/** 匯出套用目前的篩選條件（不含每頁筆數） */
+const exportUrl = computed(() =>
+    exportMethod.url({
+        query: Object.fromEntries(
+            Object.entries({
+                q: filters.q,
+                location_id: filters.location_id,
+                category_id: filters.category_id,
+                pool_id: filters.pool_id,
+            }).filter(([, v]) => v !== ''),
+        ),
+    }),
+);
+
 const selectClass =
     'h-9 rounded-md border border-input bg-transparent px-3 text-sm';
 </script>
@@ -80,11 +101,24 @@ const selectClass =
     <div class="space-y-4 p-4 md:p-6">
         <div class="flex flex-wrap items-start justify-between gap-3">
             <Heading title="器材" description="財產資料、照片與借用權限" />
-            <Button as-child>
-                <Link :href="create()"
-                    ><Plus class="mr-1 size-4" />新增器材</Link
-                >
-            </Button>
+            <div class="flex flex-wrap gap-2">
+                <!-- 下載檔案要用一般連結，不能走 Inertia -->
+                <Button variant="outline" as-child>
+                    <a :href="exportUrl" download
+                        ><Download class="mr-1 size-4" />匯出 CSV</a
+                    >
+                </Button>
+                <Button variant="outline" as-child>
+                    <Link :href="importCreate()"
+                        ><Upload class="mr-1 size-4" />批量匯入</Link
+                    >
+                </Button>
+                <Button as-child>
+                    <Link :href="create()"
+                        ><Plus class="mr-1 size-4" />新增器材</Link
+                    >
+                </Button>
+            </div>
         </div>
 
         <div class="flex flex-col gap-3 md:flex-row">

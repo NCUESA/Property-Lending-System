@@ -5,6 +5,7 @@ import {
     CalendarClock,
     PackageCheck,
     PackageOpen,
+    ScanBarcode,
     TriangleAlert,
     Undo2,
 } from '@lucide/vue';
@@ -68,6 +69,8 @@ const props = defineProps<{
     defaultDepositAmount: number;
     depositBoxCount: number;
     maxDays: number;
+    /** 財產編號 → 品項池 id：大量借用品項的池內器材 */
+    poolMembers: Record<string, number>;
 }>();
 
 /** 借用天數，含借用當天。 */
@@ -129,6 +132,67 @@ const scanInput = ref('');
 const scanFeedback = ref<{ ok: boolean; message: string } | null>(null);
 const scanBox = ref<HTMLInputElement | null>(null);
 
+/** 大量借用品項已掃到的器材編號（明細 id → 編號），同一件掃兩次只算一次 */
+const poolScans = reactive<Record<number, string[]>>({});
+
+const poolOf = (code: string): number | undefined =>
+    Object.entries(props.poolMembers ?? {}).find(
+        ([ssid]) => ssid.toUpperCase() === code,
+    )?.[1];
+
+function scanPoolItem(code: string, poolId: number) {
+    const item = pendingItems.value.find((i) => i.property_pool_id === poolId);
+
+    if (!item) {
+        const name = items.value.find((i) => i.property_pool_id === poolId)
+            ?.pool?.name;
+        scanFeedback.value = {
+            ok: false,
+            message: name
+                ? `${code} 屬於「${name}」，但這個品項已經處理過了`
+                : `${code} 不在這張借用單裡`,
+        };
+
+        return;
+    }
+
+    const scanned = (poolScans[item.id] ??= []);
+
+    if (scanned.includes(code)) {
+        scanFeedback.value = {
+            ok: true,
+            message: `${code} ${itemLabel(item)}（已掃過，${scanned.length} / ${item.quantity}）`,
+        };
+
+        return;
+    }
+
+    if (scanned.length >= item.quantity) {
+        scanFeedback.value = {
+            ok: false,
+            message: `${itemLabel(item)} 只借 ${item.quantity} 件，已經掃滿了`,
+        };
+
+        return;
+    }
+
+    scanned.push(code);
+    lendSelection[item.id].checked = true;
+    lendSelection[item.id].quantity = scanned.length;
+
+    scanFeedback.value = {
+        ok: true,
+        message: `${code} ${itemLabel(item)} 已掃 ${scanned.length} / ${item.quantity}`,
+    };
+}
+
+function unscanPoolItem(item: BorrowItem, code: string) {
+    const scanned = (poolScans[item.id] ?? []).filter((c) => c !== code);
+    poolScans[item.id] = scanned;
+    lendSelection[item.id].checked = scanned.length > 0;
+    lendSelection[item.id].quantity = Math.max(scanned.length, 1);
+}
+
 function handleScan() {
     const code = scanInput.value.trim().toUpperCase();
     scanInput.value = '';
@@ -138,6 +202,14 @@ function handleScan() {
     const item = pendingItems.value.find(
         (i) => i.property?.ssid?.toUpperCase() === code,
     );
+
+    const poolId = item ? undefined : poolOf(code);
+
+    if (poolId !== undefined) {
+        scanPoolItem(code, poolId);
+
+        return;
+    }
 
     if (!item) {
         const elsewhere = items.value.find(
@@ -173,7 +245,12 @@ function submitLend() {
                 .filter((i) => lendSelection[i.id]?.checked)
                 .map((i) =>
                     i.property_pool_id
-                        ? { id: i.id, quantity: lendSelection[i.id].quantity }
+                        ? {
+                              id: i.id,
+                              quantity: lendSelection[i.id].quantity,
+                              // 掃到的是哪幾件，記下來才能從器材反查
+                              units: poolScans[i.id] ?? [],
+                          }
                         : { id: i.id },
                 ),
         }))
@@ -182,6 +259,28 @@ function submitLend() {
 
 // ── 歸還 ─────────────────────────────────────────
 const returnSelection = reactive<Selection>({});
+
+/** 未還的部分全都有逐件紀錄（出借時掃過條碼） */
+function isTracked(item: BorrowItem): boolean {
+    return (
+        !!item.property_pool_id &&
+        openUnitCodes(item).length > 0 &&
+        openUnitCodes(item).length >= outstanding(item)
+    );
+}
+
+/** 這次要歸還的單件（明細 id → 編號） */
+const returnUnits = reactive<Record<number, string[]>>({});
+const returnScanning = ref(false);
+const returnFeedback = ref<{ ok: boolean; message: string } | null>(null);
+const returnScanInput = ref('');
+
+/** 大量借用品項還沒歸還、且有逐件紀錄的器材編號 */
+function openUnitCodes(item: BorrowItem): string[] {
+    return (item.units ?? [])
+        .filter((u) => !u.returned_at && u.property)
+        .map((u) => u.property!.ssid);
+}
 
 /**
  * 出借、歸還後 Inertia 只更新 props、不會重跑 setup，
@@ -213,10 +312,136 @@ watch(
             false,
         );
         scanFeedback.value = null;
+
+        for (const key of Object.keys(poolScans)) {
+            delete poolScans[Number(key)];
+        }
+
         resetSelection(returnSelection, lentItems.value, outstanding);
+
+        // 歸還預設全還：有逐件紀錄的品項預設勾選全部未還的器材
+        for (const key of Object.keys(returnUnits)) {
+            delete returnUnits[Number(key)];
+        }
+
+        for (const item of lentItems.value) {
+            returnUnits[item.id] = openUnitCodes(item);
+        }
+
+        returnScanning.value = false;
+        returnFeedback.value = null;
     },
     { immediate: true },
 );
+
+function syncReturnQuantity(item: BorrowItem) {
+    const codes = returnUnits[item.id] ?? [];
+    returnSelection[item.id].checked = codes.length > 0;
+    returnSelection[item.id].quantity = Math.max(codes.length, 1);
+}
+
+/** 整行勾選框的狀態：全選、部分（indeterminate）、全不選 */
+function unitsCheckState(item: BorrowItem): boolean | 'indeterminate' {
+    const selected = returnUnits[item.id]?.length ?? 0;
+
+    if (selected === 0) return false;
+
+    return selected >= openUnitCodes(item).length ? true : 'indeterminate';
+}
+
+function setAllReturnUnits(item: BorrowItem, all: boolean) {
+    returnUnits[item.id] = all ? openUnitCodes(item) : [];
+    syncReturnQuantity(item);
+}
+
+function toggleReturnUnit(item: BorrowItem, code: string) {
+    const codes = returnUnits[item.id] ?? [];
+    returnUnits[item.id] = codes.includes(code)
+        ? codes.filter((c) => c !== code)
+        : [...codes, code];
+    syncReturnQuantity(item);
+}
+
+/**
+ * 歸還掃條碼：第一次掃描時先清掉預設的「全部勾選」，之後只歸還掃到的。
+ */
+function handleReturnScan() {
+    const code = returnScanInput.value.trim().toUpperCase();
+    returnScanInput.value = '';
+
+    if (!code) return;
+
+    if (!returnScanning.value) {
+        returnScanning.value = true;
+
+        for (const item of lentItems.value) {
+            returnSelection[item.id].checked = false;
+            returnUnits[item.id] = [];
+        }
+    }
+
+    const serial = lentItems.value.find(
+        (i) => i.property?.ssid?.toUpperCase() === code,
+    );
+
+    if (serial) {
+        const already = returnSelection[serial.id].checked;
+        returnSelection[serial.id].checked = true;
+        returnFeedback.value = {
+            ok: true,
+            message: `${code} ${itemLabel(serial)}${already ? '（已掃過）' : ' 已標記歸還'}`,
+        };
+
+        return;
+    }
+
+    const poolId = poolOf(code);
+    const item =
+        poolId === undefined
+            ? undefined
+            : lentItems.value.find((i) => i.property_pool_id === poolId);
+
+    if (!item) {
+        returnFeedback.value = {
+            ok: false,
+            message: `${code} 不在這張單借出中的器材裡`,
+        };
+
+        return;
+    }
+
+    const codes = returnUnits[item.id] ?? [];
+    const open = openUnitCodes(item);
+
+    if (codes.includes(code)) {
+        returnFeedback.value = {
+            ok: true,
+            message: `${code} ${itemLabel(item)}（已掃過，${codes.length} / 未還 ${outstanding(item)}）`,
+        };
+
+        return;
+    }
+
+    // 出借時沒掃到的件數，歸還時掃到的其他椅子只能算在這部分
+    const untracked = outstanding(item) - open.length;
+    const extra = codes.filter((c) => !open.includes(c)).length;
+
+    if (!open.includes(code) && extra >= untracked) {
+        returnFeedback.value = {
+            ok: false,
+            message: `${code} 不是這張單借出的${itemLabel(item)}，或已經歸還`,
+        };
+
+        return;
+    }
+
+    returnUnits[item.id] = [...codes, code];
+    syncReturnQuantity(item);
+    returnFeedback.value = {
+        ok: true,
+        message: `${code} ${itemLabel(item)} 已掃 ${codes.length + 1} / 未還 ${outstanding(item)}`,
+    };
+}
 
 const returnForm = useForm({
     items: [] as { id: number; quantity?: number }[],
@@ -245,7 +470,11 @@ function submitReturn() {
                 .filter((i) => returnSelection[i.id]?.checked)
                 .map((i) =>
                     i.property_pool_id
-                        ? { id: i.id, quantity: returnSelection[i.id].quantity }
+                        ? {
+                              id: i.id,
+                              quantity: returnSelection[i.id].quantity,
+                              units: returnUnits[i.id] ?? [],
+                          }
                         : { id: i.id },
                 ),
         }))
@@ -488,40 +717,64 @@ const submitExtend = () =>
                 </div>
 
                 <div class="space-y-2">
-                    <label
-                        v-for="item in pendingItems"
-                        :key="item.id"
-                        class="flex items-center gap-3 rounded-md border p-2 text-sm transition-colors"
-                        :class="
-                            lendSelection[item.id].checked
-                                ? 'border-emerald-500/60 bg-emerald-50 dark:bg-emerald-950/30'
-                                : ''
-                        "
-                    >
-                        <Checkbox
-                            :model-value="lendSelection[item.id].checked"
-                            @update:model-value="
-                                lendSelection[item.id].checked = $event === true
+                    <div v-for="item in pendingItems" :key="item.id">
+                        <label
+                            class="flex items-center gap-3 rounded-md border p-2 text-sm transition-colors"
+                            :class="
+                                lendSelection[item.id].checked
+                                    ? 'border-emerald-500/60 bg-emerald-50 dark:bg-emerald-950/30'
+                                    : ''
                             "
-                        />
-                        <span class="font-mono text-xs text-muted-foreground">{{
-                            item.property?.ssid ?? '大量借用'
-                        }}</span>
-                        <span class="flex-1">{{ itemLabel(item) }}</span>
-                        <template v-if="item.property_pool_id">
-                            <Input
-                                v-model.number="lendSelection[item.id].quantity"
-                                type="number"
-                                min="1"
-                                :max="item.quantity"
-                                class="w-20"
-                                :aria-label="`${itemLabel(item)} 出借數量`"
+                        >
+                            <!-- 大量借用品項只能靠掃條碼，才知道借出的是哪幾件，所以不給勾 -->
+                            <ScanBarcode
+                                v-if="item.property_pool_id"
+                                class="size-4 shrink-0 text-muted-foreground"
+                                aria-label="請掃描條碼"
                             />
-                            <span class="text-xs text-muted-foreground"
-                                >/ {{ item.quantity }}</span
+                            <Checkbox
+                                v-else
+                                :model-value="lendSelection[item.id].checked"
+                                @update:model-value="
+                                    lendSelection[item.id].checked =
+                                        $event === true
+                                "
+                            />
+                            <span
+                                class="font-mono text-xs text-muted-foreground"
+                                >{{ item.property?.ssid ?? '大量借用' }}</span
                             >
-                        </template>
-                    </label>
+                            <span class="flex-1">{{ itemLabel(item) }}</span>
+                            <span
+                                v-if="item.property_pool_id"
+                                class="text-xs tabular-nums"
+                                :class="
+                                    poolScans[item.id]?.length
+                                        ? 'text-emerald-700 dark:text-emerald-400'
+                                        : 'text-muted-foreground'
+                                "
+                                >已掃 {{ poolScans[item.id]?.length ?? 0 }} /
+                                {{ item.quantity }}</span
+                            >
+                        </label>
+                        <!-- 掃錯可以點掉 -->
+                        <div
+                            v-if="poolScans[item.id]?.length"
+                            class="mt-1 flex flex-wrap gap-1.5 pl-9"
+                        >
+                            <button
+                                v-for="code in poolScans[item.id]"
+                                :key="code"
+                                type="button"
+                                class="inline-flex items-center gap-1 rounded-full border border-emerald-500 bg-emerald-100 px-2 py-0.5 font-mono text-xs text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200"
+                                :aria-label="`移除 ${code}`"
+                                title="掃錯了？點一下移除"
+                                @click="unscanPoolItem(item, code)"
+                            >
+                                {{ code }} ✕
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 <div class="grid gap-4 sm:grid-cols-2">
                     <!-- 沒收到證件／押金是最常見的疏漏，所以未勾選時用警示色提醒 -->
@@ -675,38 +928,109 @@ const submitExtend = () =>
             </CardHeader>
             <CardContent class="space-y-4">
                 <div v-if="canReturnItems" class="space-y-2">
-                    <label
-                        v-for="item in lentItems"
-                        :key="item.id"
-                        class="flex items-center gap-3 rounded-md border p-2 text-sm"
+                    <Label for="return-scan">掃描歸還的條碼</Label>
+                    <Input
+                        id="return-scan"
+                        v-model="returnScanInput"
+                        autocomplete="off"
+                        placeholder="開始掃描後，只會歸還掃到的器材；不掃就是全部歸還"
+                        class="font-mono"
+                        @keydown.enter.prevent="handleReturnScan"
+                    />
+                    <p
+                        v-if="returnFeedback"
+                        class="text-sm"
+                        :class="
+                            returnFeedback.ok
+                                ? 'text-emerald-600 dark:text-emerald-400'
+                                : 'text-destructive'
+                        "
+                        role="status"
                     >
-                        <Checkbox
-                            :model-value="returnSelection[item.id].checked"
-                            @update:model-value="
-                                returnSelection[item.id].checked =
-                                    $event === true
+                        {{ returnFeedback.message }}
+                    </p>
+                </div>
+                <div v-if="canReturnItems" class="space-y-2">
+                    <div v-for="item in lentItems" :key="item.id">
+                        <label
+                            class="flex items-center gap-3 rounded-md border p-2 text-sm"
+                            :class="
+                                returnSelection[item.id].checked
+                                    ? 'border-emerald-500/60 bg-emerald-50 dark:bg-emerald-950/30'
+                                    : ''
                             "
-                        />
-                        <span class="font-mono text-xs text-muted-foreground">{{
-                            item.property?.ssid ?? '大量借用'
-                        }}</span>
-                        <span class="flex-1">{{ itemLabel(item) }}</span>
-                        <template v-if="item.property_pool_id">
-                            <Input
-                                v-model.number="
-                                    returnSelection[item.id].quantity
+                        >
+                            <!-- 有逐件紀錄的品項：整行勾選＝下面借出的那幾件全選／全不選 -->
+                            <Checkbox
+                                v-if="isTracked(item)"
+                                :model-value="unitsCheckState(item)"
+                                @update:model-value="
+                                    setAllReturnUnits(item, $event === true)
                                 "
-                                type="number"
-                                min="1"
-                                :max="outstanding(item)"
-                                class="w-20"
-                                :aria-label="`${itemLabel(item)} 歸還數量`"
                             />
-                            <span class="text-xs text-muted-foreground"
-                                >/ 未還 {{ outstanding(item) }}</span
+                            <Checkbox
+                                v-else
+                                :model-value="returnSelection[item.id].checked"
+                                @update:model-value="
+                                    returnSelection[item.id].checked =
+                                        $event === true
+                                "
+                            />
+                            <span
+                                class="font-mono text-xs text-muted-foreground"
+                                >{{ item.property?.ssid ?? '大量借用' }}</span
                             >
-                        </template>
-                    </label>
+                            <span class="flex-1">{{ itemLabel(item) }}</span>
+                            <span
+                                v-if="isTracked(item)"
+                                class="text-xs text-muted-foreground tabular-nums"
+                                >還 {{ returnUnits[item.id]?.length ?? 0 }} /
+                                未還 {{ outstanding(item) }}</span
+                            >
+                            <!-- 改版前借出、沒有逐件紀錄的舊資料才填數量 -->
+                            <template v-else-if="item.property_pool_id">
+                                <Input
+                                    v-model.number="
+                                        returnSelection[item.id].quantity
+                                    "
+                                    type="number"
+                                    min="1"
+                                    :max="outstanding(item)"
+                                    class="w-20"
+                                    :aria-label="`${itemLabel(item)} 歸還數量`"
+                                />
+                                <span class="text-xs text-muted-foreground"
+                                    >/ 未還 {{ outstanding(item) }}</span
+                                >
+                            </template>
+                        </label>
+                        <!-- 有逐件紀錄：只能從借出去的那幾件裡勾（或掃描） -->
+                        <div
+                            v-if="openUnitCodes(item).length"
+                            class="mt-1 grid grid-cols-2 gap-1.5 pl-9 sm:grid-cols-3 md:grid-cols-4"
+                        >
+                            <label
+                                v-for="code in openUnitCodes(item)"
+                                :key="code"
+                                class="flex cursor-pointer items-center gap-2 rounded-md border px-2 py-1 font-mono text-xs transition-colors"
+                                :class="
+                                    returnUnits[item.id]?.includes(code)
+                                        ? 'border-emerald-500/60 bg-emerald-50 dark:bg-emerald-950/30'
+                                        : 'text-muted-foreground'
+                                "
+                            >
+                                <Checkbox
+                                    :model-value="
+                                        returnUnits[item.id]?.includes(code)
+                                    "
+                                    @update:model-value="
+                                        toggleReturnUnit(item, code)
+                                    "
+                                />
+                                {{ code }}
+                            </label>
+                        </div>
+                    </div>
                 </div>
                 <div class="grid gap-4 sm:grid-cols-2">
                     <label

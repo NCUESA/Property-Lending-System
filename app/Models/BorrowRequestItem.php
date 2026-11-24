@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * 借用明細：指定器材（property_id）或 bulk 品項池（property_pool_id + quantity）擇一。
@@ -91,6 +92,16 @@ class BorrowRequestItem extends Model
     public function returner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'returned_by');
+    }
+
+    /**
+     * 大量借用品項實際借出的單件器材（有掃條碼的才有）。
+     *
+     * @return HasMany<BorrowItemUnit, $this>
+     */
+    public function units(): HasMany
+    {
+        return $this->hasMany(BorrowItemUnit::class);
     }
 
     public function isBulk(): bool

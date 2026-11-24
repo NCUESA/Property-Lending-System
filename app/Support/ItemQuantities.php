@@ -24,4 +24,23 @@ final class ItemQuantities
 
         return new Collection($result);
     }
+
+    /**
+     * 每個明細掃到的單件器材編號（大寫、去重複）。
+     *
+     * @return Collection<int, list<non-falsy-string&uppercase-string>>
+     */
+    public static function units(mixed $items): Collection
+    {
+        $result = [];
+
+        foreach (is_array($items) ? $items : [] as $item) {
+            if (is_array($item) && isset($item['id']) && is_array($item['units'] ?? null)) {
+                $codes = array_map(fn ($c) => strtoupper(trim((string) $c)), $item['units']);
+                $result[(int) $item['id']] = array_values(array_unique(array_filter($codes)));
+            }
+        }
+
+        return new Collection($result);
+    }
 }

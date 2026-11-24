@@ -15,6 +15,7 @@ use App\Http\Requests\Admin\UpdateBorrowRequestRequest;
 use App\Models\BorrowRequest;
 use App\Models\BorrowRequestOverview;
 use App\Models\Location;
+use App\Models\Property;
 use App\Models\Setting;
 use App\Support\Toast;
 use Illuminate\Database\Eloquent\Builder;
@@ -78,6 +79,8 @@ class BorrowRequestController extends Controller
                 'items.property.location:id,name',
                 'items.pool:id,name',
                 'items.returner:id,name',
+                'items.units:id,borrow_request_item_id,property_id,returned_at',
+                'items.units.property:id,ssid',
                 'extender:id,name',
                 'lender:id,name',
                 'returner:id,name',
@@ -85,8 +88,17 @@ class BorrowRequestController extends Controller
             ])
             ->findOrFail($borrow->id);
 
+        // 大量借用品項不指定單件：掃到池內任一件器材的條碼，就算交付這個品項的一件
+        $poolIds = $overview->items->pluck('property_pool_id')->filter()->unique();
+        $poolMembers = Property::query()
+            ->whereIn('property_pool_id', $poolIds)
+            ->where('is_lendable', true)
+            ->pluck('property_pool_id', 'ssid');
+
         return Inertia::render('Admin/Borrows/Show', [
             'borrow' => $overview,
+            // 財產編號 → 品項池 id；用物件而非陣列，空的時候前端才拿到 {}
+            'poolMembers' => (object) $poolMembers->all(),
             'defaultDepositAmount' => (int) Setting::get('borrow.deposit_amount', 100),
             'depositBoxCount' => (int) Setting::get('borrow.deposit_box_count', 20),
             // 可自訂天數時借用人可自選歸還日，超過規定要讓值班人員看得出來

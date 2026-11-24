@@ -106,6 +106,13 @@ export type BorrowItem = {
     } | null;
     pool?: { id: number; name: string } | null;
     returner?: UserRef | null;
+    /** 大量借用品項實際借出的單件（有掃條碼的才有） */
+    units?: {
+        id: number;
+        property_id: number;
+        returned_at: string | null;
+        property?: { id: number; ssid: string };
+    }[];
 };
 
 export type BorrowOverview = {

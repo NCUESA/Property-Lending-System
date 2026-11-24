@@ -91,6 +91,22 @@ class Property extends Model
             ->whereIn('status', BorrowItemStatus::ACTIVE);
     }
 
+    /**
+     * 以大量借用品項借出時，這一件目前所在的借用（有掃條碼才會有）。
+     *
+     * @return HasOne<BorrowItemUnit, $this>
+     */
+    public function activeUnit(): HasOne
+    {
+        return $this->hasOne(BorrowItemUnit::class)->whereNull('returned_at');
+    }
+
+    /** @return HasMany<BorrowItemUnit, $this> */
+    public function borrowUnits(): HasMany
+    {
+        return $this->hasMany(BorrowItemUnit::class);
+    }
+
     public function isBulk(): bool
     {
         return $this->property_pool_id !== null;

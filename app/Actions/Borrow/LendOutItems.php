@@ -20,9 +20,11 @@ use Illuminate\Validation\ValidationException;
  */
 class LendOutItems
 {
+    public function __construct(private readonly BorrowUnits $units) {}
+
     /**
      * @param  array<string, mixed>  $data  LendBorrowRequestRequest::validated()：
-     *                                      items（list<{id, quantity?}>）、id_card_taken、deposit_taken、
+     *                                      items（list<{id, units?}>，大量借用品項必須帶 units）、id_card_taken、deposit_taken、
      *                                      deposit_amount?、deposit_box_no?
      */
     public function handle(BorrowRequest $request, User $staff, array $data): BorrowRequest
@@ -38,6 +40,7 @@ class LendOutItems
 
                 $pending = $request->items()->where('status', BorrowItemStatus::Pending)->get()->keyBy('id');
                 $selected = ItemQuantities::parse($data['items'] ?? []); // item id => quantity
+                $unitCodes = ItemQuantities::units($data['items'] ?? []); // item id => 掃到的財產編號
 
                 if ($pending->isEmpty()) {
                     throw ValidationException::withMessages(['items' => '這張借用單沒有可出借的項目。']);
@@ -56,15 +59,24 @@ class LendOutItems
                         continue;
                     }
 
-                    $quantity = $selected[$id] ?? $item->quantity;
+                    $codes = $item->isBulk() ? ($unitCodes[$id] ?? []) : [];
+
+                    // 大量借用品項一定要掃條碼：出借數量就是掃到的件數，每一件都有紀錄
+                    if ($item->isBulk() && $codes === []) {
+                        throw ValidationException::withMessages(['items' => '「'.$item->pool?->name.'」請掃描每一件的條碼再出借。']);
+                    }
+
+                    $quantity = $item->isBulk() ? count($codes) : 1;
                     if ($item->isBulk() && ($quantity < 1 || $quantity > $item->quantity)) {
-                        throw ValidationException::withMessages(['items' => "出借數量需介於 1 到 {$item->quantity}。"]);
+                        throw ValidationException::withMessages(['items' => "「{$item->pool?->name}」掃了 {$quantity} 件，超過申請的 {$item->quantity} 件。"]);
                     }
 
                     $item->update([
                         'status' => BorrowItemStatus::Lent,
                         'quantity' => $item->isBulk() ? $quantity : 1,
                     ]);
+
+                    $this->units->lend($item, $codes);
                 }
 
                 $request->update([

@@ -28,6 +28,8 @@ type HistoryRow = {
     id: number;
     status: BorrowRequestStatus;
     item_status: BorrowItemStatus | null;
+    /** 以大量借用品項借出時的品項名稱 */
+    via_pool: string | null;
     borrower_department: string;
     borrower_name: string;
     phone: string;
@@ -244,7 +246,7 @@ const details: [string, string | number | null][] = [
         >
             這件器材屬於大量借用品項「{{
                 property.pool.name
-            }}」，借用時是整池按數量借出、不指定單件，所以加入品項池之後的借用不會出現在下面的紀錄裡。
+            }}」，借用時是整池按數量借出。出借或歸還時有掃到這件的條碼，才會出現在下面的紀錄裡；只填數量的不會。
         </p>
 
         <section class="space-y-3">
@@ -308,6 +310,9 @@ const details: [string, string | number | null][] = [
                                 >
                                 <Badge v-if="h.extended" variant="outline"
                                     >展延</Badge
+                                >
+                                <Badge v-if="h.via_pool" variant="secondary"
+                                    >隨「{{ h.via_pool }}」借出</Badge
                                 >
                             </TableCell>
                         </TableRow>

@@ -17,7 +17,10 @@ use Illuminate\Validation\ValidationException;
  */
 class ReturnItems
 {
-    public function __construct(private readonly RecordBorrowViolation $violations) {}
+    public function __construct(
+        private readonly RecordBorrowViolation $violations,
+        private readonly BorrowUnits $units,
+    ) {}
 
     /**
      * @param  array<string, mixed>  $data  ReturnBorrowRequestRequest::validated()：
@@ -29,6 +32,7 @@ class ReturnItems
             $request = BorrowRequest::query()->lockForUpdate()->findOrFail($request->id);
 
             $selected = ItemQuantities::parse($data['items'] ?? []); // item id => quantity
+            $unitCodes = ItemQuantities::units($data['items'] ?? []); // item id => 掃到的財產編號
             $returnsDeposit = ($data['id_card_returned'] ?? false) || ($data['deposit_returned'] ?? false);
 
             if ($selected->count() === 0 && ! $returnsDeposit) {
@@ -44,7 +48,12 @@ class ReturnItems
             foreach ($selected as $id => $requested) {
                 /** @var BorrowRequestItem $item */
                 $item = $lent[$id];
-                $quantity = $requested ?? $item->outstandingQuantity();
+                $codes = $item->isBulk() ? ($unitCodes[$id] ?? []) : [];
+                $quantity = $requested ?? ($codes !== [] ? count($codes) : $item->outstandingQuantity());
+
+                if ($item->isBulk()) {
+                    $quantity = $this->units->return($item, $codes, $quantity, $staff);
+                }
 
                 if ($quantity < 1 || $quantity > $item->outstandingQuantity()) {
                     throw ValidationException::withMessages(['items' => "歸還數量需介於 1 到 {$item->outstandingQuantity()}。"]);

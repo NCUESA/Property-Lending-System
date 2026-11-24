@@ -4,6 +4,7 @@ use App\Enums\BorrowItemStatus;
 use App\Enums\BorrowOpenMode;
 use App\Enums\BorrowRequestStatus;
 use App\Http\Controllers\BorrowRequestController;
+use App\Models\BorrowItemUnit;
 use App\Models\BorrowPeriod;
 use App\Models\BorrowRequest;
 use App\Models\BorrowRequestItem;
@@ -371,11 +372,145 @@ describe('出借與歸還', function () {
         $this->items = $this->borrow->items->keyBy(fn ($i) => $i->property_id ?? 'pool');
     });
 
-    it('申請 → 部分出借 → 部分歸還 → 全部歸還', function () {
-        // 出借：麥克風 + 椅子少給 1 張；延長線沒拿走 → 自動退回
+    it('明細頁帶出品項池內器材的編號，供掃條碼對應', function () {
+        $chairs = Property::where('property_pool_id', $this->pool->id)->pluck('ssid');
+        Property::where('ssid', $chairs->first())->update(['is_lendable' => false]);
+
+        $this->actingAs($this->staff)
+            ->get(route('admin.borrows.show', $this->borrow))
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('poolMembers', 9)
+                ->where("poolMembers.{$chairs->last()}", $this->pool->id)
+                ->missing("poolMembers.{$chairs->first()}")
+                ->missing("poolMembers.{$this->mic->ssid}"));
+    });
+
+    it('大量借用品項出借時記下掃到的是哪幾件，可從器材反查', function () {
+        $chairs = Property::where('property_pool_id', $this->pool->id)->orderBy('ssid')->get();
+        $codes = $chairs->take(3)->pluck('ssid')->all();
+
         $this->actingAs($this->staff)
             ->post(route('admin.borrows.lend', $this->borrow), [
-                'items' => [['id' => $this->items[$this->mic->id]->id], ['id' => $this->items['pool']->id, 'quantity' => 5]],
+                'items' => [['id' => $this->items['pool']->id, 'units' => $codes]],
+                'id_card_taken' => true,
+                'deposit_taken' => false,
+            ])->assertSessionHasNoErrors();
+
+        expect($this->items['pool']->fresh()->quantity)->toBe(3)
+            ->and(BorrowItemUnit::whereNull('returned_at')->count())->toBe(3);
+
+        $this->actingAs(User::factory()->admin()->create())
+            ->get(route('admin.properties.show', $chairs->first()))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('current.id', $this->borrow->id)
+                ->where('current.item_status', 'lent')
+                ->where('stats.times', 1));
+
+        $this->actingAs(User::factory()->admin()->create())
+            ->get(route('admin.properties.index', ['pool_id' => $this->pool->id]))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('properties.data.0.active_borrow_item.borrow_request_id', $this->borrow->id)
+                ->where('properties.data.3.active_borrow_item', null));
+    });
+
+    it('掃到不屬於品項池的器材不能出借', function () {
+        $this->actingAs($this->staff)
+            ->post(route('admin.borrows.lend', $this->borrow), [
+                'items' => [['id' => $this->items['pool']->id, 'units' => [$this->mic->ssid]]],
+                'id_card_taken' => true,
+                'deposit_taken' => false,
+            ])->assertSessionHasErrors('items');
+
+        expect($this->borrow->fresh()->lent_at)->toBeNull();
+    });
+
+    it('歸還時逐件結清；部分歸還要指定是哪幾件', function () {
+        $codes = Property::where('property_pool_id', $this->pool->id)->orderBy('ssid')->take(3)->pluck('ssid')->all();
+
+        $this->actingAs($this->staff)->post(route('admin.borrows.lend', $this->borrow), [
+            'items' => [['id' => $this->items['pool']->id, 'units' => $codes]],
+            'id_card_taken' => true,
+            'deposit_taken' => false,
+        ])->assertSessionHasNoErrors();
+
+        $return = fn (array $item) => $this->actingAs($this->staff)
+            ->post(route('admin.borrows.return', $this->borrow), ['items' => [['id' => $this->items['pool']->id, ...$item]]]);
+
+        // 部分歸還不指定是哪件 → 擋下
+        $return(['quantity' => 1])->assertSessionHasErrors('items');
+        // 掃描歸還一件
+        $return(['units' => [$codes[0]]])->assertSessionHasNoErrors();
+
+        $item = $this->items['pool']->fresh();
+        expect($item->returned_quantity)->toBe(1)
+            ->and(BorrowItemUnit::whereNull('returned_at')->count())->toBe(2)
+            ->and(BorrowItemUnit::whereNotNull('returned_at')->sole()->returned_by)->toBe($this->staff->id);
+
+        // 不指定 = 全部還清，剩下的逐件紀錄一併結清
+        $return([])->assertSessionHasNoErrors();
+
+        expect($item->fresh()->status)->toBe(BorrowItemStatus::Returned)
+            ->and(BorrowItemUnit::whereNull('returned_at')->count())->toBe(0);
+    });
+
+    it('大量借用品項不掃條碼不能出借', function () {
+        $this->actingAs($this->staff)->post(route('admin.borrows.lend', $this->borrow), [
+            'items' => [['id' => $this->items['pool']->id, 'quantity' => 3]],
+            'id_card_taken' => true,
+            'deposit_taken' => false,
+        ])->assertSessionHasErrors('items');
+
+        expect($this->borrow->fresh()->lent_at)->toBeNull();
+    });
+
+    it('改版前沒有逐件紀錄的舊資料，歸還時可以只填數量', function () {
+        // 模擬改版前出借：只有數量，沒有逐件紀錄
+        $this->items['pool']->update(['status' => BorrowItemStatus::Lent, 'quantity' => 3]);
+        $this->borrow->forceFill(['lent_at' => now(), 'lent_by' => $this->staff->id])->save();
+
+        $this->actingAs($this->staff)
+            ->post(route('admin.borrows.return', $this->borrow), ['items' => [['id' => $this->items['pool']->id, 'quantity' => 2]]])
+            ->assertSessionHasNoErrors();
+
+        // 掃到池內任一件也能算數量（舊資料不知道借出的是哪幾件）
+        $any = Property::where('property_pool_id', $this->pool->id)->value('ssid');
+        $this->actingAs($this->staff)
+            ->post(route('admin.borrows.return', $this->borrow), ['items' => [['id' => $this->items['pool']->id, 'units' => [$any]]]])
+            ->assertSessionHasNoErrors();
+
+        expect($this->items['pool']->fresh())
+            ->returned_quantity->toBe(3)
+            ->status->toBe(BorrowItemStatus::Returned);
+    });
+
+    it('同一件器材不能同時出現在兩筆借用', function () {
+        $code = Property::where('property_pool_id', $this->pool->id)->value('ssid');
+
+        $this->actingAs($this->staff)->post(route('admin.borrows.lend', $this->borrow), [
+            'items' => [['id' => $this->items['pool']->id, 'units' => [$code]]],
+            'id_card_taken' => true,
+            'deposit_taken' => false,
+        ])->assertSessionHasNoErrors();
+
+        $this->post(route('borrow.store'), borrowPayload([
+            'pools' => [['id' => $this->pool->id, 'quantity' => 1]],
+        ]))->assertSessionHasNoErrors();
+        $other = BorrowRequest::latest('id')->first();
+
+        $this->actingAs($this->staff)->post(route('admin.borrows.lend', $other), [
+            'items' => [['id' => $other->items()->value('id'), 'units' => [$code]]],
+            'id_card_taken' => true,
+            'deposit_taken' => false,
+        ])->assertSessionHasErrors(['items' => "{$code} 目前已經借出，還沒歸還。"]);
+    });
+
+    it('申請 → 部分出借 → 部分歸還 → 全部歸還', function () {
+        $chairs = Property::where('property_pool_id', $this->pool->id)->orderBy('ssid')->take(5)->pluck('ssid')->all();
+
+        // 出借：麥克風 + 椅子少給 1 張（掃了 5 張）；延長線沒拿走 → 自動退回
+        $this->actingAs($this->staff)
+            ->post(route('admin.borrows.lend', $this->borrow), [
+                'items' => [['id' => $this->items[$this->mic->id]->id], ['id' => $this->items['pool']->id, 'units' => $chairs]],
                 'id_card_taken' => true,
                 'deposit_taken' => true,
                 'deposit_box_no' => 12,
@@ -393,9 +528,9 @@ describe('出借與歸還', function () {
         // 延長線被退回後別人可以借
         expect(Property::available()->whereKey($this->cable->id)->exists())->toBeTrue();
 
-        // 部分歸還：椅子先還 2 張
+        // 部分歸還：椅子先還 2 張（掃描）
         $this->actingAs($this->staff)
-            ->post(route('admin.borrows.return', $this->borrow), ['items' => [['id' => $this->items['pool']->id, 'quantity' => 2]]])
+            ->post(route('admin.borrows.return', $this->borrow), ['items' => [['id' => $this->items['pool']->id, 'units' => array_slice($chairs, 0, 2)]]])
             ->assertSessionHasNoErrors();
 
         expect($this->borrow->fresh()->overview->status)->toBe(BorrowRequestStatus::PartiallyReturned)
@@ -441,10 +576,12 @@ describe('出借與歸還', function () {
         $return()->assertSessionHasErrors(['items' => '選取的項目不是借出中的狀態，可能已經歸還過了。']);
     });
 
-    it('bulk 出借數量不能超過申請數量', function () {
+    it('bulk 掃到的件數不能超過申請數量', function () {
+        $chairs = Property::where('property_pool_id', $this->pool->id)->take(7)->pluck('ssid')->all();
+
         $this->actingAs($this->staff)->post(route('admin.borrows.lend', $this->borrow), [
-            'items' => [['id' => $this->items['pool']->id, 'quantity' => 7]], 'id_card_taken' => true, 'deposit_taken' => false,
-        ])->assertSessionHasErrors('items');
+            'items' => [['id' => $this->items['pool']->id, 'units' => $chairs]], 'id_card_taken' => true, 'deposit_taken' => false,
+        ])->assertSessionHasErrors(['items' => '「'.$this->pool->name.'」掃了 7 件，超過申請的 6 件。']);
     });
 
     it('不能操作別張借用單的明細', function () {

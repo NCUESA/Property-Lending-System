@@ -21,6 +21,9 @@ class LendBorrowRequestRequest extends FormRequest
             'items' => ['required', 'array', 'min:1'],
             'items.*.id' => ['required', 'integer', 'distinct'],
             'items.*.quantity' => ['nullable', 'integer', 'min:1'],
+            // 大量借用品項：掃到的器材財產編號（記錄實際是哪幾件）
+            'items.*.units' => ['nullable', 'array'],
+            'items.*.units.*' => ['string', 'size:8'],
             'id_card_taken' => ['required', 'boolean'],
             'deposit_taken' => ['required', 'boolean'],
             'deposit_amount' => ['nullable', 'integer', 'min:0', 'max:100000'],
