@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\BorrowPeriodController;
 use App\Http\Controllers\Admin\BorrowRequestController;
 use App\Http\Controllers\Admin\BorrowViolationController;
+use App\Http\Controllers\Admin\DepartmentAliasController;
 use App\Http\Controllers\Admin\LocationController;
 use App\Http\Controllers\Admin\PropertyCategoryController;
 use App\Http\Controllers\Admin\PropertyCodeController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\Admin\PropertyController;
 use App\Http\Controllers\Admin\PropertyPoolController;
 use App\Http\Controllers\Admin\PropertySubcategoryController;
 use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\StatsController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\UserGroupController;
 use Illuminate\Support\Facades\Route;
@@ -35,7 +37,7 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
 
     // ── 管理員：器材、編碼、人員、群組、設定 ───────────────
     Route::middleware('can:admin')->group(function () {
-        Route::resource('properties', PropertyController::class)->except('show');
+        Route::resource('properties', PropertyController::class);
         Route::get('property-codes/next', [PropertyCodeController::class, 'next'])->name('property-codes.next');
 
         Route::resource('categories', PropertyCategoryController::class)->only(['index', 'store', 'update', 'destroy']);
@@ -56,6 +58,17 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
         // 地點與互連關係（有向圖）
         Route::resource('locations', LocationController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::put('locations/{location}/links', [LocationController::class, 'syncLinks'])->name('locations.links.update');
+
+        // 數據：統計只讀，同義詞設定只影響統計時的單位名稱
+        Route::prefix('stats')->name('stats.')->group(function () {
+            Route::get('popular', [StatsController::class, 'popular'])->name('popular');
+            Route::get('departments', [StatsController::class, 'departments'])->name('departments');
+            Route::get('overdue', [StatsController::class, 'overdue'])->name('overdue');
+            Route::get('heatmap', [StatsController::class, 'heatmap'])->name('heatmap');
+            Route::get('aliases', [DepartmentAliasController::class, 'index'])->name('aliases.index');
+            Route::post('aliases', [DepartmentAliasController::class, 'store'])->name('aliases.store');
+            Route::delete('aliases', [DepartmentAliasController::class, 'destroy'])->name('aliases.destroy');
+        });
 
         // 封鎖由系統依設定自動建立，管理員只能提前解除
         Route::post('blocks/{block}/lift', [BorrowViolationController::class, 'lift'])->name('blocks.lift');

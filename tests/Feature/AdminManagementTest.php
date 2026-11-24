@@ -3,6 +3,7 @@
 use App\Enums\BorrowItemStatus;
 use App\Http\Controllers\Admin\SettingController;
 use App\Models\BorrowPeriod;
+use App\Models\BorrowRequest;
 use App\Models\BorrowRequestItem;
 use App\Models\Location;
 use App\Models\Property;
@@ -63,6 +64,77 @@ describe('財產編號 API', function () {
         $this->getJson(route('admin.property-codes.next', ['location_id' => $this->jinde->id, 'property_subcategory_id' => $this->sub->id]))
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['property_subcategory_id']);
+    });
+});
+
+describe('器材反查', function () {
+    beforeEach(function () {
+        $this->property = Property::factory()->create(['ssid' => 'J2000001']);
+
+        $lend = function (array $request, string $itemStatus, ?string $returnedAt = null) {
+            $borrow = BorrowRequest::factory()->create($request);
+            BorrowRequestItem::factory()->create([
+                'borrow_request_id' => $borrow->id,
+                'property_id' => $this->property->id,
+                'status' => $itemStatus,
+                'returned_quantity' => $itemStatus === 'returned' ? 1 : 0,
+                'returned_at' => $returnedAt,
+            ]);
+
+            return $borrow;
+        };
+
+        // 準時歸還、晚兩天歸還、目前借出中
+        $this->onTime = $lend([
+            'borrower_department' => '熱舞社', 'borrow_date' => '2026-01-05', 'due_date' => '2026-01-07',
+            'lent_at' => '2026-01-05 00:00:00', 'lent_by' => $this->admin->id,
+        ], 'returned', '2026-01-07 00:00:00');
+        $this->late = $lend([
+            'borrower_department' => '吉他社', 'borrow_date' => '2026-02-01', 'due_date' => '2026-02-02',
+            'lent_at' => '2026-02-01 00:00:00', 'legacy_lender_name' => '舊幹部',
+        ], 'returned', '2026-02-04 00:00:00');
+        $this->current = $lend([
+            'borrower_department' => '資工系', 'borrow_date' => today(), 'due_date' => today()->addDays(3),
+            'lent_at' => now(),
+        ], 'lent');
+    });
+
+    it('顯示目前借用人與過去的紀錄', function () {
+        $this->get(route('admin.properties.show', $this->property))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Admin/Properties/Show')
+                ->where('property.ssid', 'J2000001')
+                ->where('current.id', $this->current->id)
+                ->where('current.borrower_department', '資工系')
+                ->where('current.status', 'lent')
+                ->has('history.data', 3)
+                ->where('history.data.0.id', $this->current->id)
+                ->where('history.data.1.id', $this->late->id)
+                ->where('history.data.1.late', true)
+                ->where('history.data.1.lender', '舊幹部')
+                ->where('history.data.1.lent_on', '2026-02-01')
+                ->where('history.data.1.returned_on', '2026-02-04')
+                ->where('history.data.2.late', false)
+                ->where('history.data.2.lender', $this->admin->name));
+    });
+
+    it('統計借出次數、天數與逾期次數', function () {
+        $this->get(route('admin.properties.show', $this->property))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('stats.times', 3)
+                ->where('stats.days', 3 + 4 + 1) // 1/5–1/7、2/1–2/4、今天
+                ->where('stats.late', 1)
+                ->where('stats.last_lent_on', today()->toDateString()));
+    });
+
+    it('沒有借出時 current 為 null，退回的單不算借出', function () {
+        $this->current->items()->update(['status' => 'cancelled']);
+
+        $this->get(route('admin.properties.show', $this->property))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('current', null)
+                ->where('stats.times', 2)
+                ->has('history.data', 3));
     });
 });
 

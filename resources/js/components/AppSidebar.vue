@@ -1,14 +1,22 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
 import {
+    AlarmClock,
     Boxes,
+    Building2,
+    ChartColumn,
+    CalendarDays,
     CalendarRange,
     ClipboardList,
     FileText,
+    Globe,
+    Flame,
     MapPin,
     Package,
+    Replace,
     Search,
     Settings2,
+    ShieldCheck,
     ShieldAlert,
     Tags,
     Users,
@@ -17,6 +25,7 @@ import {
 import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavMain from '@/components/NavMain.vue';
+import type { NavGroup } from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
 import {
     Sidebar,
@@ -36,6 +45,13 @@ import { index as periodsIndex } from '@/routes/admin/periods';
 import { index as poolsIndex } from '@/routes/admin/pools';
 import { index as propertiesIndex } from '@/routes/admin/properties';
 import { edit as settingsSection } from '@/routes/admin/settings/section';
+import {
+    departments as statsDepartments,
+    heatmap as statsHeatmap,
+    overdue as statsOverdue,
+    popular as statsPopular,
+} from '@/routes/admin/stats';
+import { index as aliasesIndex } from '@/routes/admin/stats/aliases';
 import { index as usersIndex } from '@/routes/admin/users';
 import { index as violationsIndex } from '@/routes/admin/violations';
 import { create as borrowCreate } from '@/routes/borrow';
@@ -81,6 +97,22 @@ const adminNav = computed<NavItem[]>(() =>
         : [],
 );
 
+const dataNav = computed<NavItem[]>(() =>
+    can.value.admin
+        ? [
+              { title: '熱門清單', href: statsPopular(), icon: Flame },
+              { title: '常借單位', href: statsDepartments(), icon: Building2 },
+              { title: '逾期排行', href: statsOverdue(), icon: AlarmClock },
+              {
+                  title: '借用量熱力圖',
+                  href: statsHeatmap(),
+                  icon: CalendarDays,
+              },
+              { title: '單位同義詞設定', href: aliasesIndex(), icon: Replace },
+          ]
+        : [],
+);
+
 /**
  * 系統設定的各個分頁。清單來自後端的 SettingController::SECTIONS（共享 prop），
  * 所以在那裡新增一頁設定，這裡就會自己多一個連結。
@@ -107,6 +139,15 @@ const frontendNav = computed<NavItem[]>(() => [
         : []),
     { title: '器材狀態', href: propertyStatus(), icon: Search },
 ]);
+
+const navGroups = computed<NavGroup[]>(() => [
+    { label: '借用', icon: ClipboardList, items: borrowNav.value },
+    { label: '器材', icon: Package, items: propertyNav.value },
+    { label: '管理', icon: ShieldCheck, items: adminNav.value },
+    { label: '數據', icon: ChartColumn, items: dataNav.value },
+    { label: '系統', icon: Settings2, items: systemNav.value },
+    { label: '前台', icon: Globe, items: frontendNav.value },
+]);
 </script>
 
 <template>
@@ -124,11 +165,7 @@ const frontendNav = computed<NavItem[]>(() => [
         </SidebarHeader>
 
         <SidebarContent>
-            <NavMain label="借用" :items="borrowNav" />
-            <NavMain label="器材" :items="propertyNav" />
-            <NavMain label="管理" :items="adminNav" />
-            <NavMain label="系統" :items="systemNav" />
-            <NavMain label="前台" :items="frontendNav" />
+            <NavMain :groups="navGroups" />
         </SidebarContent>
 
         <SidebarFooter>

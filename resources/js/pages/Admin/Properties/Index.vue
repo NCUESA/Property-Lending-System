@@ -17,7 +17,8 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { useQueryFilters } from '@/composables/useQueryFilters';
-import { create, edit, index } from '@/routes/admin/properties';
+import { show as borrowShow } from '@/routes/admin/borrows';
+import { create, edit, index, show } from '@/routes/admin/properties';
 import type {
     Category,
     LocationRef,
@@ -175,11 +176,19 @@ const selectClass =
                                 />
                             </div>
                         </TableCell>
-                        <TableCell class="font-mono text-xs">{{
-                            p.ssid
-                        }}</TableCell>
+                        <TableCell class="font-mono text-xs">
+                            <Link
+                                :href="show(p.id)"
+                                class="underline-offset-4 hover:underline"
+                                >{{ p.ssid }}</Link
+                            >
+                        </TableCell>
                         <TableCell>
-                            <div class="font-medium">{{ p.name }}</div>
+                            <Link
+                                :href="show(p.id)"
+                                class="font-medium underline-offset-4 hover:underline"
+                                >{{ p.name }}</Link
+                            >
                             <div class="text-xs text-muted-foreground">
                                 {{
                                     [p.second_name, p.spec]
@@ -209,11 +218,20 @@ const selectClass =
                             >
                         </TableCell>
                         <TableCell>
-                            <StatusBadge
+                            <Link
                                 v-if="p.active_borrow_item"
-                                kind="item"
-                                :status="p.active_borrow_item.status"
-                            />
+                                :href="
+                                    borrowShow(
+                                        p.active_borrow_item.borrow_request_id,
+                                    )
+                                "
+                                title="查看借用單"
+                            >
+                                <StatusBadge
+                                    kind="item"
+                                    :status="p.active_borrow_item.status"
+                                />
+                            </Link>
                             <span v-else class="text-xs text-muted-foreground"
                                 >在庫</span
                             >

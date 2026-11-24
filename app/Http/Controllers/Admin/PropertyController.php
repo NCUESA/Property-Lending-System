@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\BorrowItemStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\PropertyRequest;
+use App\Models\BorrowRequestItem;
+use App\Models\BorrowRequestOverview;
 use App\Models\Location;
 use App\Models\Property;
 use App\Models\PropertyCategory;
@@ -15,6 +18,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -80,6 +84,98 @@ class PropertyController extends Controller
         Toast::success("已新增 {$property->ssid} {$property->name}。");
 
         return to_route('admin.properties.index');
+    }
+
+    /**
+     * 器材反查：目前在誰手上、過去的借用紀錄。
+     * 大量借用品項是整池借出、不指定單件，所以池內器材沒有單件紀錄。
+     */
+    public function show(Property $property): Response
+    {
+        $property->load(['subcategory.category:id,code,name', 'location:id,name', 'pool:id,name']);
+
+        $history = BorrowRequestOverview::query()
+            ->whereHas('items', fn (Builder $q) => $q->where('property_id', $property->id))
+            ->with([
+                'items' => fn ($q) => $q->where('property_id', $property->id)->with('returner:id,name'),
+                'lender:id,name',
+                'returner:id,name',
+            ])
+            ->orderByDesc('borrow_date')
+            ->orderByDesc('id')
+            ->paginate(20)
+            ->through(fn (BorrowRequestOverview $b) => $this->historyRow($b));
+
+        $current = BorrowRequestOverview::query()
+            ->whereHas('items', fn (Builder $q) => $q->where('property_id', $property->id)->active())
+            ->with([
+                'items' => fn ($q) => $q->where('property_id', $property->id),
+                'lender:id,name',
+            ])
+            ->first();
+
+        return Inertia::render('Admin/Properties/Show', [
+            'property' => [
+                ...$property->toArray(),
+                'image_url' => PropertyImage::url($property->image_path),
+            ],
+            'current' => $current ? $this->historyRow($current) : null,
+            'stats' => $this->borrowStats($property),
+            'history' => $history,
+        ]);
+    }
+
+    /** @return array<string, mixed> */
+    private function historyRow(BorrowRequestOverview $b): array
+    {
+        /** @var BorrowRequestItem|null $item */
+        $item = $b->items->first();
+        $itemReturnedAt = $item?->returned_at;
+
+        return [
+            'id' => $b->id,
+            'status' => $b->status,
+            'item_status' => $item?->status,
+            'borrower_department' => $b->borrower_department,
+            'borrower_name' => $b->borrower_name,
+            'phone' => $b->phone,
+            'borrow_date' => $b->borrow_date->toDateString(),
+            'due_date' => $b->due_date->toDateString(),
+            // 以台北時間的日期給前端：舊資料只有日期（00:00），轉成 UTC 會變成前一天
+            'lent_on' => $b->lent_at?->toDateString(),
+            'returned_on' => $itemReturnedAt?->toDateString(),
+            'lender' => $b->lender->name ?? $b->legacy_lender_name,
+            'returner' => $item?->returner->name ?? $b->returner->name ?? $b->legacy_returner_name,
+            'extended' => $b->extended_at !== null,
+            // 這一件是否晚還（或至今未還且已過歸還日）
+            'late' => $item !== null && match ($item->status) {
+                BorrowItemStatus::Returned => $itemReturnedAt !== null && $itemReturnedAt->startOfDay()->greaterThan($b->due_date),
+                BorrowItemStatus::Lent => $b->due_date->lessThan(today()),
+                default => false,
+            },
+        ];
+    }
+
+    /** @return array{times: int, days: int, late: int, last_lent_on: ?string} */
+    private function borrowStats(Property $property): array
+    {
+        $row = DB::table('borrow_request_items as i')
+            ->join('borrow_requests as r', 'r.id', '=', 'i.borrow_request_id')
+            ->where('i.property_id', $property->id)
+            ->whereIn('i.status', [BorrowItemStatus::Lent->value, BorrowItemStatus::Returned->value])
+            ->selectRaw('count(*) AS times')
+            ->selectRaw('max(r.lent_at) AS last_lent_at')
+            // 借出到歸還（未還算到今天）的天數，同一天借還算 1 天
+            ->selectRaw('coalesce(sum(coalesce(i.returned_at::date, current_date) - coalesce(r.lent_at::date, r.borrow_date) + 1), 0) AS days')
+            ->selectRaw("count(*) FILTER (WHERE coalesce(i.returned_at::date, CASE WHEN i.status = 'lent' THEN current_date END) > r.due_date) AS late")
+            ->first();
+
+        return [
+            'times' => (int) ($row->times ?? 0),
+            'days' => (int) ($row->days ?? 0),
+            'late' => (int) ($row->late ?? 0),
+            'last_lent_on' => $row?->last_lent_at !== null ? substr((string) $row->last_lent_at, 0, 10) : null,
+        ];
     }
 
     public function edit(Property $property): Response
