@@ -10,6 +10,7 @@ enum BorrowRequestStatus: string
     case Pending = 'pending';                       // 已送出，等待取件
     case Expired = 'expired';                       // 借用日已過仍未取件
     case Lent = 'lent';                             // 借出中
+    case Extended = 'extended';                     // 展延過、仍借出中且未逾期
     case PartiallyReturned = 'partially_returned';  // 部分歸還
     case Overdue = 'overdue';                       // 超過歸還日仍有器材未還
     case ReturnedLate = 'returned_late';            // 全部歸還，但超過歸還日才還
@@ -22,6 +23,7 @@ enum BorrowRequestStatus: string
             self::Pending => '申請中',
             self::Expired => '逾期未取',
             self::Lent => '借出中',
+            self::Extended => '展延中',
             self::PartiallyReturned => '部分歸還',
             self::Overdue => '逾期未還',
             self::ReturnedLate => '逾期歸還',

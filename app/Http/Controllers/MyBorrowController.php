@@ -25,6 +25,7 @@ class MyBorrowController extends Controller
     private const ACTIVE = [
         BorrowRequestStatus::Pending,
         BorrowRequestStatus::Lent,
+        BorrowRequestStatus::Extended,
         BorrowRequestStatus::PartiallyReturned,
         BorrowRequestStatus::Overdue,
     ];

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
-import { Search, X } from '@lucide/vue';
+import { RefreshCw, Search, X } from '@lucide/vue';
+import { ref } from 'vue';
 import Heading from '@/components/Heading.vue';
 import PaginationLinks from '@/components/PaginationLinks.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
@@ -62,6 +63,17 @@ function quickFilter(values: BorrowRequestStatus[]) {
     filters.status = values;
 }
 
+// 只重抓列表，保留目前的篩選與頁碼
+const refreshing = ref(false);
+
+function refresh() {
+    router.reload({
+        only: ['borrows'],
+        onStart: () => (refreshing.value = true),
+        onFinish: () => (refreshing.value = false),
+    });
+}
+
 const hasFilters = () =>
     filters.status.length ||
     filters.location_id ||
@@ -86,7 +98,14 @@ const hasFilters = () =>
             <Button
                 size="sm"
                 variant="outline"
-                @click="quickFilter(['lent', 'partially_returned', 'overdue'])"
+                @click="
+                    quickFilter([
+                        'lent',
+                        'extended',
+                        'partially_returned',
+                        'overdue',
+                    ])
+                "
                 >借出中</Button
             >
             <Button
@@ -95,6 +114,16 @@ const hasFilters = () =>
                 @click="quickFilter(['overdue'])"
                 >逾期未還</Button
             >
+            <Button
+                size="sm"
+                variant="outline"
+                class="ml-auto"
+                :disabled="refreshing"
+                @click="refresh"
+            >
+                <RefreshCw :class="{ 'animate-spin': refreshing }" />
+                重新整理
+            </Button>
         </div>
 
         <div class="space-y-3 rounded-lg border p-3">

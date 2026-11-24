@@ -50,6 +50,7 @@ export const requestStatusMeta: Record<
     pending: { label: '申請中', tone: 'info' },
     expired: { label: '逾期未取', tone: 'neutral' },
     lent: { label: '借出中', tone: 'warning' },
+    extended: { label: '展延中', tone: 'info' },
     partially_returned: { label: '部分歸還', tone: 'warning' },
     overdue: { label: '逾期未還', tone: 'danger' },
     returned_late: { label: '逾期歸還', tone: 'warning' },

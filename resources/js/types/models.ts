@@ -4,6 +4,7 @@ export type BorrowRequestStatus =
     | 'pending'
     | 'expired'
     | 'lent'
+    | 'extended'
     | 'partially_returned'
     | 'overdue'
     | 'returned_late'

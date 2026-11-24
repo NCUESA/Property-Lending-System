@@ -7,6 +7,7 @@ use App\Http\Controllers\BorrowRequestController;
 use App\Models\BorrowPeriod;
 use App\Models\BorrowRequest;
 use App\Models\BorrowRequestItem;
+use App\Models\BorrowRequestOverview;
 use App\Models\Location;
 use App\Models\Property;
 use App\Models\PropertyPool;
@@ -529,6 +530,27 @@ describe('展延歸還日', function () {
             ->and($this->borrow->extension_reason)->toBe('活動延期到下週')
             ->and($this->borrow->extended_by)->toBe($this->staff->id)
             ->and($this->borrow->extended_at)->not->toBeNull();
+    });
+
+    it('借出中展延過顯示展延中，逾期仍算逾期未還', function () {
+        $status = fn () => BorrowRequestOverview::findOrFail($this->borrow->id)->status;
+
+        $this->borrow->items()->update(['status' => BorrowItemStatus::Lent]);
+        expect($status())->toBe(BorrowRequestStatus::Lent);
+
+        $this->actingAs($this->staff)
+            ->post(route('admin.borrows.extend', $this->borrow), [
+                'due_date' => $this->borrow->due_date->copy()->addDays(3)->toDateString(),
+                'reason' => '延期',
+            ])->assertSessionHasNoErrors();
+        expect($status())->toBe(BorrowRequestStatus::Extended);
+
+        $this->borrow->forceFill(['due_date' => today()->subDay(), 'borrow_date' => today()->subDays(2)])->save();
+        expect($status())->toBe(BorrowRequestStatus::Overdue);
+
+        $this->borrow->forceFill(['due_date' => today()->addDay()])->save();
+        $this->borrow->items()->update(['status' => BorrowItemStatus::Returned]);
+        expect($status())->toBe(BorrowRequestStatus::Returned);
     });
 
     it('沒填理由不給展延', function () {

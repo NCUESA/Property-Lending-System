@@ -41,7 +41,7 @@ class ImportLegacyProperties extends Command
     ];
 
     /** 舊 property 資料表的欄位順序（mysqldump 不帶欄位名稱）。 */
-    private const COLUMNS = [
+    public const COLUMNS = [
         'id', 'ssid', 'class', 'name', 'second_name', 'order_number', 'price',
         'department', 'depositary', 'belong_place', 'get_day', 'format', 'remark',
         'enable_lending', 'lending_status', 'property_status', 'img_url',
