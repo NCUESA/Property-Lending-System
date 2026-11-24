@@ -496,6 +496,22 @@ describe('出借與歸還', function () {
             ->assertInertia(fn (Assert $page) => $page->has('borrows.data', 0));
     });
 
+    it('列表預設每頁 10 筆，可切換每頁筆數', function () {
+        $this->actingAs($this->staff)
+            ->get(route('admin.borrows.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('borrows.per_page', 10)
+                ->where('perPageOptions', [10, 30, 50, 100]));
+
+        $this->actingAs($this->staff)
+            ->get(route('admin.borrows.index', ['per_page' => 50]))
+            ->assertInertia(fn (Assert $page) => $page->where('borrows.per_page', 50));
+
+        $this->actingAs($this->staff)
+            ->get(route('admin.borrows.index', ['per_page' => 20]))
+            ->assertSessionHasErrors('per_page');
+    });
+
     it('明細頁帶出即時狀態與明細', function () {
         $this->actingAs($this->staff)
             ->get(route('admin.borrows.show', $this->borrow))

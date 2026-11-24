@@ -29,6 +29,9 @@ use Inertia\Response;
  */
 class BorrowRequestController extends Controller
 {
+    /** 每頁筆數的可選值，第一個是預設值，與器材列表相同。 */
+    public const PER_PAGE_OPTIONS = PropertyController::PER_PAGE_OPTIONS;
+
     public function index(Request $request): Response
     {
         $filters = $request->validate([
@@ -38,6 +41,7 @@ class BorrowRequestController extends Controller
             'q' => ['nullable', 'string', 'max:50'],
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date'],
+            'per_page' => ['nullable', 'integer', Rule::in(self::PER_PAGE_OPTIONS)],
         ]);
 
         $borrows = BorrowRequestOverview::query()
@@ -53,7 +57,7 @@ class BorrowRequestController extends Controller
                 ->when(ctype_digit($term), fn (Builder $w) => $w->orWhere('id', (int) $term))))
             ->with('location:id,name')
             ->orderByDesc('id')
-            ->paginate(20)
+            ->paginate($filters['per_page'] ?? self::PER_PAGE_OPTIONS[0])
             ->withQueryString();
 
         return Inertia::render('Admin/Borrows/Index', [
@@ -61,6 +65,7 @@ class BorrowRequestController extends Controller
             'borrows' => $borrows,
             'statuses' => collect(BorrowRequestStatus::cases())->map(fn ($s) => ['value' => $s->value, 'label' => $s->label()]),
             'locations' => Location::pickupPoints()->get(['id', 'name']),
+            'perPageOptions' => self::PER_PAGE_OPTIONS,
         ]);
     }
 

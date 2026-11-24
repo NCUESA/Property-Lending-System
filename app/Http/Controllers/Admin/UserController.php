@@ -21,11 +21,15 @@ use Inertia\Response;
  */
 class UserController extends Controller
 {
+    /** 每頁筆數的可選值，第一個是預設值，與器材列表相同。 */
+    public const PER_PAGE_OPTIONS = PropertyController::PER_PAGE_OPTIONS;
+
     public function index(Request $request): Response
     {
         $filters = $request->validate([
             'q' => ['nullable', 'string', 'max:50'],
             'role' => ['nullable', Rule::enum(Role::class)],
+            'per_page' => ['nullable', 'integer', Rule::in(self::PER_PAGE_OPTIONS)],
         ]);
 
         $users = User::query()
@@ -37,13 +41,14 @@ class UserController extends Controller
             ->with('groups:id,name')
             ->orderByRaw("CASE role WHEN 'admin' THEN 0 WHEN 'staff' THEN 1 ELSE 2 END")
             ->orderBy('name')
-            ->paginate(30)
+            ->paginate($filters['per_page'] ?? self::PER_PAGE_OPTIONS[0])
             ->withQueryString();
 
         return Inertia::render('Admin/Users/Index', [
             'filters' => $filters,
             'users' => $users,
             'roles' => collect(Role::cases())->map(fn (Role $r) => ['value' => $r->value, 'label' => $r->label()]),
+            'perPageOptions' => self::PER_PAGE_OPTIONS,
         ]);
     }
 

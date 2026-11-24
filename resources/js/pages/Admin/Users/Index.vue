@@ -45,10 +45,18 @@ defineOptions({
 });
 
 const props = defineProps<{
-    filters: { q?: string; role?: Role };
+    filters: { q?: string; role?: Role; per_page?: number };
     users: Paginator<Row>;
     roles: Option<Role>[];
+    perPageOptions?: number[];
 }>();
+
+// 選項以後端為準；props 沒帶時至少列出目前生效的值，避免出現空白選單
+const perPageChoices = computed(() =>
+    props.perPageOptions?.length
+        ? props.perPageOptions
+        : [props.users.per_page],
+);
 
 const me = computed(() => usePage().props.auth.user.id);
 const roleLabel = (role: Role) =>
@@ -57,6 +65,7 @@ const roleLabel = (role: Role) =>
 const { filters } = useQueryFilters(index.url(), {
     q: props.filters.q ?? '',
     role: props.filters.role ?? '',
+    per_page: String(props.users.per_page),
 });
 
 const open = ref(false);
@@ -211,7 +220,28 @@ function submit() {
             </Table>
         </div>
 
-        <PaginationLinks :paginator="users" />
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <label
+                class="flex items-center gap-2 text-sm text-muted-foreground"
+            >
+                每頁顯示
+                <select
+                    v-model="filters.per_page"
+                    class="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+                    aria-label="每頁顯示筆數"
+                >
+                    <option
+                        v-for="n in perPageChoices"
+                        :key="n"
+                        :value="String(n)"
+                    >
+                        {{ n }}
+                    </option>
+                </select>
+                筆
+            </label>
+            <PaginationLinks :paginator="users" class="flex-1" />
+        </div>
     </div>
 
     <Dialog v-model:open="open">

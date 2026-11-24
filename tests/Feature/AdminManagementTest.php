@@ -246,6 +246,24 @@ describe('編碼規則清冊', function () {
 });
 
 describe('人員與群組', function () {
+    it('人員列表預設每頁 10 筆，可切換每頁筆數', function () {
+        User::factory()->count(11)->create(); // 加上登入的管理員共 12 位
+
+        $this->get(route('admin.users.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Admin/Users/Index')
+                ->where('users.per_page', 10)
+                ->has('users.data', 10)
+                ->where('users.total', 12)
+                ->where('perPageOptions', [10, 30, 50, 100]));
+
+        $this->get(route('admin.users.index', ['per_page' => 30]))
+            ->assertInertia(fn (Assert $page) => $page->has('users.data', 12));
+
+        $this->get(route('admin.users.index', ['per_page' => 7]))
+            ->assertSessionHasErrors('per_page');
+    });
+
     it('管理員不能把自己降級或停用', function () {
         $this->put(route('admin.users.update', $this->admin), [
             'name' => $this->admin->name, 'student_id' => $this->admin->student_id, 'email' => $this->admin->email,

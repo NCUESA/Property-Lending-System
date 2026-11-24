@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
 import { RefreshCw, Search, X } from '@lucide/vue';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import Heading from '@/components/Heading.vue';
 import PaginationLinks from '@/components/PaginationLinks.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
@@ -36,13 +36,22 @@ const props = defineProps<{
         q?: string;
         from?: string;
         to?: string;
+        per_page?: number;
     };
     borrows: Paginator<BorrowOverview>;
     statuses: Option<BorrowRequestStatus>[];
     locations: { id: number; name: string }[];
+    perPageOptions?: number[];
 }>();
 
-const { filters, reset } = useQueryFilters(index.url(), {
+// 選項以後端為準；props 沒帶時至少列出目前生效的值，避免出現空白選單
+const perPageChoices = computed(() =>
+    props.perPageOptions?.length
+        ? props.perPageOptions
+        : [props.borrows.per_page],
+);
+
+const { filters, reset: resetAll } = useQueryFilters(index.url(), {
     status: props.filters.status ?? ([] as BorrowRequestStatus[]),
     location_id: props.filters.location_id
         ? String(props.filters.location_id)
@@ -50,7 +59,15 @@ const { filters, reset } = useQueryFilters(index.url(), {
     q: props.filters.q ?? '',
     from: props.filters.from ?? '',
     to: props.filters.to ?? '',
+    per_page: String(props.borrows.per_page),
 });
+
+// 清除篩選時保留每頁筆數，否則選單會變成空白
+function reset() {
+    const perPage = filters.per_page;
+    resetAll();
+    filters.per_page = perPage;
+}
 
 function toggleStatus(value: BorrowRequestStatus) {
     filters.status = filters.status.includes(value)
@@ -258,6 +275,27 @@ const hasFilters = () =>
             </Table>
         </div>
 
-        <PaginationLinks :paginator="borrows" />
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <label
+                class="flex items-center gap-2 text-sm text-muted-foreground"
+            >
+                每頁顯示
+                <select
+                    v-model="filters.per_page"
+                    class="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+                    aria-label="每頁顯示筆數"
+                >
+                    <option
+                        v-for="n in perPageChoices"
+                        :key="n"
+                        :value="String(n)"
+                    >
+                        {{ n }}
+                    </option>
+                </select>
+                筆
+            </label>
+            <PaginationLinks :paginator="borrows" class="flex-1" />
+        </div>
     </div>
 </template>
