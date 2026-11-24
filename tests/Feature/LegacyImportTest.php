@@ -30,6 +30,9 @@ test('器材匯入會修正重複與錯誤的財產編號', function () {
         'J0081004' => '大型雙面展示板',
         'J0081005' => '大型雙面展示板',
     ]);
+
+    expect(Property::where('ssid', 'J0080004')->value('image_path'))->toBe('properties/33.jpg')
+        ->and(Property::where('ssid', 'J0081005')->value('image_path'))->toBeNull();
 });
 
 test('經手人依學號建立帳號，離職者為一般借用人且不停用', function () {

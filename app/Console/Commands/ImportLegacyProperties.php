@@ -190,7 +190,8 @@ class ImportLegacyProperties extends Command
                     'is_school_owned' => $r['school_property'] === '1',
                     // 舊系統的權限是依 IP（authip 表），新系統改用群組授權，一律從 0 開始
                     'auth_level' => 0,
-                    'image_path' => $this->nullIfBlank($r['img_url']),
+                    // 舊照片與後台上傳的照片放在同一個資料夾：storage/app/public/properties/
+                    'image_path' => ($img = $this->nullIfBlank($r['img_url'])) !== null ? 'properties/'.basename($img) : null,
                     'is_lendable' => $r['enable_lending'] === '1',
                     'remark' => $this->nullIfBlank($r['remark']),
                 ]);
