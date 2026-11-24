@@ -68,6 +68,7 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
             Route::get('aliases', [DepartmentAliasController::class, 'index'])->name('aliases.index');
             Route::post('aliases', [DepartmentAliasController::class, 'store'])->name('aliases.store');
             Route::delete('aliases', [DepartmentAliasController::class, 'destroy'])->name('aliases.destroy');
+            Route::patch('aliases/rename', [DepartmentAliasController::class, 'rename'])->name('aliases.rename');
         });
 
         // 封鎖由系統依設定自動建立，管理員只能提前解除

@@ -115,24 +115,76 @@ test('熱力圖回傳每天的借用單數與件數', function () {
             ->where('days.2026-03-02', ['requests' => 3, 'items' => 8]));
 });
 
-test('合併寫法時，原本指向舊名稱的對應會一起改', function () {
+test('把寫法拖進群組只移動那一種寫法', function () {
     DepartmentAlias::create(['alias' => '熱舞', 'canonical' => '熱舞社']);
 
     $this->post(route('admin.stats.aliases.store'), [
-        'aliases' => ['熱舞社', '酷電熱舞'],
+        'aliases' => ['熱舞社'],
         'canonical' => '酷電熱舞社',
     ])->assertSessionHasNoErrors();
 
+    // 「熱舞」還在原本的群組，不會被一起帶走
     expect(DepartmentAlias::pluck('canonical', 'alias')->all())->toEqual([
-        '熱舞' => '酷電熱舞社',
+        '熱舞' => '熱舞社',
         '熱舞社' => '酷電熱舞社',
-        '酷電熱舞' => '酷電熱舞社',
     ]);
 
     $this->delete(route('admin.stats.aliases.destroy'), ['aliases' => ['熱舞']])
         ->assertSessionHasNoErrors();
 
     expect(DepartmentAlias::where('alias', '熱舞')->exists())->toBeFalse();
+});
+
+test('拖進和自己同名的群組時不建立多餘的對應', function () {
+    DepartmentAlias::create(['alias' => '熱舞社', 'canonical' => '舞蹈']);
+
+    $this->post(route('admin.stats.aliases.store'), [
+        'aliases' => ['熱舞社'],
+        'canonical' => '熱舞社',
+    ])->assertSessionHasNoErrors();
+
+    expect(DepartmentAlias::count())->toBe(0);
+});
+
+test('群組改名時，同名的寫法也留在群組裡', function () {
+    // 群組「熱舞社」：熱舞 → 熱舞社，加上借用單上本來就寫「熱舞社」的
+    DepartmentAlias::create(['alias' => '熱舞', 'canonical' => '熱舞社']);
+
+    $this->patch(route('admin.stats.aliases.rename'), ['from' => '熱舞社', 'to' => '酷電熱舞社'])
+        ->assertSessionHasNoErrors();
+
+    expect(DepartmentAlias::pluck('canonical', 'alias')->all())->toEqual([
+        '熱舞' => '酷電熱舞社',
+        '熱舞社' => '酷電熱舞社',
+    ]);
+
+    $this->get(route('admin.stats.departments'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('rows.0.department', '酷電熱舞社')
+            ->where('rows.0.times', 2));
+});
+
+test('群組改成和成員同名時，取消那個成員的對應', function () {
+    DepartmentAlias::create(['alias' => '熱舞', 'canonical' => '熱舞社']);
+    DepartmentAlias::create(['alias' => '酷電熱舞', 'canonical' => '熱舞社']);
+
+    $this->patch(route('admin.stats.aliases.rename'), ['from' => '熱舞社', 'to' => '熱舞'])
+        ->assertSessionHasNoErrors();
+
+    expect(DepartmentAlias::pluck('canonical', 'alias')->all())->toEqual([
+        '熱舞社' => '熱舞',
+        '酷電熱舞' => '熱舞',
+    ]);
+});
+
+test('群組名稱不能只有符號', function () {
+    $this->post(route('admin.stats.aliases.store'), ['aliases' => ['熱舞'], 'canonical' => '*'])
+        ->assertSessionHasErrors('canonical');
+
+    $this->patch(route('admin.stats.aliases.rename'), ['from' => '熱舞社', 'to' => '--'])
+        ->assertSessionHasErrors('to');
+
+    expect(DepartmentAlias::count())->toBe(0);
 });
 
 test('同義詞頁列出每一種寫法與目前的對應', function () {
@@ -142,7 +194,8 @@ test('同義詞頁列出每一種寫法與目前的對應', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->component('Admin/Stats/Aliases')
             ->has('rows', 3)
-            ->where('canonicals', ['熱舞社']));
+            ->where('rows.0.spelling', '吉他社')
+            ->where('rows.0.canonical', null));
 });
 
 test('值班人員看不到數據頁', function () {

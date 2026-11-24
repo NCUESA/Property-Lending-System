@@ -17,19 +17,12 @@ use Inertia\Response;
  */
 class DepartmentAliasController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(): Response
     {
-        $filters = $request->validate([
-            'q' => ['nullable', 'string', 'max:50'],
-        ]);
-
         // 列出借用單上出現過的每一種寫法，以及它目前合併到哪個名稱
         $rows = DB::table('borrow_requests as r')
             ->leftJoin('department_aliases as da', 'da.alias', '=', DB::raw('btrim(r.borrower_department)'))
             ->selectRaw('btrim(r.borrower_department) AS spelling, da.canonical, count(*) AS times, max(r.borrow_date) AS last_borrow_date')
-            ->when($filters['q'] ?? null, fn ($q, string $term) => $q->where(fn ($w) => $w
-                ->where('r.borrower_department', 'ilike', "%{$term}%")
-                ->orWhere('da.canonical', 'ilike', "%{$term}%")))
             ->groupByRaw('btrim(r.borrower_department), da.canonical')
             ->orderByRaw('coalesce(da.canonical, btrim(r.borrower_department))')
             ->orderByDesc('times')
@@ -42,29 +35,25 @@ class DepartmentAliasController extends Controller
             ]);
 
         return Inertia::render('Admin/Stats/Aliases', [
-            'filters' => $filters,
             'rows' => $rows,
-            // 合併時可以直接選既有的名稱
-            'canonicals' => DepartmentAlias::query()->distinct()->orderBy('canonical')->pluck('canonical'),
         ]);
     }
 
-    /** 把勾選的寫法合併到同一個名稱。 */
+    /** 把寫法移進某個群組（統一名稱）。只移動這幾種寫法，原本群組的其他成員不受影響。 */
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
             'aliases' => ['required', 'array', 'min:1'],
             'aliases.*' => ['required', 'string', 'max:100', 'distinct'],
-            'canonical' => ['required', 'string', 'max:100'],
-        ], attributes: ['aliases' => '寫法', 'canonical' => '統一名稱']);
+            'canonical' => ['required', 'string', 'max:100', 'regex:/[\p{L}\p{N}]/u'],
+        ], [
+            'canonical.regex' => '群組名稱至少要有一個文字或數字。',
+        ], ['aliases' => '寫法', 'canonical' => '群組名稱']);
 
         $canonical = trim($data['canonical']);
         $aliases = array_values(array_unique(array_map('trim', $data['aliases'])));
 
         DB::transaction(function () use ($aliases, $canonical) {
-            // 原本合併到這些寫法的，跟著改到新名稱，不會留下指向舊名稱的對應
-            DepartmentAlias::query()->whereIn('canonical', $aliases)->update(['canonical' => $canonical]);
-
             foreach ($aliases as $alias) {
                 if ($alias === $canonical) {
                     // 寫法本身就是統一名稱，不需要對應
@@ -80,7 +69,41 @@ class DepartmentAliasController extends Controller
             DepartmentAlias::query()->where('alias', $canonical)->delete();
         });
 
-        Toast::success('已將 '.count($aliases)." 種寫法合併為「{$canonical}」");
+        return back();
+    }
+
+    /** 群組改名：整個群組（含與舊名稱同名的那種寫法）一起改到新名稱；新名稱已存在就等於合併兩個群組。 */
+    public function rename(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'from' => ['required', 'string', 'max:100'],
+            'to' => ['required', 'string', 'max:100', 'regex:/[\p{L}\p{N}]/u'],
+        ], [
+            'to.regex' => '群組名稱至少要有一個文字或數字。',
+        ], ['to' => '群組名稱']);
+
+        $from = trim($data['from']);
+        $to = trim($data['to']);
+
+        if ($from === $to) {
+            return back();
+        }
+
+        DB::transaction(function () use ($from, $to) {
+            DepartmentAlias::query()->where('canonical', $from)->update(['canonical' => $to]);
+
+            // 和舊名稱同名的那種寫法原本不需要對應，改名後要補一筆才會留在群組裡
+            $usedAsSpelling = DB::table('borrow_requests')->whereRaw('btrim(borrower_department) = ?', [$from])->exists();
+
+            if ($usedAsSpelling && ! DepartmentAlias::query()->where('alias', $from)->exists()) {
+                DepartmentAlias::query()->create(['alias' => $from, 'canonical' => $to]);
+            }
+
+            // 新名稱本身若是別的群組的成員，拉回這個群組，免得形成鏈
+            DepartmentAlias::query()->where('alias', $to)->delete();
+        });
+
+        Toast::success("群組已改名為「{$to}」");
 
         return back();
     }
@@ -93,9 +116,7 @@ class DepartmentAliasController extends Controller
             'aliases.*' => ['required', 'string', 'max:100'],
         ]);
 
-        $deleted = DepartmentAlias::query()->whereIn('alias', array_map('trim', $data['aliases']))->delete();
-
-        Toast::success("已取消 {$deleted} 種寫法的合併");
+        DepartmentAlias::query()->whereIn('alias', array_map('trim', $data['aliases']))->delete();
 
         return back();
     }
