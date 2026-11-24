@@ -35,7 +35,7 @@ const props = defineProps<{
         q?: string;
         location_id?: number;
         category_id?: number;
-        pool_id?: number;
+        pool_id?: number | 'none';
         per_page?: number;
     };
     properties: Paginator<Property>;
@@ -131,6 +131,7 @@ const selectClass =
                 aria-label="品項池"
             >
                 <option value="">全部（含大量借用品項）</option>
+                <option value="none">不含大量借用品項</option>
                 <option v-for="p in pools" :key="p.id" :value="String(p.id)">
                     {{ p.name }}（{{ p.location?.name }}）
                 </option>

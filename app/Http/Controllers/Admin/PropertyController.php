@@ -33,7 +33,8 @@ class PropertyController extends Controller
             'q' => ['nullable', 'string', 'max:50'],
             'location_id' => ['nullable', 'integer'],
             'category_id' => ['nullable', 'integer'],
-            'pool_id' => ['nullable', 'integer'],
+            // 品項池 id，或 none = 只看不屬於任何品項池的器材
+            'pool_id' => ['nullable', 'regex:/^(none|\d+)$/'],
             'per_page' => ['nullable', 'integer', Rule::in(self::PER_PAGE_OPTIONS)],
         ]);
 
@@ -45,7 +46,9 @@ class PropertyController extends Controller
                 ->orWhere('custodian', 'ilike', "%{$term}%")))
             ->when($filters['location_id'] ?? null, fn (Builder $q, int $id) => $q->where('location_id', $id))
             ->when($filters['category_id'] ?? null, fn (Builder $q, int $id) => $q->whereHas('subcategory', fn (Builder $s) => $s->where('property_category_id', $id)))
-            ->when($filters['pool_id'] ?? null, fn (Builder $q, int $id) => $q->where('property_pool_id', $id))
+            ->when($filters['pool_id'] ?? null, fn (Builder $q, string $pool) => $pool === 'none'
+                ? $q->whereNull('property_pool_id')
+                : $q->where('property_pool_id', (int) $pool))
             ->with(['subcategory.category:id,code,name', 'location:id,name', 'pool:id,name', 'activeBorrowItem:id,property_id,status,borrow_request_id'])
             ->orderBy('ssid')
             ->paginate($filters['per_page'] ?? self::PER_PAGE_OPTIONS[0])

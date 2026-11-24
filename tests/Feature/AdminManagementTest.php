@@ -123,6 +123,25 @@ describe('器材維護', function () {
                 ->where('properties.data.0.name', '投影機'));
     });
 
+    it('列表可篩選品項池，或只看不含大量借用品項的器材', function () {
+        $pool = PropertyPool::factory()->create();
+        Property::factory()->create(['ssid' => 'J2000001', 'property_pool_id' => $pool->id]);
+        Property::factory()->create(['ssid' => 'J2000002']);
+
+        $this->get(route('admin.properties.index', ['pool_id' => 'none']))
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('properties.data', 1)
+                ->where('properties.data.0.ssid', 'J2000002'));
+
+        $this->get(route('admin.properties.index', ['pool_id' => $pool->id]))
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('properties.data', 1)
+                ->where('properties.data.0.ssid', 'J2000001'));
+
+        $this->get(route('admin.properties.index', ['pool_id' => 'abc']))
+            ->assertSessionHasErrors('pool_id');
+    });
+
     it('列表預設每頁 10 筆', function () {
         Property::factory()->count(12)->create(['property_subcategory_id' => $this->sub->id]);
 
