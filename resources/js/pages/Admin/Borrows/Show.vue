@@ -605,7 +605,7 @@ const submitExtend = () =>
                                     : '未收'
                             }}； 押金：{{
                                 borrow.deposit_taken
-                                    ? `NT$ ${borrow.deposit_amount ?? ''}（${borrow.deposit_returned ? '已退還' : '保管中'}）`
+                                    ? `${borrow.deposit_returned ? '已退還' : '保管中'}（NT$ ${borrow.deposit_amount ?? ''}）`
                                     : '未收'
                             }}
                         </div>
